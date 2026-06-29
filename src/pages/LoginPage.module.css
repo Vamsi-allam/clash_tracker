@@ -217,18 +217,167 @@ p {
   }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .authLayout {
-    padding: 16px;
+    padding: 20px;
   }
 
   .brandCard,
   .formCard {
-    padding: 22px;
-    border-radius: 22px;
+    padding: 28px;
+    border-radius: 24px;
   }
 
   h1 {
-    font-size: 2.4rem;
+    font-size: clamp(2rem, 5vw, 3.5rem);
+  }
+
+  h2 {
+    font-size: clamp(1.4rem, 3vw, 2rem);
+  }
+
+  .input,
+  .primaryButton,
+  .ghostButton {
+    padding: 14px 16px;
+    border-radius: 14px;
+    font-size: 0.95rem;
+  }
+
+  .featureGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .featureTile {
+    padding: 14px;
+  }
+}
+
+@media (max-width: 640px) {
+  .authLayout {
+    padding: 12px;
+  }
+
+  .authShell {
+    gap: 16px;
+  }
+
+  .brandCard,
+  .formCard {
+    padding: 18px;
+    border-radius: 18px;
+  }
+
+  .auroraLeft,
+  .auroraRight {
+    width: 50vw;
+    height: 50vw;
+    opacity: 0.4;
+  }
+
+  .auroraLeft {
+    top: -20vw;
+    left: -10vw;
+  }
+
+  .auroraRight {
+    right: -10vw;
+    bottom: -20vw;
+  }
+
+  h1 {
+    font-size: clamp(1.6rem, 4vw, 2.5rem);
+    margin-bottom: 8px;
+  }
+
+  h2 {
+    font-size: clamp(1.2rem, 3vw, 1.8rem);
+    margin-bottom: 6px;
+  }
+
+  p {
+    font-size: 0.9rem;
+  }
+
+  .eyebrow {
+    font-size: 0.7rem;
+    margin-bottom: 8px;
+  }
+
+  .featureGrid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .featureTile {
+    padding: 12px;
+    border-radius: 14px;
+  }
+
+  .featureTile span,
+  .featureTile strong {
+    font-size: 0.85rem;
+  }
+
+  .input,
+  .primaryButton,
+  .ghostButton {
+    padding: 12px 14px;
+    border-radius: 12px;
+    font-size: 0.9rem;
+  }
+
+  .field {
+    gap: 8px;
+  }
+
+  .formHeader {
+    margin-bottom: 8px;
+  }
+
+  .stackForm {
+    gap: 14px;
+  }
+
+  .highlightList {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .highlightTile {
+    padding: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .authLayout {
+    padding: 8px;
+  }
+
+  .brandCard,
+  .formCard {
+    padding: 14px;
+    border-radius: 14px;
+  }
+
+  h1 {
+    font-size: 1.5rem;
+  }
+
+  h2 {
+    font-size: 1.1rem;
+  }
+
+  .input,
+  .primaryButton,
+  .ghostButton {
+    padding: 11px 12px;
+    font-size: 0.85rem;
+  }
+
+  .primaryButton,
+  .ghostButton {
+    width: 100%;
   }
 }

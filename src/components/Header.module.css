@@ -1,0 +1,171 @@
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 24px;
+  background: linear-gradient(135deg, rgba(10, 19, 35, 0.95), rgba(17, 31, 55, 0.85));
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.branding {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.icon {
+  font-size: 1.6rem;
+  display: flex;
+  align-items: center;
+}
+
+.branding h1 {
+  margin: 0;
+  color: var(--text);
+  font-size: 1.4rem;
+  line-height: 1.2;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.rightSection {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.profile {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.profileIcon {
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+}
+
+.username {
+  color: var(--text);
+  font-size: 0.85rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.logoutBtn {
+  background: linear-gradient(135deg, var(--danger), #ff5a7e);
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  white-space: nowrap;
+}
+
+.logoutBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(255, 122, 89, 0.3);
+}
+
+.logoutBtn:disabled {
+  cursor: wait;
+  opacity: 0.72;
+}
+
+@media (max-width: 768px) {
+  .header {
+    padding: 8px 16px;
+    gap: 10px;
+  }
+
+  .branding h1 {
+    font-size: 1.2rem;
+  }
+
+  .icon {
+    font-size: 1.4rem;
+  }
+
+  .profile {
+    padding: 4px 10px;
+    gap: 6px;
+  }
+
+  .profileIcon {
+    font-size: 1rem;
+  }
+
+  .username {
+    font-size: 0.75rem;
+  }
+
+  .logoutBtn {
+    padding: 6px 14px;
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .header {
+    padding: 8px 12px;
+    gap: 8px;
+  }
+
+  .branding h1 {
+    font-size: 1rem;
+  }
+
+  .icon {
+    font-size: 1.2rem;
+  }
+
+  .profile {
+    display: none;
+  }
+
+  .logoutBtn {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    border-radius: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .header {
+    padding: 6px 8px;
+    gap: 6px;
+  }
+
+  .branding h1 {
+    font-size: 0.9rem;
+  }
+
+  .icon {
+    font-size: 1rem;
+  }
+
+  .profile {
+    display: none;
+  }
+
+  .logoutBtn {
+    padding: 5px 10px;
+    font-size: 0.7rem;
+  }
+}
