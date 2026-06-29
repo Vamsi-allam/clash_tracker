@@ -1,0 +1,607 @@
+.dashboardLayout {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+  padding: 0 28px 28px;
+  background: linear-gradient(160deg, #0a1020, #111b2d 60%, #1b2640);
+  color: var(--text);
+}
+
+.dashboardShell {
+  position: relative;
+  width: min(1180px, 100%);
+  margin: 0 auto;
+  display: grid;
+  gap: 18px;
+  z-index: 1;
+}
+
+.dashboardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 20px 24px;
+  border-radius: 0 0 28px 28px;
+  border: 1px solid var(--border);
+  background: rgba(8, 16, 29, 0.82);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(22px);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  width: calc(100% + 56px);
+  margin: 0 -28px 18px;
+}
+
+.titleWrap h1 {
+  margin: 4px 0 0;
+  font-size: clamp(1.5rem, 2.8vw, 2.2rem);
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.profilePill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.profileIcon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, var(--accent), #ff7a59);
+  color: #16120a;
+  font-weight: 800;
+}
+
+.profileName {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.eyebrow {
+  margin: 0 0 10px;
+  color: var(--accent-2);
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 0.75rem;
+}
+
+.ghostButton {
+  border: 0;
+  border-radius: 14px;
+  padding: 10px 16px;
+  font-weight: 700;
+  background: rgba(10, 19, 35, 0.5);
+  color: var(--text);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.adminSetupPanel {
+  display: grid;
+  gap: 18px;
+  padding: 24px;
+  border-radius: 24px;
+  border: 1px solid var(--border);
+  background: rgba(8, 16, 29, 0.75);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(18px);
+}
+
+.choiceGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.choiceCard {
+  display: grid;
+  gap: 10px;
+  padding: 20px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(180deg, rgba(91, 167, 255, 0.16), rgba(8, 16, 29, 0.72));
+  color: var(--text);
+  text-align: left;
+}
+
+.choiceTitle {
+  font-size: 1.3rem;
+  font-weight: 800;
+}
+
+.choiceText {
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.loadedHeroMini {
+  display: grid;
+  gap: 12px;
+  padding: 20px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.loadedHeroMini h3 {
+  margin: 0;
+  font-size: clamp(1.4rem, 2.6vw, 2rem);
+  color: #5ba7ff;
+}
+
+.loadedHeroMini p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.exportPanel {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.exportLabel {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.exportTextarea {
+  width: 100%;
+  min-height: 180px;
+  resize: vertical;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(8, 16, 29, 0.78);
+  color: var(--text);
+  padding: 14px 16px;
+  outline: none;
+  font-family: inherit;
+}
+
+.exportTextarea:focus {
+  border-color: rgba(91, 167, 255, 0.5);
+}
+
+.exportActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.primaryActionButton,
+.secondaryActionButton {
+  border: 0;
+  border-radius: 14px;
+  padding: 12px 18px;
+  font-weight: 800;
+}
+
+.primaryActionButton {
+  color: #10151d;
+  background: linear-gradient(135deg, #7ac62c, #5ca21f);
+}
+
+.secondaryActionButton {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.secondaryActionButton:disabled {
+  opacity: 0.5;
+}
+
+.exportError {
+  margin: 0;
+  color: #ffb1be;
+  font-weight: 700;
+}
+
+.exportMeta {
+  margin: 0;
+  color: var(--muted);
+}
+
+.upgradeSection {
+  display: grid;
+  gap: 12px;
+}
+
+.upgradeSection h2 {
+  margin: 0;
+  font-size: clamp(1.4rem, 2.8vw, 1.9rem);
+  color: #5ba7ff;
+}
+
+.upgradeMeta {
+  margin: 0;
+  color: var(--muted);
+}
+
+.upgradeList {
+  display: grid;
+  gap: 10px;
+}
+
+.upgradeItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.upgradeItem h3 {
+  margin: 0 0 4px;
+  font-size: 1.05rem;
+}
+
+.upgradeItem p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.upgradeItem strong {
+  color: #8fe04d;
+  white-space: nowrap;
+}
+
+.adminSetupIntro {
+  display: grid;
+  gap: 8px;
+}
+
+.adminSetupIntro h2 {
+  margin: 0;
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
+}
+
+.adminSetupIntro p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.adminSetupEyebrow {
+  margin: 0;
+  color: var(--accent-2);
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.townhallPicker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.townhallButton,
+.townhallButtonActive {
+  border: 0;
+  border-radius: 999px;
+  padding: 10px 14px;
+  font-weight: 800;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.townhallButtonActive {
+  background: linear-gradient(135deg, #5ba7ff, #3f7de0);
+  border-color: rgba(91, 167, 255, 0.45);
+}
+
+.townhallPreviewCard {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 18px;
+  align-items: center;
+  padding: 18px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.townhallPreviewImageWrap {
+  display: grid;
+  place-items: center;
+}
+
+.townhallPreviewImage {
+  width: 120px;
+  height: 120px;
+  object-fit: contain;
+}
+
+.townhallPreviewText {
+  display: grid;
+  gap: 8px;
+}
+
+.townhallPreviewLabel {
+  margin: 0;
+  color: var(--accent-2);
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.townhallPreviewText h3 {
+  margin: 0;
+  font-size: clamp(1.3rem, 2.4vw, 1.9rem);
+}
+
+.townhallPreviewText p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.townhallOverviewGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+  gap: 18px;
+}
+
+.townhallOverviewCard,
+.townhallNextCard {
+  padding: 18px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.townhallOverviewLabel {
+  margin: 0 0 12px;
+  color: var(--accent-2);
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.townhallOverviewBody {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.townhallOverviewImage {
+  width: 140px;
+  height: 140px;
+  object-fit: contain;
+}
+
+.townhallOverviewBody h3,
+.townhallNextBody h3 {
+  margin: 0 0 8px;
+  font-size: 1.8rem;
+}
+
+.townhallOverviewBody p,
+.townhallNextBody p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.townhallNextBody {
+  display: grid;
+  gap: 12px;
+}
+
+.defencesSection {
+  display: grid;
+  gap: 18px;
+}
+
+.resourceSection,
+.armySection {
+  display: grid;
+  gap: 18px;
+}
+
+.defencesSection h2 {
+  margin: 0;
+  font-size: clamp(1.5rem, 3vw, 2rem);
+}
+
+.resourceSection h2,
+.armySection h2 {
+  margin: 0;
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  color: #5ba7ff;
+}
+
+.defenceGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.resourceGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.defenceCard {
+  padding: 18px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.resourceCard {
+  padding: 18px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.defenceCard h3 {
+  margin: 0;
+  font-size: 1.6rem;
+  color: #5ba7ff;
+}
+
+.defenceCaption {
+  margin: 10px 0 12px;
+  color: var(--muted);
+}
+
+.levelQuickButtons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.levelQuickButton {
+  border: 0;
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: #f5fbff;
+  font-weight: 700;
+  background: rgba(91, 167, 255, 0.8);
+}
+
+.defenceRow {
+  display: grid;
+  grid-template-columns: 56px 1fr 92px;
+  gap: 14px;
+  align-items: center;
+}
+
+.defenceImage {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+}
+
+.defenceSlider {
+  width: 100%;
+}
+
+.defenceValue {
+  width: 92px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+}
+
+.dashboardOrbOne,
+.dashboardOrbTwo {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(12px);
+  pointer-events: none;
+  width: 30vw;
+  height: 30vw;
+  opacity: 0.52;
+}
+
+.dashboardOrbOne {
+  top: -8vw;
+  left: -8vw;
+  background: radial-gradient(circle, rgba(102, 227, 196, 0.18), transparent 64%);
+}
+
+.dashboardOrbTwo {
+  bottom: -10vw;
+  right: -10vw;
+  background: radial-gradient(circle, rgba(255, 179, 71, 0.16), transparent 64%);
+}
+
+@media (max-width: 960px) {
+  .dashboardHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .headerActions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .townhallPreviewCard,
+  .townhallOverviewGrid,
+  .defenceGrid,
+  .resourceGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .choiceGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .townhallOverviewBody {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 640px) {
+  .dashboardLayout {
+    padding: 0 16px 16px;
+  }
+
+  .dashboardHeader {
+    padding: 16px;
+    width: calc(100% + 32px);
+    margin: 0 -16px 16px;
+    border-radius: 0 0 22px 22px;
+  }
+
+  .profilePill {
+    padding: 8px 10px;
+  }
+
+  .townhallPicker {
+    gap: 8px;
+  }
+
+  .townhallButton,
+  .townhallButtonActive {
+    padding: 9px 12px;
+  }
+
+  .defenceRow {
+    grid-template-columns: 1fr;
+  }
+
+  .resourceGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .defenceValue {
+    width: 100%;
+  }
+
+  .upgradeItem {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
