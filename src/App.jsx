@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import AdminPage from './pages/AdminPage'
 import UserPage from './pages/UserPage'
+import BuildingEditorPage from './pages/BuildingEditorPage'
 import { supabase } from './supabaseClient'
 import { getRoleFromEmail } from './authConfig'
 import { loadProfile, signInWithProfile, signUpWithProfile, upsertProfile } from './authService'
@@ -143,33 +145,64 @@ export default function App() {
 		)
 	}
 
-	if (view === 'register') {
+	if (!session) {
 		return (
-			<RegisterPage
-				onRegister={handleRegister}
-				onSwitchToLogin={() => setView('login')}
-				loading={actionLoading}
-				errorMessage={errorMessage}
-				infoMessage={infoMessage}
-			/>
+			<Routes>
+				<Route
+					path="/register"
+					element={
+						<RegisterPage
+							onRegister={handleRegister}
+							onSwitchToLogin={() => setView('login')}
+							loading={actionLoading}
+							errorMessage={errorMessage}
+							infoMessage={infoMessage}
+						/>
+					}
+				/>
+				<Route
+					path="*"
+					element={
+						<LoginPage
+							onLogin={handleLogin}
+							onSwitchToRegister={() => setView('register')}
+							loading={actionLoading}
+							errorMessage={errorMessage}
+						/>
+					}
+				/>
+			</Routes>
 		)
 	}
 
-	if (view === 'admin') {
-		return <AdminPage username={profile?.username} onLogout={handleLogout} userId={session?.user?.id} />
-	}
-
-	if (view === 'user') {
-		return <UserPage username={profile?.username} onLogout={handleLogout} userId={session?.user?.id} />
-	}
-
 	return (
-		<LoginPage
-			onLogin={handleLogin}
-			onSwitchToRegister={() => setView('register')}
-			loading={actionLoading}
-			errorMessage={errorMessage}
-		/>
+		<Routes>
+			{view === 'admin' && (
+				<>
+					<Route
+						path="/admin"
+						element={
+							<AdminPage username={profile?.username} onLogout={handleLogout} userId={session?.user?.id} />
+						}
+					/>
+					<Route
+						path="/admin/building/:townhallLevel/:buildingId"
+						element={<BuildingEditorPage username={profile?.username} onLogout={handleLogout} />}
+					/>
+					<Route path="*" element={<Navigate to="/admin" />} />
+				</>
+			)}
+			{view === 'user' && (
+				<>
+					<Route
+						path="/user"
+						element={
+							<UserPage username={profile?.username} onLogout={handleLogout} userId={session?.user?.id} />
+						}
+					/>
+					<Route path="*" element={<Navigate to="/user" />} />
+				</>
+			)}
+		</Routes>
 	)
 }
-
