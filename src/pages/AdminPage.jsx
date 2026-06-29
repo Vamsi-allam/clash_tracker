@@ -11,16 +11,21 @@ export default function AdminPage({ username, onLogout }) {
         <div className={styles.auroraLeft} />
         <div className={styles.auroraRight} />
         <div className={styles.content}>
-          <h2>Town Halls</h2>
           <div className={styles.townhallGrid}>
             {townhalls.map((level) => (
               <div key={level} className={styles.townhallCard}>
-                <img
-                  src={`/src/assets/townhall/1_${level}.png`}
-                  alt={`Town Hall ${level}`}
-                  className={styles.townhallImage}
-                />
-                <p className={styles.townhallLabel}>TH {level}</p>
+                <div className={styles.townhallLeft}>
+                  <img
+                    src={`/src/assets/townhall/1_${level}.png`}
+                    alt={`Town Hall ${level}`}
+                    className={styles.townhallImage}
+                  />
+                  <p className={styles.townhallLabel}>Town Hall {level}</p>
+                </div>
+                <div className={styles.divider} />
+                <div className={styles.townhallRight}>
+                  <p className={styles.townhallDesc}>Add details here later</p>
+                </div>
               </div>
             ))}
           </div>
