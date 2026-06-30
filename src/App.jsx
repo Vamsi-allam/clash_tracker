@@ -186,6 +186,12 @@ export default function App() {
 						}
 					/>
 					<Route
+						path="/admin/:townhallLevel"
+						element={
+							<AdminPage username={profile?.username} onLogout={handleLogout} userId={session?.user?.id} />
+						}
+					/>
+					<Route
 						path="/admin/building/:townhallLevel/:buildingId"
 						element={<BuildingEditorPage username={profile?.username} onLogout={handleLogout} />}
 					/>

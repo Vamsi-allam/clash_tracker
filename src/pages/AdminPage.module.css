@@ -154,6 +154,179 @@
   font-size: 1.1rem;
 }
 
+.backBtn {
+  background: rgba(102, 227, 196, 0.2);
+  border: 1px solid rgba(102, 227, 196, 0.4);
+  color: var(--accent-2);
+  padding: 10px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: all 0.2s;
+  margin: 0 20px 24px 20px;
+  display: inline-block;
+}
+
+.backBtn:hover {
+  background: rgba(102, 227, 196, 0.3);
+  border-color: rgba(102, 227, 196, 0.6);
+  transform: translateX(-4px);
+}
+
+.buildingsPage {
+  padding: 0 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.tabsContainer {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+  border-bottom: 2px solid rgba(102, 227, 196, 0.2);
+  overflow-x: auto;
+  padding-bottom: 12px;
+}
+
+.tab {
+  padding: 10px 16px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(102, 227, 196, 0.2);
+  color: var(--muted);
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+
+.tab:hover {
+  border-color: rgba(102, 227, 196, 0.4);
+  background: rgba(102, 227, 196, 0.1);
+}
+
+.tabActive {
+  background: rgba(102, 227, 196, 0.2);
+  border-color: rgba(102, 227, 196, 0.6);
+  color: var(--accent-2);
+}
+
+.buildingsList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.buildingItem {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(102, 227, 196, 0.2);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.buildingItem:hover {
+  background: rgba(102, 227, 196, 0.1);
+  border-color: rgba(102, 227, 196, 0.4);
+  transform: translateX(4px);
+}
+
+.buildingItemImage {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.buildingItemInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.buildingItemName {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+}
+
+.buildingItemHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.buildingItemCount {
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin: 0;
+  white-space: nowrap;
+}
+
+.buildingItemAction {
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin: 0;
+}
+
+.buildingItemData {
+  font-size: 0.85rem;
+  color: var(--accent-2);
+  margin: 0;
+  font-weight: 500;
+}
+
+.buildingItemLevels {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.buildingLevelRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: var(--accent-2);
+  font-weight: 500;
+}
+
+.levelResourceIcon {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+}
+
+.levelNumber {
+  color: var(--accent-2);
+  min-width: 50px;
+}
+
+.levelCost {
+  color: var(--text);
+  min-width: 50px;
+}
+
+.levelTime {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.buildingItemArrow {
+  font-size: 1.2rem;
+  color: var(--accent-2);
+  font-weight: 700;
+}
+
 @media (max-width: 960px) {
   .content {
     padding: 24px;
@@ -183,6 +356,33 @@
   }
 
   .townhallDesc {
+    font-size: 0.85rem;
+  }
+
+  .backBtn {
+    margin: 0 16px 20px 16px;
+  }
+
+  .buildingsPage {
+    padding: 0 16px;
+  }
+
+  .buildingItem {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .buildingItemImage {
+    width: 70px;
+    height: 70px;
+  }
+
+  .buildingItemName {
+    font-size: 0.95rem;
+  }
+
+  .tab {
+    padding: 8px 12px;
     font-size: 0.85rem;
   }
 }
@@ -293,6 +493,43 @@
   .townhallDesc {
     font-size: 0.75rem;
   }
+
+  .backBtn {
+    margin: 0 12px 16px 12px;
+    font-size: 0.9rem;
+  }
+
+  .buildingsPage {
+    padding: 0 12px;
+  }
+
+  .tabsContainer {
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .tab {
+    padding: 8px 10px;
+    font-size: 0.8rem;
+  }
+
+  .buildingItem {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .buildingItemImage {
+    width: 60px;
+    height: 60px;
+  }
+
+  .buildingItemName {
+    font-size: 0.9rem;
+  }
+
+  .buildingItemAction {
+    font-size: 0.8rem;
+  }
 }
 
 @media (max-width: 480px) {
@@ -340,5 +577,48 @@
 
   .townhallDesc {
     font-size: 0.7rem;
+  }
+
+  .backBtn {
+    margin: 0 10px 12px 10px;
+    padding: 8px 12px;
+    font-size: 0.85rem;
+  }
+
+  .buildingsPage {
+    padding: 0 10px;
+  }
+
+  .tabsContainer {
+    gap: 6px;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+  }
+
+  .tab {
+    padding: 6px 8px;
+    font-size: 0.75rem;
+  }
+
+  .buildingItem {
+    padding: 10px;
+    gap: 10px;
+  }
+
+  .buildingItemImage {
+    width: 50px;
+    height: 50px;
+  }
+
+  .buildingItemName {
+    font-size: 0.85rem;
+  }
+
+  .buildingItemAction {
+    font-size: 0.75rem;
+  }
+
+  .buildingItemArrow {
+    font-size: 1rem;
   }
 }

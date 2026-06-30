@@ -227,13 +227,16 @@
 .levelRow {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 20px;
   padding: 2px 0;
   font-size: 0.85rem;
   color: var(--text);
   font-weight: 600;
   line-height: 1.2;
   margin: 0;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 .levelLabel {
@@ -254,6 +257,16 @@
   margin: 0;
   display: flex;
   align-items: center;
+  min-width: 35px;
+  text-align: right;
+}
+
+.costValue.elixir {
+  color: #E24AC5;
+}
+
+.costValue.dark_elixir {
+  color: #6d5a5ab9;
 }
 
 .resourceIcon {
@@ -263,8 +276,10 @@
   flex-shrink: 0;
   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
   display: block;
-  vertical-align: middle;
-  margin-right: 6px;
+}
+
+.levelRow > .resourceIcon {
+  margin-right: -14px;
 }
 
 .timeValue {
@@ -280,10 +295,13 @@
   color: #2ecc71;
   font-size: 1.2rem;
   font-weight: 700;
-  margin-left: 4px;
   line-height: 1;
   display: flex;
   align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin: 0;
+  min-width: 20px;
 }
 
 .noData {
@@ -380,13 +398,17 @@
 .levelEditRow {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 16px;
   padding: 2px 0;
   background: rgba(0, 0, 0, 0.2);
   border-radius: 6px;
   border: 1px solid rgba(102, 227, 196, 0.15);
   line-height: 1.2;
   margin: 0;
+}
+
+.levelEditRow > .resourceIcon {
+  margin-right: -12px;
 }
 
 .costInput,
@@ -415,13 +437,278 @@
   width: 50px;
 }
 
+/* Hide number spinner on costInput */
+.costInput::-webkit-outer-spin-button,
+.costInput::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.costInput[type=number] {
+  -moz-appearance: textfield;
+}
+
 .resourceSelect {
   width: 70px;
   cursor: pointer;
 }
 
+.resourceSelect option {
+  background: #0a1527;
+  color: var(--text);
+}
+
 .timeInput {
   width: 60px;
+}
+
+.timeDropdownGroup {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.timeSelect {
+  padding: 6px 4px;
+  border: 1px solid rgba(102, 227, 196, 0.4);
+  background: rgba(0, 0, 0, 0.3);
+  color: var(--text);
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.2;
+  height: auto;
+  width: 65px;
+  cursor: pointer;
+}
+
+.timeSelect:focus {
+  outline: none;
+  border-color: var(--accent-2);
+  background: rgba(102, 227, 196, 0.1);
+}
+
+.timeSelect option {
+  background: #0a1527;
+  color: var(--text);
+  padding: 4px;
+}
+
+.timeModalBtn {
+  padding: 6px 12px;
+  border: 1px solid rgba(102, 227, 196, 0.4);
+  background: rgba(0, 0, 0, 0.3);
+  color: var(--text);
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 120px;
+}
+
+.timeModalBtn:hover {
+  border-color: var(--accent-2);
+  background: rgba(102, 227, 196, 0.1);
+}
+
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: linear-gradient(135deg, var(--bg-1), var(--bg-2));
+  border: 1px solid rgba(102, 227, 196, 0.3);
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  max-width: 400px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.modal::-webkit-scrollbar {
+  display: none;
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid rgba(102, 227, 196, 0.2);
+}
+
+.modalHeader h3 {
+  margin: 0;
+  color: var(--accent-2);
+  font-size: 1.2rem;
+}
+
+.modalClose {
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.modalClose:hover {
+  background: rgba(255, 122, 89, 0.1);
+  color: var(--accent);
+}
+
+.modalContent {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.timeInputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.timeInputGroup label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.timeModalInput {
+  padding: 10px 12px;
+  border: 1px solid rgba(102, 227, 196, 0.4);
+  background: rgba(0, 0, 0, 0.3);
+  color: var(--accent-2);
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-align: center;
+  transition: all 0.2s;
+}
+
+.timeModalInput:focus {
+  outline: none;
+  border-color: var(--accent-2);
+  background: rgba(102, 227, 196, 0.1);
+  box-shadow: 0 0 8px rgba(102, 227, 196, 0.3);
+}
+
+/* Hide spinner on number input */
+.timeModalInput::-webkit-outer-spin-button,
+.timeModalInput::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.timeModalInput[type=number] {
+  -moz-appearance: textfield;
+}
+
+.timeDisplay {
+  background: rgba(102, 227, 196, 0.1);
+  border: 1px solid rgba(102, 227, 196, 0.3);
+  border-radius: 6px;
+  padding: 12px;
+  text-align: center;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--accent-2);
+  margin: 8px 0;
+}
+
+.modalFooter {
+  display: flex;
+  gap: 12px;
+  padding: 20px;
+  border-top: 1px solid rgba(102, 227, 196, 0.2);
+  justify-content: flex-end;
+}
+
+.modalSaveBtn {
+  padding: 10px 24px;
+  background: rgba(102, 227, 196, 0.2);
+  border: 1px solid rgba(102, 227, 196, 0.4);
+  color: var(--accent-2);
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+
+.modalSaveBtn:hover {
+  background: rgba(102, 227, 196, 0.3);
+  border-color: var(--accent-2);
+}
+
+.modalCancelBtn {
+  padding: 10px 24px;
+  background: rgba(255, 122, 89, 0.1);
+  border: 1px solid rgba(255, 122, 89, 0.3);
+  color: var(--accent);
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+
+.modalCancelBtn:hover {
+  background: rgba(255, 122, 89, 0.2);
+  border-color: var(--accent);
+}
+
+.costInputGroup {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.magnitudeSelect {
+  padding: 3px 6px;
+  border: 1px solid rgba(102, 227, 196, 0.4);
+  background: rgba(0, 0, 0, 0.3);
+  color: var(--text);
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  line-height: 1.2;
+  height: auto;
+  width: 50px;
+  cursor: pointer;
+}
+
+.magnitudeSelect option {
+  background: #0a1527;
+  color: var(--text);
+}
+
+.magnitudeSelect:focus {
+  outline: none;
+  border-color: var(--accent-2);
+  background: rgba(102, 227, 196, 0.1);
 }
 
 .saveBtn {
@@ -552,5 +839,19 @@
   .timeInput {
     width: 100% !important;
     font-size: 0.75rem;
+  }
+
+  .timeModalBtn {
+    min-width: 100%;
+    width: 100%;
+  }
+
+  .modal {
+    width: 95%;
+    max-width: 90vw;
+  }
+
+  .timeInputGroup input {
+    font-size: 1rem;
   }
 }

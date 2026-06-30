@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import styles from './BuildingEditorPage.module.css'
 import { supabase } from '../supabaseClient'
@@ -14,6 +14,32 @@ const AVAILABLE_DEFENCES = [
   { id: 'x_bow', name: 'X-Bow', image: '/src/assets/Defences/x-bow' },
   { id: 'eagle_artillery', name: 'Eagle Artillery', image: '/src/assets/Defences/Eagle_Artillery' },
 ]
+
+const AVAILABLE_ARMY = [
+  { id: 'army_camp', name: 'Army Camp', image: '/src/assets/Army/Army_Camp' },
+  { id: 'barracks', name: 'Barracks', image: '/src/assets/Army/Barracks' },
+  { id: 'clan_castle', name: 'Clan Castle', image: '/src/assets/Army/clan_castle' },
+]
+
+const AVAILABLE_RESOURCES = [
+  { id: 'gold_mine', name: 'Gold Mine', image: '/src/assets/Resources/goldmine' },
+  { id: 'elixir_collector', name: 'Elixir Collector', image: '/src/assets/Resources/elixir_collector' },
+  { id: 'gold_storage', name: 'Gold Storage', image: '/src/assets/Resources/gold_storage' },
+  { id: 'elixir_storage', name: 'Elixir Storage', image: '/src/assets/Resources/elixi_storage' },
+]
+
+const AVAILABLE_TROOPS = [
+  { id: 'barbarian', name: 'Barbarian', image: '/src/assets/Troops/Barbarian' },
+  { id: 'archer', name: 'Archer', image: '/src/assets/Troops/Archer' },
+  { id: 'giant', name: 'Giant', image: '/src/assets/Troops/Giant' },
+  { id: 'goblin', name: 'Goblin', image: '/src/assets/Troops/Goblin' },
+]
+
+const AVAILABLE_WALLS = [
+  { id: 'walls', name: 'Walls', image: '/src/assets/Walls' },
+]
+
+const ALL_BUILDINGS = [...AVAILABLE_DEFENCES, ...AVAILABLE_ARMY, ...AVAILABLE_RESOURCES, ...AVAILABLE_TROOPS, ...AVAILABLE_WALLS]
 
 const RESOURCE_ICONS = {
   gold: '/src/assets/magic-items/gold.png',
@@ -31,15 +57,177 @@ const formatCost = (value) => {
   return value.toString()
 }
 
+const parseTimeStringToSeconds = (timeString) => {
+  if (!timeString || typeof timeString !== 'string') return 0
+  
+  let totalSeconds = 0
+  const timeLower = timeString.toLowerCase().trim()
+  
+  // Parse days
+  const daysMatch = timeLower.match(/(\d+)\s*d(?:ays?)?/)
+  if (daysMatch) totalSeconds += parseInt(daysMatch[1]) * 86400
+  
+  // Parse hours
+  const hoursMatch = timeLower.match(/(\d+)\s*h(?:r|ours?)?/)
+  if (hoursMatch) totalSeconds += parseInt(hoursMatch[1]) * 3600
+  
+  // Parse minutes
+  const minutesMatch = timeLower.match(/(\d+)\s*m(?:in|inutes?)?/)
+  if (minutesMatch) totalSeconds += parseInt(minutesMatch[1]) * 60
+  
+  // Parse seconds
+  const secondsMatch = timeLower.match(/(\d+)\s*s(?:ec|econds?)?/)
+  if (secondsMatch) totalSeconds += parseInt(secondsMatch[1])
+  
+  return totalSeconds
+}
+
+const formatSecondsToTimeDisplay = (seconds) => {
+  if (!seconds || seconds === 0) return '0sec'
+  
+  let remaining = Math.round(seconds)
+  const parts = []
+  
+  const days = Math.floor(remaining / 86400)
+  if (days > 0) {
+    parts.push(`${days}d`)
+    remaining %= 86400
+  }
+  
+  const hours = Math.floor(remaining / 3600)
+  if (hours > 0) {
+    parts.push(`${hours}hr`)
+    remaining %= 3600
+  }
+  
+  const minutes = Math.floor(remaining / 60)
+  if (minutes > 0) {
+    parts.push(`${minutes}min`)
+    remaining %= 60
+  }
+  
+  if (remaining > 0 || parts.length === 0) {
+    parts.push(`${remaining}sec`)
+  }
+  
+  return parts.join(' ')
+}
+
+const parseSecondsToDropdowns = (seconds) => {
+  const totalSeconds = Math.round(seconds || 0)
+  let remaining = totalSeconds
+  
+  const days = Math.floor(remaining / 86400)
+  remaining %= 86400
+  
+  const hours = Math.floor(remaining / 3600)
+  remaining %= 3600
+  
+  const minutes = Math.floor(remaining / 60)
+  remaining %= 60
+  
+  return { days, hours, minutes, seconds: remaining }
+}
+
 const getDefaultBuildingData = (townhallLevel) => {
   if (townhallLevel === 2) {
     return {
       canon: {
         buildings_unlocked: 2,
         levels: [
-          { level: 1, cost: 250, resource: 'gold', time: '5s' },
-          { level: 2, cost: 1000, resource: 'gold', time: '30s' },
-          { level: 3, cost: 4000, resource: 'gold', time: '2m' },
+          { level: 1, cost: 250, resource: 'gold', time: '5sec' },
+          { level: 2, cost: 1000, resource: 'gold', time: '30sec' },
+          { level: 3, cost: 4000, resource: 'gold', time: '2min' },
+        ],
+      },
+      archer_tower: {
+        buildings_unlocked: 1,
+        levels: [
+          { level: 1, cost: 1000, resource: 'gold', time: '15sec' },
+          { level: 2, cost: 2000, resource: 'gold', time: '2min' },
+        ],
+      },
+      army_camp: {
+        buildings_unlocked: 1,
+        levels: [
+          { level: 1, cost: 200, resource: 'elixir', time: '1min' },
+          { level: 2, cost: 2000, resource: 'elixir', time: '5min' },
+        ],
+      },
+      barracks: {
+        buildings_unlocked: 1,
+        levels: [
+          { level: 1, cost: 100, resource: 'elixir', time: '10sec' },
+          { level: 2, cost: 500, resource: 'elixir', time: '15sec' },
+          { level: 3, cost: 2500, resource: 'elixir', time: '2min' },
+          { level: 4, cost: 5000, resource: 'elixir', time: '30min' },
+        ],
+      },
+      clan_castle: {
+        buildings_unlocked: 1,
+        levels: [
+          { level: 1, cost: 10000, resource: 'elixir', time: '0sec' },
+        ],
+      },
+      gold_mine: {
+        buildings_unlocked: 2,
+        levels: [
+          { level: 1, cost: 150, resource: 'elixir', time: '5sec' },
+          { level: 2, cost: 300, resource: 'elixir', time: '15sec' },
+          { level: 3, cost: 700, resource: 'elixir', time: '1min' },
+          { level: 4, cost: 1400, resource: 'elixir', time: '2min' },
+        ],
+      },
+      elixir_collector: {
+        buildings_unlocked: 2,
+        levels: [
+          { level: 1, cost: 150, resource: 'gold', time: '5sec' },
+          { level: 2, cost: 300, resource: 'gold', time: '15sec' },
+          { level: 3, cost: 700, resource: 'gold', time: '1min' },
+          { level: 4, cost: 1400, resource: 'gold', time: '2min' },
+        ],
+      },
+      gold_storage: {
+        buildings_unlocked: 1,
+        levels: [
+          { level: 1, cost: 300, resource: 'elixir', time: '10sec' },
+          { level: 2, cost: 750, resource: 'elixir', time: '2min' },
+          { level: 3, cost: 1500, resource: 'elixir', time: '5min' },
+        ],
+      },
+      elixir_storage: {
+        buildings_unlocked: 1,
+        levels: [
+          { level: 1, cost: 300, resource: 'gold', time: '10sec' },
+          { level: 2, cost: 750, resource: 'gold', time: '2min' },
+          { level: 3, cost: 1500, resource: 'gold', time: '5min' },
+        ],
+      },
+      walls: {
+        buildings_unlocked: 25,
+        levels: [
+          { level: 1, cost: 0, resource: 'gold', time: '0sec' },
+          { level: 2, cost: 1000, resource: 'gold', time: '0sec' },
+        ],
+      },
+      barbarian: {
+        levels: [
+          { level: 1, cost: 0, resource: 'elixir', time: '0sec' },
+        ],
+      },
+      archer: {
+        levels: [
+          { level: 1, cost: 0, resource: 'elixir', time: '0sec' },
+        ],
+      },
+      giant: {
+        levels: [
+          { level: 1, cost: 0, resource: 'elixir', time: '0sec' },
+        ],
+      },
+      goblin: {
+        levels: [
+          { level: 1, cost: 0, resource: 'elixir', time: '0sec' },
         ],
       },
     }
@@ -50,6 +238,7 @@ const getDefaultBuildingData = (townhallLevel) => {
 export default function BuildingEditorPage({ username, onLogout }) {
   const { townhallLevel, buildingId } = useParams()
   const navigate = useNavigate()
+  const isEditingRef = useRef(false)
 
   const [staticData, setStaticData] = useState({})
   const [dynamicData, setDynamicData] = useState({})
@@ -58,21 +247,28 @@ export default function BuildingEditorPage({ username, onLogout }) {
   const [editingBuildingCount, setEditingBuildingCount] = useState(0)
   const [savingLoading, setSavingLoading] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [timeModalOpen, setTimeModalOpen] = useState(false)
+  const [timeModalLevel, setTimeModalLevel] = useState(null)
+  const [timeModalValues, setTimeModalValues] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 })
 
-  const defence = AVAILABLE_DEFENCES.find((d) => d.id === buildingId)
+  const defence = ALL_BUILDINGS.find((d) => d.id === buildingId)
+
+  // Keep ref in sync with isEditing state
+  useEffect(() => {
+    isEditingRef.current = isEditing
+  }, [isEditing])
 
   useEffect(() => {
     const fetchData = async () => {
+      // Don't fetch if already editing
+      if (isEditingRef.current) return
+
       setLoading(true)
       try {
         // Load static data
         const defaultData = getDefaultBuildingData(parseInt(townhallLevel))
         let staticBuildingData = defaultData[buildingId] || { buildings_unlocked: 0, levels: [] }
         setStaticData(staticBuildingData)
-        
-        // Initialize editing levels with static data immediately
-        setEditingLevels(JSON.parse(JSON.stringify(staticBuildingData.levels || [])))
-        setEditingBuildingCount(staticBuildingData.buildings_unlocked || 0)
 
         // Fetch dynamic data from database
         const { data, error } = await supabase
@@ -85,21 +281,31 @@ export default function BuildingEditorPage({ username, onLogout }) {
         
         if (data && data.defences?.[buildingId]) {
           const buildingData = data.defences[buildingId]
-          setDynamicData(buildingData)
-          // Override with database data if it exists
-          setEditingLevels(JSON.parse(JSON.stringify(buildingData.levels)))
-          setEditingBuildingCount(buildingData.buildings_unlocked)
+          // Only update if still not editing
+          if (!isEditingRef.current) {
+            setDynamicData(buildingData)
+            const levelsData = JSON.parse(JSON.stringify(buildingData.levels))
+            setEditingLevels(levelsData)
+            setEditingBuildingCount(buildingData.buildings_unlocked)
+          }
         } else {
           // No database record yet - use static data as initial dynamic data
-          setDynamicData({
-            buildings_unlocked: staticBuildingData.buildings_unlocked || 0,
-            levels: staticBuildingData.levels || []
-          })
+          if (!isEditingRef.current) {
+            setDynamicData({
+              buildings_unlocked: staticBuildingData.buildings_unlocked || 0,
+              levels: staticBuildingData.levels || []
+            })
+            const levelsData = JSON.parse(JSON.stringify(staticBuildingData.levels || []))
+            setEditingLevels(levelsData)
+            setEditingBuildingCount(staticBuildingData.buildings_unlocked || 0)
+          }
         }
       } catch (err) {
         console.error('Error fetching data:', err)
       } finally {
-        setLoading(false)
+        if (!isEditingRef.current) {
+          setLoading(false)
+        }
       }
     }
 
@@ -119,11 +325,68 @@ export default function BuildingEditorPage({ username, onLogout }) {
     // If editingLevels is empty, initialize it from static data
     let toUpdate = editingLevels.length > 0 ? [...editingLevels] : JSON.parse(JSON.stringify(currentStaticLevel))
     
-    toUpdate[levelIndex] = {
-      ...toUpdate[levelIndex],
-      [field]: field === 'cost' ? parseInt(value) || 0 : value,
+    const magnitudes = { '': 1, 'k': 1000, 'm': 1000000, 'b': 1000000000 }
+    
+    if (field === 'cost') {
+      // Recalculate actual cost using current magnitude
+      const magnitude = toUpdate[levelIndex].costMagnitude || ''
+      const multiplier = magnitudes[magnitude] || 1
+      const displayValue = parseFloat(value) || 0
+      toUpdate[levelIndex] = {
+        ...toUpdate[levelIndex],
+        costDisplay: displayValue,
+        cost: displayValue * multiplier,
+      }
+    } else if (field === 'costMagnitude') {
+      // Calculate actual cost based on new magnitude
+      const displayValue = toUpdate[levelIndex].costDisplay || 0
+      const multiplier = magnitudes[value] || 1
+      toUpdate[levelIndex] = {
+        ...toUpdate[levelIndex],
+        costMagnitude: value,
+        cost: displayValue * multiplier,
+      }
+    } else {
+      toUpdate[levelIndex] = {
+        ...toUpdate[levelIndex],
+        [field]: value,
+      }
     }
     setEditingLevels(toUpdate)
+  }
+
+  const openTimeModal = (levelIndex) => {
+    const level = editingLevels[levelIndex]
+    const seconds = parseTimeStringToSeconds(level.time)
+    setTimeModalValues(parseSecondsToDropdowns(seconds))
+    setTimeModalLevel(levelIndex)
+    setTimeModalOpen(true)
+  }
+
+  const closeTimeModal = () => {
+    setTimeModalOpen(false)
+    setTimeModalLevel(null)
+  }
+
+  const handleTimeModalChange = (timeUnit, value) => {
+    setTimeModalValues({
+      ...timeModalValues,
+      [timeUnit]: Math.min(Math.max(0, parseInt(value) || 0), timeUnit === 'days' ? 31 : timeUnit === 'hours' ? 23 : 59)
+    })
+  }
+
+  const saveTimeModal = () => {
+    const { days, hours, minutes, seconds } = timeModalValues
+    const totalSeconds = days * 86400 + hours * 3600 + minutes * 60 + seconds
+    const formattedTime = formatSecondsToTimeDisplay(totalSeconds)
+    
+    let toUpdate = [...editingLevels]
+    toUpdate[timeModalLevel] = {
+      ...toUpdate[timeModalLevel],
+      time: formattedTime,
+    }
+    setEditingLevels(toUpdate)
+    closeTimeModal()
   }
 
   const handleSave = async () => {
@@ -227,7 +490,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
     <div className={styles.page}>
       <Header username={username} onLogout={onLogout} />
       <div className={styles.container}>
-        <button className={styles.backBtn} onClick={() => navigate(-1)}>
+        <button className={styles.backBtn} onClick={() => navigate(`/admin/${townhallLevel}`)}>
           ← Back
         </button>
 
@@ -235,11 +498,36 @@ export default function BuildingEditorPage({ username, onLogout }) {
         <div className={styles.buildingCard}>
           {/* Left: Image + Name */}
           <div className={styles.buildingImageSection}>
-            <img
-              src={`${defence.image}/18_3.png`}
-              alt={defence.name}
-              className={styles.buildingImage}
-            />
+            {(() => {
+              const allLevels = editingLevels.length > 0 ? editingLevels : (dynamicData.levels || staticData.levels || [])
+              const maxLevel = allLevels.length > 0 ? Math.max(...allLevels.map(l => l.level)) : 3
+              
+              const getImagePath = () => {
+                if (defence.id === 'archer_tower') return `16_${maxLevel}`
+                if (defence.id === 'canon') return `18_${maxLevel}`
+                if (defence.id === 'army_camp') return `10_${maxLevel}`
+                if (defence.id === 'barracks') return `8_${maxLevel}`
+                if (defence.id === 'clan_castle') return `19_${maxLevel}`
+                if (defence.id === 'walls') return `60_${maxLevel}`
+                if (defence.id === 'gold_mine') return `2_${maxLevel}`
+                if (defence.id === 'elixir_collector') return `3_${maxLevel}`
+                if (defence.id === 'gold_storage') return `5_${maxLevel}`
+                if (defence.id === 'elixir_storage') return `6_${maxLevel}`
+                if (defence.id === 'barbarian') return `31_${maxLevel}`
+                if (defence.id === 'archer') return `32_${maxLevel}`
+                if (defence.id === 'giant') return `33_${maxLevel}`
+                if (defence.id === 'goblin') return `34_${maxLevel}`
+                return '18_3'
+              }
+              
+              return (
+                <img
+                  src={`${defence.image}/${getImagePath()}.png`}
+                  alt={defence.name}
+                  className={styles.buildingImage}
+                />
+              )
+            })()}
             <p className={styles.buildingNameLabel}>{defence.name}</p>
           </div>
 
@@ -275,13 +563,13 @@ export default function BuildingEditorPage({ username, onLogout }) {
               <div className={styles.levelsList}>
                 {currentStaticLevel.map((level) => (
                   <div key={`static-${level.level}`} className={styles.levelRow}>
-                    <div className={styles.levelLabel}>Lvl {level.level}:</div>
-                    <span className={styles.costValue}>{formatCost(level.cost)}</span>
                     <img
                       src={RESOURCE_ICONS[level.resource]}
                       alt={level.resource}
                       className={styles.resourceIcon}
                     />
+                    <div className={styles.levelLabel}>Lvl {level.level}:</div>
+                    <span className={`${styles.costValue} ${styles[level.resource]}`}>{formatCost(level.cost)}</span>
                     <span className={styles.timeValue}>{level.time}</span>
                   </div>
                 ))}
@@ -311,13 +599,13 @@ export default function BuildingEditorPage({ username, onLogout }) {
 
                     return (
                       <div key={`dynamic-${level.level}`} className={styles.levelRow}>
-                        <div className={styles.levelLabel}>Lvl {level.level}:</div>
-                        <span className={styles.costValue}>{formatCost(level.cost)}</span>
                         <img
                           src={RESOURCE_ICONS[level.resource]}
                           alt={level.resource}
                           className={styles.resourceIcon}
                         />
+                        <div className={styles.levelLabel}>Lvl {level.level}:</div>
+                        <span className={`${styles.costValue} ${styles[level.resource]}`}>{formatCost(level.cost)}</span>
                         <span className={styles.timeValue}>{level.time}</span>
                         {isMatching && <span className={styles.checkmark}>✓</span>}
                       </div>
@@ -334,14 +622,31 @@ export default function BuildingEditorPage({ username, onLogout }) {
                 <div className={styles.levelsList}>
                   {(editingLevels.length > 0 ? editingLevels : currentStaticLevel).map((level, idx) => (
                     <div key={`edit-${level.level}`} className={styles.levelEditRow}>
-                      <span className={styles.levelLabel}>Lvl {level.level}:</span>
-                      <input
-                        type="number"
-                        value={level.cost}
-                        onChange={(e) => handleEditLevel(idx, 'cost', e.target.value)}
-                        className={styles.costInput}
-                        placeholder="Cost"
+                      <img
+                        src={RESOURCE_ICONS[level.resource]}
+                        alt={level.resource}
+                        className={styles.resourceIcon}
                       />
+                      <span className={styles.levelLabel}>Lvl {level.level}:</span>
+                      <div className={styles.costInputGroup}>
+                        <input
+                          type="number"
+                          value={level.costDisplay || level.cost}
+                          onChange={(e) => handleEditLevel(idx, 'cost', e.target.value)}
+                          className={styles.costInput}
+                          placeholder="0"
+                        />
+                        <select
+                          value={level.costMagnitude || ''}
+                          onChange={(e) => handleEditLevel(idx, 'costMagnitude', e.target.value)}
+                          className={styles.magnitudeSelect}
+                        >
+                          <option value="">None</option>
+                          <option value="k">k</option>
+                          <option value="m">m</option>
+                          <option value="b">b</option>
+                        </select>
+                      </div>
                       <select
                         value={level.resource}
                         onChange={(e) => handleEditLevel(idx, 'resource', e.target.value)}
@@ -351,13 +656,13 @@ export default function BuildingEditorPage({ username, onLogout }) {
                         <option value="elixir">Elixir</option>
                         <option value="dark_elixir">Dark Elixir</option>
                       </select>
-                      <input
-                        type="text"
-                        value={level.time}
-                        onChange={(e) => handleEditLevel(idx, 'time', e.target.value)}
-                        className={styles.timeInput}
-                        placeholder="5s, 30s, 2m"
-                      />
+                      <button
+                        onClick={() => openTimeModal(idx)}
+                        className={styles.timeModalBtn}
+                        title="Click to set time"
+                      >
+                        {level.time}
+                      </button>
                     </div>
                   ))}
                 </div>
@@ -366,6 +671,97 @@ export default function BuildingEditorPage({ username, onLogout }) {
           </div>
         </div>
       </div>
+
+      {/* Time Modal */}
+      {timeModalOpen && (
+        <div className={styles.modalOverlay} onClick={closeTimeModal}>
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h3>Set Upgrade Time</h3>
+              <button
+                className={styles.modalClose}
+                onClick={closeTimeModal}
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className={styles.modalContent}>
+              <div className={styles.timeInputGroup}>
+                <label>Days (0-31)</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="31"
+                  value={timeModalValues.days}
+                  onChange={(e) => handleTimeModalChange('days', e.target.value)}
+                  className={styles.timeModalInput}
+                />
+              </div>
+              
+              <div className={styles.timeInputGroup}>
+                <label>Hours (0-23)</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="23"
+                  value={timeModalValues.hours}
+                  onChange={(e) => handleTimeModalChange('hours', e.target.value)}
+                  className={styles.timeModalInput}
+                />
+              </div>
+              
+              <div className={styles.timeInputGroup}>
+                <label>Minutes (0-59)</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="59"
+                  value={timeModalValues.minutes}
+                  onChange={(e) => handleTimeModalChange('minutes', e.target.value)}
+                  className={styles.timeModalInput}
+                />
+              </div>
+              
+              <div className={styles.timeInputGroup}>
+                <label>Seconds (0-59)</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="59"
+                  value={timeModalValues.seconds}
+                  onChange={(e) => handleTimeModalChange('seconds', e.target.value)}
+                  className={styles.timeModalInput}
+                />
+              </div>
+
+              <div className={styles.timeDisplay}>
+                Total: {formatSecondsToTimeDisplay(
+                  timeModalValues.days * 86400 +
+                  timeModalValues.hours * 3600 +
+                  timeModalValues.minutes * 60 +
+                  timeModalValues.seconds
+                )}
+              </div>
+            </div>
+
+            <div className={styles.modalFooter}>
+              <button
+                className={styles.modalSaveBtn}
+                onClick={saveTimeModal}
+              >
+                Save
+              </button>
+              <button
+                className={styles.modalCancelBtn}
+                onClick={closeTimeModal}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

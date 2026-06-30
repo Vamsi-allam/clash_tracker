@@ -65,6 +65,148 @@
   white-space: nowrap;
 }
 
+.switchVillageBtn {
+  background: transparent;
+  color: var(--accent-2);
+  border: 1px solid var(--accent-2);
+  padding: 8px 16px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.switchVillageBtn:hover {
+  background: var(--accent-2);
+  color: #07111f;
+}
+
+.villageWrapper {
+  position: relative;
+}
+
+.villageDropdown {
+  position: absolute;
+  top: calc(100% + 12px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  min-width: 220px;
+  max-width: 90vw;
+  background: var(--bg-2);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 14px;
+  padding: 10px;
+  z-index: 1000;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+  max-height: 550px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.villageItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.villageItem:hover {
+  background: rgba(255,255,255,0.07);
+}
+
+.villageItemActive {
+  background: rgba(102,227,196,0.08);
+}
+
+.villageTHImage {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.villageItemInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.villageItemName {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.villageItemTH {
+  font-size: 0.75rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.villageItemClan {
+  font-size: 0.7rem;
+  color: var(--accent-2);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.activeCheck {
+  font-size: 0.9rem;
+  color: var(--accent-2);
+  font-weight: 700;
+}
+
+.addVillageItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  color: var(--accent-2);
+  font-weight: 600;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  margin-top: 4px;
+  transition: background 0.15s;
+}
+
+.addVillageItem:hover {
+  background: rgba(102,227,196,0.15);
+}
+
+.addIcon {
+  font-size: 1.3rem;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.addVillageInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.addVillageText {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--accent-2);
+}
+
+.addVillageSub {
+  font-size: 0.7rem;
+  color: var(--muted);
+  font-weight: 500;
+}
+
 .logoutBtn {
   background: linear-gradient(135deg, var(--danger), #ff5a7e);
   color: #fff;
