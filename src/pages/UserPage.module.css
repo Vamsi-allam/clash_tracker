@@ -596,6 +596,10 @@
   align-items: start;
 }
 
+.loadedTabBodyWalls {
+  grid-template-columns: 1fr;
+}
+
 .loadedTabMain {
   min-width: 0;
 }
@@ -606,11 +610,100 @@
   gap: 14px;
 }
 
+.loadedTabSectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.loadedTabHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
 .loadedTabSectionTitle {
   margin: 0;
   color: #6fb0ff;
   font-size: 1.25rem;
   font-weight: 800;
+}
+
+.loadedTabEditBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 1px solid rgba(24, 42, 74, 0.72);
+  border-radius: 2px;
+  background: linear-gradient(180deg, #5f94db 0%, #4d7fc6 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 2px 0 rgba(0, 0, 0, 0.22);
+  color: #dbeaff;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: filter 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
+  white-space: nowrap;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.4);
+}
+
+.loadedTabEditBtn:hover:not(:disabled) {
+  filter: brightness(1.04);
+  transform: translateY(-1px);
+}
+
+.loadedTabEditBtn:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.loadedTabEditBtnIcon {
+  font-size: 1rem !important;
+  flex-shrink: 0;
+}
+
+.loadedTabSettingsIcon {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.loadedStructureFrame {
+  border-top: 1px solid rgba(255, 255, 255, 0.82);
+  border-right: 1px solid rgba(255, 255, 255, 0.82);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.82);
+  border-left: 1px solid rgba(255, 255, 255, 0.82);
+  background: rgba(10, 20, 38, 0.42);
+  overflow: hidden;
+}
+
+.loadedStructureHeader {
+  display: grid;
+  grid-template-columns: 1.35fr 0.95fr 1.1fr;
+  align-items: center;
+  background: #4d88db;
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 800;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.82);
+}
+
+.loadedStructureHeader span {
+  padding: 10px 16px;
+  border-right: 1px solid rgba(255, 255, 255, 0.65);
+  text-align: center;
+}
+
+.loadedStructureHeader span:last-child {
+  border-right: none;
+}
+
+.loadedStructureBody {
+  padding: 0;
 }
 
 .loadedWallsSummary,
@@ -644,32 +737,59 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.82);
+  background: rgba(10, 20, 38, 0.42);
+  padding: 0;
+  overflow: hidden;
 }
 
-.loadedRemainingTitle {
-  margin: 0;
-  color: #6fb0ff;
-  font-size: 1.2rem;
-  font-weight: 800;
-}
-
-.loadedRemainingTable {
+.loadedRemainingBlock {
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
 
+.loadedRemainingTitle {
+  margin: 0;
+  color: #4d88db;
+  font-size: 1.15rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.loadedRemainingTable {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
 .loadedRemainingHeadRow {
-  color: rgba(255, 255, 255, 0.9);
+  background: #4d88db;
+  color: #ffffff;
   font-weight: 800;
   font-size: 0.95rem;
-  padding-bottom: 8px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+  padding: 10px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.82);
 }
 
 .loadedRemainingRow {
+  background: rgba(48, 70, 110, 0.9);
   color: rgba(255, 255, 255, 0.9);
   font-size: 0.95rem;
+  padding: 10px 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.35);
+}
+
+.loadedRemainingLabelWithIcon {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.loadedRemainingClockIcon {
+  font-size: 1.05rem;
+  color: rgba(255, 255, 255, 0.9);
+  flex-shrink: 0;
 }
 
 .loadedRemainingRow strong,
@@ -964,6 +1084,109 @@
   font-size: 0.92rem;
 }
 
+.loadedRemainingBuildersRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 6px;
+  margin-top: 8px;
+  padding-top: 8px;
+  width: 100%;
+}
+
+.loadedRemainingBuildersStack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  margin-left: 8px;
+}
+
+.loadedRemainingBuildersLabel {
+  color: #ffffff;
+  font-size: 0.94rem;
+  font-weight: 700;
+  white-space: nowrap;
+  line-height: 1.1;
+}
+
+.loadedRemainingBuildersNumbers {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  min-height: 0;
+  width: 100%;
+  margin-top: 4px;
+  margin-bottom: 8px;
+}
+
+.loadedRemainingTimeBlock {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.loadedRemainingTimeBuilders {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.loadedRemainingTimeValue {
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.loadedRemainingBuilderBox {
+  min-width: 35px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 4px;
+  background: linear-gradient(180deg, #8f8f8f 0%, #7d7d7d 100%);
+  color: #ffffff;
+  font-size: 0.85rem;
+  font-weight: 700;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+
+.loadedRemainingBuildersNumbers > :last-child {
+  margin-right: 0;
+}
+
+.loadedRemainingBuilderBoxActive {
+  background: linear-gradient(180deg, #86c81f 0%, #77b619 100%);
+  border-color: rgba(164, 231, 58, 0.8);
+  color: #ffffff;
+  box-shadow: 0 0 0 1px rgba(164, 231, 58, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+
+@media (max-width: 520px) {
+  .loadedRemainingBuildersRow {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .loadedRemainingBuildersStack {
+    width: 100%;
+  }
+
+  .loadedRemainingTimeBlock {
+    align-items: flex-start;
+  }
+
+  .loadedRemainingBuildersNumbers {
+    justify-content: flex-start;
+  }
+}
+
 @media (max-width: 900px) {
   .structuresTopRow {
     flex-direction: column;
@@ -1251,10 +1474,14 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
-  padding-left: 10px;
-  padding-right: 18px;
+  padding: 14px 16px 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.18);
   min-width: 0;
   overflow: hidden;
+}
+
+.defenceCard:first-child {
+  border-top: none;
 }
 
 .defenceCardHeader {
@@ -1323,6 +1550,8 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.16);
 }
 
 .defenceRowCount {
@@ -1388,6 +1617,7 @@
 }
 
 .defenceValueInput[type='number'] {
+	appearance: textfield;
   -moz-appearance: textfield;
 }
 

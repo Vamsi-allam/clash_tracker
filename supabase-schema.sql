@@ -13,6 +13,32 @@ create table if not exists public.profiles (
   updated_at timestamptz not null default timezone('utc', now())
 );
 
+alter table if exists public.user_villages
+  add column if not exists builder_count integer;
+
+alter table if exists public.user_villages
+  alter column builder_count drop default;
+
+alter table if exists public.user_village_buildings
+  drop column if exists builder_count;
+
+drop function if exists public.set_user_village_buildings_updated_at();
+create or replace function public.set_user_village_buildings_updated_at()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.updated_at = timezone('utc', now());
+  return new;
+end;
+$$;
+
+drop trigger if exists trigger_set_user_village_buildings_updated_at on public.user_village_buildings;
+create trigger trigger_set_user_village_buildings_updated_at
+before update on public.user_village_buildings
+for each row
+execute function public.set_user_village_buildings_updated_at();
+
 -- ============================================
 -- 2. ENABLE ROW LEVEL SECURITY FOR PROFILES
 -- ============================================

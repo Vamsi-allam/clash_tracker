@@ -1,6 +1,11 @@
 import { useState, useRef } from 'react'
 import styles from './Header.module.css'
 
+const formatPlayerTag = (value = '') => {
+  const cleanTag = String(value).trim().replace(/^#/, '').toUpperCase()
+  return cleanTag ? `#${cleanTag}` : ''
+}
+
 export default function Header({ username, onLogout, villages = [], activeVillage, onSelectVillage, onAddVillage }) {
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const hideTimer = useRef(null)
@@ -47,7 +52,7 @@ export default function Header({ username, onLogout, villages = [], activeVillag
                     />
                     <div className={styles.villageItemInfo}>
                       <span className={styles.villageItemName}>{v.player_name}</span>
-                      <span className={styles.villageItemTH}>TH {v.townhall_level} · {v.player_tag}</span>
+                      <span className={styles.villageItemTH}>TH {v.townhall_level} · {formatPlayerTag(v.player_tag)}</span>
                       {v.clan_name && <span className={styles.villageItemClan}>{v.clan_name}</span>}
                     </div>
                     {activeVillage?.id === v.id && <span className={styles.activeCheck}>✓</span>}

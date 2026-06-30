@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS public.user_villages (
   player_name TEXT NOT NULL,
   townhall_level INTEGER NOT NULL,
   exp_level INTEGER,
+  builder_count INTEGER,
   clan_name TEXT,
   clan_badge_url TEXT,
   clan_level INTEGER,
@@ -21,6 +22,13 @@ CREATE TABLE IF NOT EXISTS public.user_villages (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()),
   UNIQUE(user_id, player_tag)
 );
+
+-- Ensure existing databases have the builder_count column
+ALTER TABLE IF EXISTS public.user_villages
+  ADD COLUMN IF NOT EXISTS builder_count INTEGER;
+
+ALTER TABLE IF EXISTS public.user_villages
+  ALTER COLUMN builder_count DROP DEFAULT;
 
 -- Enable RLS
 ALTER TABLE public.user_villages ENABLE ROW LEVEL SECURITY;
@@ -61,6 +69,26 @@ CREATE TABLE IF NOT EXISTS public.user_village_buildings (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()),
   UNIQUE(village_id, building_id)
 );
+
+-- Auto-update timestamp on every row change
+DROP FUNCTION IF EXISTS public.set_user_village_buildings_updated_at();
+CREATE OR REPLACE FUNCTION public.set_user_village_buildings_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = TIMEZONE('utc'::text, NOW());
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trigger_set_user_village_buildings_updated_at ON public.user_village_buildings;
+CREATE TRIGGER trigger_set_user_village_buildings_updated_at
+BEFORE UPDATE ON public.user_village_buildings
+FOR EACH ROW
+EXECUTE FUNCTION public.set_user_village_buildings_updated_at();
+
+-- Remove the builder_count column from the village buildings table
+ALTER TABLE IF EXISTS public.user_village_buildings
+  DROP COLUMN IF EXISTS builder_count;
 
 -- Enable RLS
 ALTER TABLE public.user_village_buildings ENABLE ROW LEVEL SECURITY;

@@ -4,6 +4,9 @@ import RefreshIcon from '@mui/icons-material/Refresh'
 import CloudUploadIcon from '@mui/icons-material/CloudUpload'
 import GridViewIcon from '@mui/icons-material/GridView'
 import BorderAllIcon from '@mui/icons-material/BorderAll'
+import AccessTimeIcon from '@mui/icons-material/AccessTime'
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined'
+import SettingsIcon from '@mui/icons-material/Settings'
 import builderBoostImg from '../assets/magic-items/builder-boost.png'
 import researchBoostImg from '../assets/magic-items/research-boost.png'
 import Header from '../components/Header'
@@ -22,6 +25,11 @@ const formatStructureName = (structureId = '') => {
   return String(structureId)
     .replace(/_/g, ' ')
     .replace(/\b\w/g, (char) => char.toUpperCase())
+}
+
+const formatPlayerTag = (value = '') => {
+  const cleanTag = String(value).trim().replace(/^#/, '').toUpperCase()
+  return cleanTag ? `#${cleanTag}` : ''
 }
 
 const canonImages = import.meta.glob('../assets/Defences/canon/*.png', { eager: true, import: 'default' })
@@ -44,6 +52,7 @@ export default function UserPage({ username, onLogout, userId }) {
   const [activeVillage, setActiveVillage] = useState(null)
   const [viewMode, setViewMode] = useState('search')
   const [builderCount, setBuilderCount] = useState(2)
+  const [savingBuilders, setSavingBuilders] = useState(false)
   const [wallConfig, setWallConfig] = useState(null)
   const [wallCounts, setWallCounts] = useState({})
   const [wallLoading, setWallLoading] = useState(false)
@@ -54,6 +63,23 @@ export default function UserPage({ username, onLogout, userId }) {
   const [activeLoadedTab, setActiveLoadedTab] = useState('defences')
   const activeVillageRef = useRef(null)
   const viewModeRef = useRef('search')
+  const builderCountRef = useRef(2)
+
+  const setActiveVillagePersisted = async (villageId) => {
+    if (!userId || !villageId) return
+
+    await supabase
+      .from('user_villages')
+      .update({ is_active: false })
+      .eq('user_id', userId)
+
+    const { error } = await supabase
+      .from('user_villages')
+      .update({ is_active: true })
+      .eq('id', villageId)
+
+    if (error) throw error
+  }
 
   useEffect(() => {
     activeVillageRef.current = activeVillage
@@ -62,6 +88,15 @@ export default function UserPage({ username, onLogout, userId }) {
   useEffect(() => {
     viewModeRef.current = viewMode
   }, [viewMode])
+
+  useEffect(() => {
+    const savedBuilderCount = Number(activeVillage?.builder_count)
+    if (savedBuilderCount) {
+      const normalizedCount = Math.min(5, Math.max(2, savedBuilderCount))
+      builderCountRef.current = normalizedCount
+      setBuilderCount(normalizedCount)
+    }
+  }, [activeVillage])
 
   useEffect(() => {
     loadVillages()
@@ -73,10 +108,17 @@ export default function UserPage({ username, onLogout, userId }) {
       .from('user_villages')
       .select('*')
       .eq('user_id', userId)
-      .order('created_at', { ascending: true })
+      .order('is_active', { ascending: false })
+      .order('created_at', { ascending: false })
     if (data && data.length > 0) {
       setVillages(data)
-      if (!activeVillage) setActiveVillage(data[0])
+      const selectedVillage = data.find((village) => village.is_active) || data[0]
+      if (selectedVillage) {
+        setActiveVillage(selectedVillage)
+        const selectedBuilderCount = Math.min(5, Math.max(2, Number(selectedVillage.builder_count) || 2))
+        builderCountRef.current = selectedBuilderCount
+        setBuilderCount(selectedBuilderCount)
+      }
       setViewMode('loaded')
     } else {
       setViewMode('search')
@@ -98,16 +140,6 @@ export default function UserPage({ username, onLogout, userId }) {
       }
       const data = await res.json()
       setPlayerData(data)
-
-      // Persist fetched village automatically for signed-in users
-      if (userId) {
-        const saved = await upsertVillageFromPlayer(data)
-        if (saved) {
-          setActiveVillage(saved)
-          await loadVillages()
-          setViewMode('loaded')
-        }
-      }
     } catch (e) {
       setError('Failed to fetch player data')
     } finally {
@@ -124,42 +156,45 @@ export default function UserPage({ username, onLogout, userId }) {
     setSaving(true)
     setError('')
 
+    const cleanTag = String(playerData.tag || '').trim().replace(/^#/, '').toUpperCase()
+    const storedTag = formatPlayerTag(cleanTag)
+    const selectedBuilderCount = Math.min(5, Math.max(2, Number(builderCountRef.current) || 2))
+
     const existingResult = await supabase
       .from('user_villages')
       .select('id')
       .eq('user_id', userId)
-      .eq('player_tag', playerData.tag)
+      .eq('player_tag', storedTag)
       .maybeSingle()
-
-    if (existingResult.data) {
-      setError('Village already added to this user')
-      setSaving(false)
-      return
-    }
 
     const villageRow = {
       user_id: userId,
-      player_tag: playerData.tag,
+      player_tag: storedTag,
       player_name: playerData.name,
       townhall_level: playerData.townHallLevel,
       exp_level: playerData.expLevel,
+      builder_count: selectedBuilderCount,
       clan_name: playerData.clan?.name || null,
       clan_badge_url: playerData.clan?.badgeUrls?.small || null,
       clan_level: playerData.clan?.clanLevel || null,
     }
-    const { data, error: saveError } = await supabase
-      .from('user_villages')
-      .insert(villageRow)
-      .select()
-      .single()
+    const { data, error: saveError } = existingResult.data
+      ? await supabase
+        .from('user_villages')
+        .update(villageRow)
+        .eq('id', existingResult.data.id)
+        .select()
+        .single()
+      : await supabase
+        .from('user_villages')
+        .insert(villageRow)
+        .select()
+        .single()
 
     if (saveError) {
-      if (saveError.code === '23505') {
-        setError('Village already added to this user')
-      } else {
-        setError(saveError.message || 'Failed to save village')
-      }
+      setError(saveError.message || 'Failed to save village')
     } else if (data) {
+      await setActiveVillagePersisted(data.id)
       await loadVillages()
       setActiveVillage(data)
       loadTownhallStructures(data.townhall_level)
@@ -175,21 +210,24 @@ export default function UserPage({ username, onLogout, userId }) {
     if (!userId || !player?.tag) return null
 
     const cleanTag = String(player.tag).trim().replace(/^#/, '').toUpperCase()
+    const storedTag = formatPlayerTag(cleanTag)
+    const selectedBuilderCount = Math.min(5, Math.max(2, Number(builderCountRef.current) || 2))
 
     // Check existing
     const { data: existing } = await supabase
       .from('user_villages')
       .select('*')
       .eq('user_id', userId)
-      .eq('player_tag', cleanTag)
+      .eq('player_tag', storedTag)
       .maybeSingle()
 
     const row = {
       user_id: userId,
-      player_tag: cleanTag,
+      player_tag: storedTag,
       player_name: player.name,
       townhall_level: player.townHallLevel,
       exp_level: player.expLevel,
+      builder_count: selectedBuilderCount,
       clan_name: player.clan?.name || null,
       clan_badge_url: player.clan?.badgeUrls?.small || null,
       clan_level: player.clan?.clanLevel || null,
@@ -218,6 +256,7 @@ export default function UserPage({ username, onLogout, userId }) {
   }
 
   const handleSelectVillage = (village) => {
+    setActiveVillagePersisted(village.id).catch(() => {})
     setActiveVillage(village)
     setViewMode('loaded')
     setPlayerData(null)
@@ -295,6 +334,39 @@ export default function UserPage({ username, onLogout, userId }) {
     setPlayerData(null)
     setTag('')
     setActiveVillage(null)
+  }
+
+  const handleSaveBuilders = async () => {
+    if (!activeVillage?.id) return
+
+    setSavingBuilders(true)
+    setError('')
+
+    try {
+      const normalizedCount = Math.min(5, Math.max(2, Number(builderCountRef.current) || 2))
+      const { data, error: updateError } = await supabase
+        .from('user_villages')
+        .update({
+          builder_count: normalizedCount,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', activeVillage.id)
+        .select()
+        .single()
+
+      if (updateError) throw updateError
+
+      if (data) {
+        builderCountRef.current = Math.min(5, Math.max(2, Number(data.builder_count) || normalizedCount))
+        setBuilderCount(Math.min(5, Math.max(2, Number(data.builder_count) || normalizedCount)))
+        setActiveVillage(data)
+        setVillages((current) => current.map((village) => (village.id === data.id ? data : village)))
+      }
+    } catch (saveError) {
+      setError(saveError.message || 'Failed to save builders')
+    } finally {
+      setSavingBuilders(false)
+    }
   }
 
   const showingSearch = viewMode === 'search' || villages.length === 0
@@ -449,6 +521,76 @@ export default function UserPage({ username, onLogout, userId }) {
     setViewMode('structures')
   }
 
+  const handleOpenWallsEditor = async () => {
+    if (!activeVillage) return
+
+    setWallLoading(true)
+    setViewMode('walls')
+
+    try {
+      const data = await loadTownhallSnapshot(activeVillage.townhall_level, { loadWalls: true })
+      if (!data) {
+        setWallConfig(null)
+        setWallCounts({})
+      }
+    } catch (fetchError) {
+      console.error('Failed to load wall config:', fetchError)
+      setWallConfig(null)
+      setWallCounts({})
+    } finally {
+      setWallLoading(false)
+    }
+  }
+
+  const handleEditLevels = () => {
+    if (activeLoadedTab === 'walls') {
+      void handleOpenWallsEditor()
+      return
+    }
+
+    handleSetupVillageStructures()
+  }
+
+  const handleUpdateStructures = async () => {
+    if (!activeVillage?.id) return
+
+    setStructuresLoading(true)
+    setError('')
+
+    try {
+      const structureRowsToSave = [...visibleDefenseBuildings, ...visibleArmyBuildings, ...visibleResourceBuildings]
+        .flatMap((building) => {
+          const currentLevels = structureLevels[building.id] || []
+          const rowCount = Math.max(1, building.buildings_unlocked || currentLevels.length || 1)
+
+          return Array.from({ length: rowCount }, (_, index) => ({
+            village_id: activeVillage.id,
+            building_id: `${building.id}-${index + 1}`,
+            building_name: building.name || formatStructureName(building.id),
+            current_level: Number(currentLevels[index] ?? getDefaultRowLevel(building, index, isCopyUnlocked(building, index))),
+            quantity: 1,
+            updated_at: new Date().toISOString(),
+          }))
+        })
+        .filter((row) => row.current_level >= 0)
+
+      if (structureRowsToSave.length > 0) {
+        const { error: upsertError } = await supabase
+          .from('user_village_buildings')
+          .upsert(structureRowsToSave, { onConflict: 'village_id,building_id' })
+
+        if (upsertError) throw upsertError
+      }
+
+      setViewMode('loaded')
+      alert('Structures saved successfully!')
+    } catch (saveError) {
+      setError(saveError.message || 'Failed to save structures')
+    } finally {
+      setStructuresLoading(false)
+    }
+  }
+
   const handleSetAllToZero = () => {
     const resetLevels = {}
     ;[...visibleDefenseBuildings, ...visibleArmyBuildings, ...visibleResourceBuildings].forEach((building) => {
@@ -470,28 +612,6 @@ export default function UserPage({ username, onLogout, userId }) {
 
   const handleBackToLoaded = () => {
     setViewMode('loaded')
-  }
-
-  const handleProceedToWalls = async () => {
-    if (!activeVillage) return
-    setViewMode('walls')
-    setWallLoading(true)
-
-    try {
-      const data = await loadTownhallSnapshot(activeVillage.townhall_level, { loadWalls: true })
-      if (!data) {
-        setWallConfig(null)
-        setWallCounts({})
-      }
-    } catch (fetchError) {
-      console.error('Failed to load wall config:', fetchError)
-      setWallConfig(null)
-      setWallCounts({})
-      setStructureCatalog({ defences: [], army: [], resources: [], troops: [] })
-      setStructureLevels({})
-    } finally {
-      setWallLoading(false)
-    }
   }
 
   const handleWallCountChange = (levelNumber, value) => {
@@ -529,39 +649,15 @@ export default function UserPage({ username, onLogout, userId }) {
           building_name: 'Walls',
           current_level: wallLevel.level,
           quantity: Number(wallCounts[wallLevel.level] || 0),
+          updated_at: new Date().toISOString(),
         }))
-        .filter((row) => row.quantity > 0)
 
-      const structureRowsToSave = [...visibleDefenseBuildings, ...visibleArmyBuildings, ...visibleResourceBuildings]
-        .flatMap((building) => {
-          const currentLevels = structureLevels[building.id] || []
-          const rowCount = Math.max(1, building.buildings_unlocked || currentLevels.length || 1)
-
-          return Array.from({ length: rowCount }, (_, index) => ({
-            village_id: activeVillage.id,
-            building_id: `${building.id}-${index + 1}`,
-            building_name: building.name || formatStructureName(building.id),
-            current_level: Number(currentLevels[index] ?? getDefaultRowLevel(building, index, isCopyUnlocked(building, index))),
-            quantity: 1,
-          }))
-        })
-        .filter((row) => row.current_level >= 0)
-
-      const { error: deleteError } = await supabase
-        .from('user_village_buildings')
-        .delete()
-        .eq('village_id', activeVillage.id)
-
-      if (deleteError) throw deleteError
-
-      const rowsToInsert = [...structureRowsToSave, ...wallRowsToSave]
-
-      if (rowsToInsert.length > 0) {
-        const { error: insertError } = await supabase
+      if (wallRowsToSave.length > 0) {
+        const { error: upsertError } = await supabase
           .from('user_village_buildings')
-          .insert(rowsToInsert)
+          .upsert(wallRowsToSave, { onConflict: 'village_id,building_id' })
 
-        if (insertError) throw insertError
+        if (upsertError) throw upsertError
       }
 
       setViewMode('loaded')
@@ -578,6 +674,7 @@ export default function UserPage({ username, onLogout, userId }) {
   const wallBuilt = Object.values(wallCounts).reduce((total, value) => total + Number(value || 0), 0)
   const remainingWalls = Math.max(wallPieces - wallBuilt, 0)
   const wallMaxLevel = wallLevels.length > 0 ? Math.max(...wallLevels.map((wallLevel) => wallLevel.level || 0)) : 0
+  const displayedBuilderCount = Math.max(1, Math.min(5, Number(builderCount) || 2))
   const getWallRowMax = (levelNumber) => {
     const otherWalls = Object.entries(wallCounts).reduce((total, [levelKey, count]) => {
       if (Number(levelKey) === Number(levelNumber)) return total
@@ -704,9 +801,7 @@ export default function UserPage({ username, onLogout, userId }) {
     const maxLevel = Math.max(...(building.levels || []).map((level) => level.level), 0)
     const getMinimumLevel = (rowIndex) => getDefaultRowLevel(building, rowIndex, isCopyUnlocked(building, rowIndex))
     const clampLevel = (value, rowIndex) => Math.min(Math.max(Number(value || 0), getMinimumLevel(rowIndex)), maxLevel)
-    const buttonLevels = building.id === 'archer_tower'
-      ? Array.from({ length: maxLevel + 1 }, (_, index) => index)
-      : Array.from({ length: maxLevel }, (_, index) => index + 1)
+    const buttonLevels = Array.from({ length: maxLevel }, (_, index) => index + 1)
 
     return (
       <section key={cardKey} className={styles.defenceCard}>
@@ -788,6 +883,28 @@ export default function UserPage({ username, onLogout, userId }) {
       if (leftPriority !== rightPriority) return leftPriority - rightPriority
       return (left.name || '').localeCompare(right.name || '')
     })
+
+  const loadedTabPrimaryLabel =
+    activeLoadedTab === 'defences'
+      ? 'Defense'
+      : activeLoadedTab === 'army'
+        ? 'Army'
+        : activeLoadedTab === 'resources'
+          ? 'Resources'
+          : activeLoadedTab === 'troops'
+            ? 'Troops'
+            : 'Walls'
+
+    const loadedTabSectionTitle =
+      activeLoadedTab === 'defences'
+        ? 'Defenses'
+        : activeLoadedTab === 'army'
+          ? 'Army'
+          : activeLoadedTab === 'resources'
+            ? 'Resources'
+            : activeLoadedTab === 'troops'
+              ? 'Troops'
+              : 'Walls'
 
   return (
     <>
@@ -918,7 +1035,7 @@ export default function UserPage({ username, onLogout, userId }) {
           ) : showingLoaded ? (
             <div className={styles.centeredPlayerHeader}>
               <div className={styles.centeredPlayerName}>{activeVillage?.player_name || playerData?.name || 'Village Loaded'}</div>
-              <div className={styles.centeredPlayerTag}>{activeVillage?.player_tag || playerData?.tag || ''}</div>
+              <div className={styles.centeredPlayerTag}>{formatPlayerTag(activeVillage?.player_tag || playerData?.tag || tag)}</div>
 
               <div className={styles.headerDivider} />
 
@@ -1088,55 +1205,159 @@ export default function UserPage({ username, onLogout, userId }) {
                     ))}
                   </div>
 
-                  <div className={styles.loadedTabBody}>
+                  <div className={`${styles.loadedTabBody} ${activeLoadedTab === 'walls' ? styles.loadedTabBodyWalls : ''}`}>
                     <div className={styles.loadedTabMain}>
                       {activeLoadedTab === 'defences' && (
                         <div className={styles.loadedTabSection}>
-                          <h3 className={styles.loadedTabSectionTitle}>Defenses</h3>
-                          <div className={styles.structuresDatabaseGrid}>
-                            {visibleDefenseBuildings.map((building, index) => renderStructureCard(building, `tab-defences-${building.id}-${index}`))}
+                          <div className={styles.loadedTabSectionHeader}>
+                            <div className={styles.loadedTabHeaderLeft}>
+                              <h3 className={styles.loadedTabSectionTitle}>{loadedTabSectionTitle}</h3>
+                              <SettingsIcon className={styles.loadedTabSettingsIcon} />
+                            </div>
+                            <button
+                              type="button"
+                              className={styles.loadedTabEditBtn}
+                              onClick={handleEditLevels}
+                              disabled={structuresLoading}
+                            >
+                              <EditOutlinedIcon className={styles.loadedTabEditBtnIcon} />
+                              {structuresLoading ? 'Loading...' : 'Edit Levels'}
+                            </button>
+                          </div>
+                          <div className={styles.loadedStructureFrame}>
+                            <div className={styles.loadedStructureHeader}>
+                              <span>{loadedTabPrimaryLabel}</span>
+                              <span>Level</span>
+                              <span>Upgrades</span>
+                            </div>
+                            <div className={styles.loadedStructureBody}>
+                              <div className={styles.structuresDatabaseGrid}>
+                                {visibleDefenseBuildings.map((building, index) => renderStructureCard(building, `tab-defences-${building.id}-${index}`))}
+                              </div>
+                            </div>
                           </div>
                         </div>
                       )}
 
                       {activeLoadedTab === 'army' && (
                         <div className={styles.loadedTabSection}>
-                          <h3 className={styles.loadedTabSectionTitle}>Army</h3>
-                          <div className={styles.structuresDatabaseGrid}>
-                            {visibleArmyBuildings.map((building, index) => renderStructureCard(building, `tab-army-${building.id}-${index}`))}
+                          <div className={styles.loadedTabSectionHeader}>
+                            <div className={styles.loadedTabHeaderLeft}>
+                              <h3 className={styles.loadedTabSectionTitle}>{loadedTabSectionTitle}</h3>
+                              <SettingsIcon className={styles.loadedTabSettingsIcon} />
+                            </div>
+                            <button
+                              type="button"
+                              className={styles.loadedTabEditBtn}
+                              onClick={handleEditLevels}
+                              disabled={structuresLoading}
+                            >
+                              <EditOutlinedIcon className={styles.loadedTabEditBtnIcon} />
+                              {structuresLoading ? 'Loading...' : 'Edit Levels'}
+                            </button>
+                          </div>
+                          <div className={styles.loadedStructureFrame}>
+                            <div className={styles.loadedStructureHeader}>
+                              <span>{loadedTabPrimaryLabel}</span>
+                              <span>Level</span>
+                              <span>Upgrades</span>
+                            </div>
+                            <div className={styles.loadedStructureBody}>
+                              <div className={styles.structuresDatabaseGrid}>
+                                {visibleArmyBuildings.map((building, index) => renderStructureCard(building, `tab-army-${building.id}-${index}`))}
+                              </div>
+                            </div>
                           </div>
                         </div>
                       )}
 
                       {activeLoadedTab === 'resources' && (
                         <div className={styles.loadedTabSection}>
-                          <h3 className={styles.loadedTabSectionTitle}>Resources</h3>
-                          <div className={styles.structuresDatabaseGrid}>
-                            {visibleResourceBuildings.map((building, index) => renderStructureCard(building, `tab-resources-${building.id}-${index}`))}
+                          <div className={styles.loadedTabSectionHeader}>
+                            <div className={styles.loadedTabHeaderLeft}>
+                              <h3 className={styles.loadedTabSectionTitle}>{loadedTabSectionTitle}</h3>
+                              <SettingsIcon className={styles.loadedTabSettingsIcon} />
+                            </div>
+                            <button
+                              type="button"
+                              className={styles.loadedTabEditBtn}
+                              onClick={handleEditLevels}
+                              disabled={structuresLoading}
+                            >
+                              <EditOutlinedIcon className={styles.loadedTabEditBtnIcon} />
+                              {structuresLoading ? 'Loading...' : 'Edit Levels'}
+                            </button>
+                          </div>
+                          <div className={styles.loadedStructureFrame}>
+                            <div className={styles.loadedStructureHeader}>
+                              <span>{loadedTabPrimaryLabel}</span>
+                              <span>Level</span>
+                              <span>Upgrades</span>
+                            </div>
+                            <div className={styles.loadedStructureBody}>
+                              <div className={styles.structuresDatabaseGrid}>
+                                {visibleResourceBuildings.map((building, index) => renderStructureCard(building, `tab-resources-${building.id}-${index}`))}
+                              </div>
+                            </div>
                           </div>
                         </div>
                       )}
 
                       {activeLoadedTab === 'troops' && (
                         <div className={styles.loadedTabSection}>
-                          <h3 className={styles.loadedTabSectionTitle}>Troops</h3>
-                          <div className={styles.structuresDatabaseGrid}>
-                            {(structureCatalog.troops || []).map((building, index) => renderStructureCard(building, `tab-troops-${building.id}-${index}`))}
+                          <div className={styles.loadedTabSectionHeader}>
+                            <h3 className={styles.loadedTabSectionTitle}>{loadedTabSectionTitle}</h3>
+                            <SettingsIcon className={styles.loadedTabSettingsIcon} />
+                          </div>
+                          <div className={styles.loadedStructureFrame}>
+                            <div className={styles.loadedStructureHeader}>
+                              <span>{loadedTabPrimaryLabel}</span>
+                              <span>Level</span>
+                              <span>Upgrades</span>
+                            </div>
+                            <div className={styles.loadedStructureBody}>
+                              <div className={styles.structuresDatabaseGrid}>
+                                {(structureCatalog.troops || []).map((building, index) => renderStructureCard(building, `tab-troops-${building.id}-${index}`))}
+                              </div>
+                            </div>
                           </div>
                         </div>
                       )}
 
                       {activeLoadedTab === 'walls' && (
                         <div className={styles.loadedTabSection}>
-                          <h3 className={styles.loadedTabSectionTitle}>Walls</h3>
-                          <div className={styles.loadedWallsSummary}>
-                            <div className={styles.loadedWallsRow}>
-                              <span>Built</span>
-                              <strong>{wallBuilt} / {wallPieces}</strong>
+                          <div className={styles.loadedTabSectionHeader}>
+                            <div className={styles.loadedTabHeaderLeft}>
+                              <h3 className={styles.loadedTabSectionTitle}>{loadedTabSectionTitle}</h3>
+                              <SettingsIcon className={styles.loadedTabSettingsIcon} />
                             </div>
-                            <div className={styles.loadedWallsRow}>
-                              <span>Remaining</span>
-                              <strong>{remainingWalls}</strong>
+                            <button
+                              type="button"
+                              className={styles.loadedTabEditBtn}
+                              onClick={handleEditLevels}
+                              disabled={wallLoading}
+                            >
+                              <EditOutlinedIcon className={styles.loadedTabEditBtnIcon} />
+                              {wallLoading ? 'Loading...' : 'Edit Levels'}
+                            </button>
+                          </div>
+                          <div className={styles.loadedStructureFrame}>
+                            <div className={styles.loadedStructureHeader}>
+                              <span>{loadedTabPrimaryLabel}</span>
+                              <span>Level</span>
+                              <span>Upgrades</span>
+                            </div>
+                            <div className={styles.loadedStructureBody}>
+                              <div className={styles.loadedWallsSummary}>
+                                <div className={styles.loadedWallsRow}>
+                                  <span>Built</span>
+                                  <strong>{wallBuilt} / {wallPieces}</strong>
+                                </div>
+                                <div className={styles.loadedWallsRow}>
+                                  <span>Remaining</span>
+                                  <strong>{remainingWalls}</strong>
+                                </div>
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -1144,23 +1365,41 @@ export default function UserPage({ username, onLogout, userId }) {
 
                     </div>
 
-                    <div className={styles.loadedRemainingCard}>
-                      <h3 className={styles.loadedRemainingTitle}>Remaining (Beta)</h3>
-                      <div className={styles.loadedRemainingTable}>
-                        <div className={styles.loadedRemainingHeadRow}>
-                          <span>Resource</span>
-                          <span>Total</span>
-                        </div>
-                        <div className={styles.loadedRemainingRow}>
-                          <span>Walls</span>
-                          <strong>{remainingWalls}</strong>
-                        </div>
-                        <div className={styles.loadedRemainingRow}>
-                          <span>Time</span>
-                          <strong>Complete</strong>
+                    {activeLoadedTab !== 'walls' && (
+                      <div className={styles.loadedRemainingBlock}>
+                        <h3 className={styles.loadedRemainingTitle}>Remaining (Beta)</h3>
+                        <div className={styles.loadedRemainingCard}>
+                          <div className={styles.loadedRemainingTable}>
+                            <div className={styles.loadedRemainingHeadRow}>
+                              <span>Resource</span>
+                              <span>Total</span>
+                            </div>
+                            <div className={styles.loadedRemainingRow}>
+                              <span className={styles.loadedRemainingLabelWithIcon}>
+                                <AccessTimeIcon className={styles.loadedRemainingClockIcon} />
+                                Time
+                              </span>
+                              <div className={styles.loadedRemainingTimeBlock}>
+                                <span className={styles.loadedRemainingTimeBuilders}>With {displayedBuilderCount} builders:</span>
+                                <strong className={styles.loadedRemainingTimeValue}>2m</strong>
+                              </div>
+                            </div>
+                            <div className={styles.loadedRemainingBuildersRow}>
+                              <div className={styles.loadedRemainingBuildersStack}>
+                                <div className={styles.loadedRemainingBuildersLabel}>Set Builders:</div>
+                                <div className={styles.loadedRemainingBuildersNumbers}>
+                                  {Array.from({ length: displayedBuilderCount }, (_, index) => (
+                                    <div key={index} className={`${styles.loadedRemainingBuilderBox} ${index + 1 === displayedBuilderCount ? styles.loadedRemainingBuilderBoxActive : ''}`}>
+                                      {index + 1}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 </div>
             </div>
@@ -1189,7 +1428,13 @@ export default function UserPage({ username, onLogout, userId }) {
                           max="5"
                           step="1"
                           value={builderCount}
-                          onChange={(e) => setBuilderCount(Number(e.target.value))}
+                          onChange={(e) => {
+                            const nextCount = Math.min(5, Math.max(2, Number(e.target.value) || 2))
+                            builderCountRef.current = nextCount
+                            setBuilderCount(nextCount)
+                          }}
+                          onMouseUp={handleSaveBuilders}
+                          onTouchEnd={handleSaveBuilders}
                           className={styles.builderRange}
                         />
                         <div className={styles.builderValueBox}>{builderCount}</div>
@@ -1238,7 +1483,9 @@ export default function UserPage({ username, onLogout, userId }) {
                 </section>
 
                 <div className={styles.structuresProceedBar}>
-                  <button className={styles.structuresSecondaryBtn} onClick={handleProceedToWalls}>Proceed</button>
+                  <button className={styles.structuresSecondaryBtn} onClick={handleUpdateStructures} disabled={structuresLoading}>
+                    {structuresLoading ? 'Saving...' : 'Update'}
+                  </button>
                 </div>
 
               </div>
