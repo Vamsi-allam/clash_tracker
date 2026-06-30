@@ -107,45 +107,24 @@ DROP POLICY IF EXISTS "Allow admins to manage townhall buildings" ON public.town
 CREATE POLICY "Allow admins to manage townhall buildings" ON public.townhall_buildings
 FOR ALL USING (auth.jwt() ->> 'email' = 'vamsiallam77@gmail.com');
 
+-- Auto-update timestamp on every change
+DROP FUNCTION IF EXISTS public.set_townhall_buildings_updated_at();
+CREATE OR REPLACE FUNCTION public.set_townhall_buildings_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = TIMEZONE('utc'::text, NOW());
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trigger_set_townhall_buildings_updated_at ON public.townhall_buildings;
+CREATE TRIGGER trigger_set_townhall_buildings_updated_at
+BEFORE UPDATE ON public.townhall_buildings
+FOR EACH ROW
+EXECUTE FUNCTION public.set_townhall_buildings_updated_at();
+
 -- Create index
 CREATE INDEX IF NOT EXISTS idx_townhall_level ON public.townhall_buildings(townhall_level);
-
--- ============================================
--- 4. INSERT TOWNHALL LEVEL 2 BUILDING DATA
--- ============================================
-INSERT INTO public.townhall_buildings (townhall_level, defences, army, resources, troops, walls)
-VALUES (
-  2,
-  '[
-    {"id":"16_","name":"Archer Tower","maxLevel":2,"levels":[{"level":1,"cost":"1000","resource":"gold","time":"30m"},{"level":2,"cost":"2000","resource":"gold","time":"1h"}]},
-    {"id":"18_","name":"Canon","maxLevel":3,"levels":[{"level":1,"cost":"250","resource":"gold","time":"15m"},{"level":2,"cost":"1000","resource":"gold","time":"30m"},{"level":3,"cost":"4000","resource":"gold","time":"1h"}]},
-    {"id":"19_","name":"Clan Castle","maxLevel":1,"levels":[{"level":1,"cost":"10000","resource":"elixir","time":"N/A"}]}
-  ]'::jsonb,
-  '[
-    {"id":"10_","name":"Army Camp","maxLevel":2,"levels":[{"level":1,"cost":"200","resource":"elixir","time":"30m"},{"level":2,"cost":"2000","resource":"elixir","time":"1h"}]}
-  ]'::jsonb,
-  '[
-    {"id":"2_","name":"Gold Mine","maxLevel":4,"levels":[{"level":1,"cost":"150","resource":"elixir","time":"10m"},{"level":2,"cost":"300","resource":"elixir","time":"30m"},{"level":3,"cost":"700","resource":"elixir","time":"1h"},{"level":4,"cost":"1400","resource":"elixir","time":"2h"}]},
-    {"id":"3_","name":"Elixir Collector","maxLevel":4,"levels":[{"level":1,"cost":"150","resource":"gold","time":"10m"},{"level":2,"cost":"300","resource":"gold","time":"30m"},{"level":3,"cost":"700","resource":"gold","time":"1h"},{"level":4,"cost":"1400","resource":"gold","time":"2h"}]},
-    {"id":"5_","name":"Gold Storage","maxLevel":3,"levels":[{"level":1,"cost":"300","resource":"elixir","time":"15m"},{"level":2,"cost":"750","resource":"elixir","time":"30m"},{"level":3,"cost":"1500","resource":"elixir","time":"1h"}]},
-    {"id":"6_","name":"Elixir Storage","maxLevel":3,"levels":[{"level":1,"cost":"300","resource":"gold","time":"15m"},{"level":2,"cost":"750","resource":"gold","time":"30m"},{"level":3,"cost":"1500","resource":"gold","time":"1h"}]}
-  ]'::jsonb,
-  '[
-    {"id":"31_","name":"Barbarian","maxLevel":1,"levels":[{"level":1,"cost":"20","resource":"elixir","time":"15s","trainingSpace":"1"}]},
-    {"id":"32_","name":"Archer","maxLevel":1,"levels":[{"level":1,"cost":"20","resource":"elixir","time":"15s","trainingSpace":"1"}]},
-    {"id":"33_","name":"Giant","maxLevel":1,"levels":[{"level":1,"cost":"100","resource":"elixir","time":"1m","trainingSpace":"5"}]},
-    {"id":"34_","name":"Goblin","maxLevel":1,"levels":[{"level":1,"cost":"50","resource":"elixir","time":"30s","trainingSpace":"1"}]}
-  ]'::jsonb,
-  '[
-    {"id":"60_","name":"Walls","maxLevel":2,"levels":[{"level":1,"cost":"0","resource":"gold","time":"instant"},{"level":2,"cost":"1000","resource":"gold","time":"30m"}]}
-  ]'::jsonb
-) ON CONFLICT (townhall_level) DO UPDATE SET
-  defences = excluded.defences,
-  army = excluded.army,
-  resources = excluded.resources,
-  troops = excluded.troops,
-  walls = excluded.walls,
-  updated_at = TIMEZONE('utc'::text, NOW());
 
 -- ============================================
 -- DONE!

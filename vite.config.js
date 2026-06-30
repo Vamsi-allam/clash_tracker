@@ -21,6 +21,12 @@ export default defineConfig(({ mode }) => {
               }
             : undefined,
         },
+        '/api/assets': {
+          target: 'https://api-assets.clashofclans.com',
+          changeOrigin: true,
+          secure: true,
+          rewrite: (path) => path.replace(/^\/api\/assets/, ''),
+        },
       },
     },
   }

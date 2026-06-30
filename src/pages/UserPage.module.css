@@ -39,13 +39,13 @@
 .content {
   position: relative;
   z-index: 1;
-  width: min(900px, 100%);
+  width: min(1040px, 100%);
   border-radius: 28px;
   border: 1px solid var(--border);
   box-shadow: var(--shadow);
   backdrop-filter: blur(22px);
   background: var(--panel-strong);
-  padding: 36px;
+  padding: 34px 34px 38px;
 }
 
 .content h2 {
@@ -115,6 +115,786 @@
 .searchBtn:disabled {
   opacity: 0.5;
   cursor: wait;
+}
+
+.setupShell {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.setupHero {
+  text-align: center;
+  padding-bottom: 4px;
+}
+
+.setupTitle {
+  margin: 0;
+  font-size: clamp(2rem, 2.7vw, 2.7rem);
+  font-weight: 800;
+  color: #3f79c8;
+  letter-spacing: 0.01em;
+}
+
+.setupSubtitle {
+  margin: 10px auto 0;
+  max-width: 860px;
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+
+.setupPrompt {
+  color: var(--text);
+  font-size: 0.98rem;
+  font-weight: 500;
+}
+
+.setupCard {
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.setupCardHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 20px 20px;
+  background: linear-gradient(180deg, #5a88c6 0%, #4d79b7 100%);
+  color: #fff;
+  font-size: 1.03rem;
+  font-weight: 800;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.setupCardArrow {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.setupCardBody {
+  display: grid;
+  grid-template-columns: minmax(320px, 0.82fr) minmax(430px, 1.18fr);
+  gap: 20px;
+  padding: 20px 24px 24px;
+  align-items: start;
+}
+
+.setupSearchColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  padding-top: 10px;
+}
+
+.setupPreviewColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  padding-top: 2px;
+}
+
+.previewPlaceholder {
+  min-height: 322px;
+  border-radius: 2px;
+  background: rgba(16, 28, 48, 0.92);
+  color: rgba(255, 255, 255, 0.9);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 24px;
+  gap: 12px;
+}
+
+.previewPlaceholderText,
+.previewPlaceholderNote {
+  margin: 0;
+  line-height: 1.7;
+  font-size: 0.95rem;
+}
+
+.previewHeader,
+.previewClanBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.previewTopRow {
+  display: grid;
+  grid-template-columns: minmax(240px, 1fr) minmax(200px, 0.9fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.previewPlayerBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.previewHeaderLabel {
+  color: #4d88db;
+  font-size: 1.08rem;
+  font-weight: 800;
+}
+
+.previewSummary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.previewName {
+  margin: 0;
+  color: #4d88db;
+  font-size: 1.35rem;
+  font-weight: 800;
+}
+
+.previewMeta {
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.previewCenterRow {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 170px;
+  padding: 0;
+}
+
+.previewThWrap {
+  display: flex;
+  justify-content: center;
+  padding: 4px 0 6px;
+}
+
+.previewThImage {
+  width: 176px;
+  height: 176px;
+  object-fit: contain;
+}
+
+.previewFooter {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: auto;
+}
+
+.previewFooterText {
+  margin: 0;
+  padding: 14px 16px;
+  border-radius: 2px;
+  background: rgba(16, 28, 48, 0.92);
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.loadedFlowCard {
+  min-height: 150px;
+  padding: 24px 28px 28px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 2px;
+  background: rgba(14, 25, 43, 0.92);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.loadedFlowHeader {
+  font-size: 1.55rem;
+  font-weight: 800;
+  color: #3f79c8;
+}
+
+.loadedFlowText {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.loadedFlowBtn {
+  align-self: flex-start;
+  padding: 11px 18px;
+  border: 1px solid rgba(0, 0, 0, 0.25);
+  border-radius: 3px;
+  background: linear-gradient(180deg, #74b529 0%, #63a820 100%);
+  color: #f4f4f4;
+  font-size: 0.92rem;
+  font-weight: 700;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+}
+
+.structuresFlowCard {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 16px 0 0;
+}
+
+.structuresHero {
+  background: rgba(181, 203, 234, 0.94);
+  color: #11203a;
+  padding: 18px 18px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.structuresTitle {
+  color: #3f79c8;
+  font-size: 1.55rem;
+  font-weight: 800;
+}
+
+.structuresSubtitle {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.structuresUploadBtn {
+  align-self: flex-start;
+  padding: 11px 16px;
+  border: 1px solid rgba(0, 0, 0, 0.28);
+  border-radius: 3px;
+  background: linear-gradient(180deg, #74b529 0%, #63a820 100%);
+  color: #f4f4f4;
+  font-size: 0.92rem;
+  font-weight: 700;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+}
+
+.structuresDivider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.structuresGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 30px;
+  align-items: start;
+}
+
+.structuresCard {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 20px 22px;
+  background: rgba(10, 20, 38, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+}
+
+.structuresTopRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 28px;
+}
+
+.builderBlock {
+  flex: 1;
+  min-width: 0;
+}
+
+.bobBlock {
+  flex: 0 0 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 2px;
+}
+
+.structuresSection {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.structuresSectionTitle,
+.structuresFooterTitle {
+  margin: 0;
+  color: #3f79c8;
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.buildersRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.builderIcon {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.builderRange {
+  flex: 0 1 180px;
+  width: 100%;
+  max-width: 180px;
+  accent-color: #4d88db;
+}
+
+.builderValueBox {
+  min-width: 74px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #e4e4e4;
+  color: #111;
+  border: 1px solid rgba(0, 0, 0, 0.18);
+}
+
+.structuresNote,
+.structuresBobText,
+.structuresFooterText {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+
+.structuresBobText {
+  font-size: 0.92rem;
+}
+
+@media (max-width: 900px) {
+  .structuresTopRow {
+    flex-direction: column;
+  }
+
+  .bobBlock {
+    flex-basis: auto;
+    padding-top: 0;
+  }
+}
+
+.structuresFooter {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 8px;
+}
+
+.structuresFooterButtons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.structuresDangerBtn,
+.structuresSecondaryBtn {
+  padding: 11px 14px;
+  border: none;
+  border-radius: 2px;
+  color: #f4f4f4;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.structuresDangerBtn {
+  background: linear-gradient(180deg, #d95b45 0%, #c94a34 100%);
+}
+
+.structuresSecondaryBtn {
+  background: linear-gradient(180deg, #5f8fd1 0%, #4e7ec4 100%);
+}
+
+.wallsFlowCard {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.wallsTitle {
+  margin: 0;
+  text-align: center;
+  color: #3f79c8;
+  font-size: clamp(2rem, 2.8vw, 2.7rem);
+  font-weight: 800;
+}
+
+.wallsInfoBar {
+  padding: 18px 16px;
+  background: rgba(200, 220, 240, 0.92);
+  color: #12253e;
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+
+.wallsResetBtn {
+  align-self: flex-start;
+  padding: 10px 14px;
+  border: none;
+  border-radius: 3px;
+  background: linear-gradient(180deg, #5f8fd1 0%, #4e7ec4 100%);
+  color: #f4f4f4;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.wallsBody {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(340px, 0.95fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.wallsLeftPane {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.wallsSectionTitle {
+  margin: 0;
+  color: #3f79c8;
+  font-size: 1.5rem;
+  font-weight: 800;
+}
+
+.wallsLoading {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.wallRow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.wallRowIcon {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.wallRowContent {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+}
+
+.wallRowLabel {
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.wallSlider {
+  width: 100%;
+  accent-color: #4d88db;
+}
+
+.wallValueBox {
+  min-width: 72px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #e6e6e6;
+  color: #111;
+  border: 1px solid rgba(0, 0, 0, 0.16);
+}
+
+.wallsOverviewCard {
+  min-height: 380px;
+  padding: 18px 18px 16px;
+  background: rgba(201, 218, 236, 0.96);
+  color: #12253e;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.wallsOverviewTitle {
+  margin: 0;
+  color: #3f79c8;
+  font-size: 1.4rem;
+  font-weight: 800;
+}
+
+.wallsOverviewStats {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  flex: 1;
+}
+
+.wallsOverviewStatBlock,
+.wallsOverviewBuiltBlock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.wallsOverviewLabel {
+  color: #3f79c8;
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+.wallsOverviewValueRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #111;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.wallsMiniIcon {
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+}
+
+.wallsOverviewBuiltValue {
+  color: #111;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.wallsOverviewWarning {
+  color: #f0a400;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.wallsOverviewActions {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: auto;
+}
+
+.wallsCancelBtn,
+.wallsUpdateBtn {
+  padding: 12px 18px;
+  border: none;
+  border-radius: 3px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.wallsCancelBtn {
+  background: linear-gradient(180deg, #d95b45 0%, #c94a34 100%);
+  color: #f4f4f4;
+}
+
+.wallsUpdateBtn {
+  background: linear-gradient(180deg, #74b529 0%, #63a820 100%);
+  color: #f4f4f4;
+}
+
+.structuresDatabaseSection {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin-top: 0;
+}
+
+.structuresDatabaseTitle {
+  margin: 0;
+  color: #3f79c8;
+  font-size: 1.5rem;
+  font-weight: 800;
+}
+
+.structuresDatabaseGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 32px;
+}
+
+.defencesSection {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin-top: 10px;
+}
+
+.defencesTitle {
+  margin: 0;
+  color: #3f79c8;
+  font-size: 1.45rem;
+  font-weight: 800;
+}
+
+.defencesGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 28px;
+}
+
+.defenceCard {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-left: 10px;
+  padding-right: 18px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.defenceCardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.defenceCardTitle {
+  margin: 0;
+  color: #3f79c8;
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.defenceCountBadge {
+  min-width: 32px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(63, 121, 200, 0.15);
+  color: #3f79c8;
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-align: center;
+}
+
+.defenceSetRow {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.defenceSetLabel {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.92rem;
+}
+
+.defenceRows {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.defenceButtonGroup {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.defenceLevelBtn {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid rgba(0, 0, 0, 0.28);
+  border-radius: 3px;
+  background: #5f8fd1;
+  color: #f4f4f4;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.defenceRow {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.defenceRowCount {
+  width: 18px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.defenceIcon {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  flex-shrink: 0;
+  justify-self: center;
+}
+
+.defenceIconPlaceholder {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+}
+
+.defenceSlider {
+  flex: 0 0 118px;
+  accent-color: #4d88db;
+  min-width: 0;
+  width: 118px;
+}
+
+.defenceValueBox {
+  min-width: 72px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #e6e6e6;
+  color: #111;
+  border: 1px solid rgba(0, 0, 0, 0.16);
+  justify-self: end;
+}
+
+.defenceValueInput {
+  width: 64px;
+  height: 38px;
+  padding: 0 4px;
+  border: 1px solid rgba(0, 0, 0, 0.16);
+  background: #e6e6e6;
+  color: #111;
+  text-align: center;
+  font-size: 0.9rem;
+  font-weight: 700;
+  margin-left: 4px;
+  min-width: 0;
+}
+
+.defenceValueInput::-webkit-outer-spin-button,
+.defenceValueInput::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.defenceValueInput[type='number'] {
+  -moz-appearance: textfield;
 }
 
 .errorMsg {
@@ -208,36 +988,26 @@
 .clanRow {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .clanBadge {
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   object-fit: contain;
 }
 
 .clanName {
-  font-size: 0.95rem;
-  font-weight: 600;
+  font-size: 0.92rem;
+  font-weight: 700;
   color: var(--text);
 }
 
-.clanLevel {
-  font-size: 0.8rem;
-  color: var(--muted);
-}
-
 .notInClan {
-  padding: 12px;
-  border-radius: 8px;
-  background: rgba(255, 122, 89, 0.1);
-  border: 1px solid rgba(255, 122, 89, 0.3);
-  color: #ff7a59;
-  font-size: 0.9rem;
+  color: var(--text);
+  font-size: 0.95rem;
   font-weight: 500;
-  text-align: center;
-  margin-bottom: 8px;
 }
 
 .proceedBtn {
@@ -266,8 +1036,9 @@
 
 .searchLabel {
   color: var(--muted);
-  font-size: 0.9rem;
+  font-size: 0.92rem;
   margin: 0 0 12px 0;
+  line-height: 1.5;
 }
 
 .card code {
@@ -283,6 +1054,26 @@
 @media (max-width: 960px) {
   .content {
     padding: 24px;
+  }
+
+  .setupCardBody {
+    grid-template-columns: 1fr;
+  }
+
+  .structuresGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .wallsBody {
+    grid-template-columns: 1fr;
+  }
+
+  .defencesGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .structuresDatabaseGrid {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -301,6 +1092,25 @@
   .container {
     padding: 12px;
     place-items: start;
+  }
+
+  .setupCardHeader {
+    padding: 16px;
+    font-size: 1rem;
+  }
+
+  .setupCardBody {
+    padding: 16px;
+    gap: 20px;
+  }
+
+  .previewThImage {
+    width: 128px;
+    height: 128px;
+  }
+
+  .buildersRow {
+    gap: 10px;
   }
 
   .auroraLeft,

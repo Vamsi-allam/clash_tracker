@@ -41,6 +41,15 @@ const AVAILABLE_WALLS = [
 
 const ALL_BUILDINGS = [...AVAILABLE_DEFENCES, ...AVAILABLE_ARMY, ...AVAILABLE_RESOURCES, ...AVAILABLE_TROOPS, ...AVAILABLE_WALLS]
 
+const getBuildingCategory = (buildingId) => {
+  if (AVAILABLE_DEFENCES.some((building) => building.id === buildingId)) return 'defences'
+  if (AVAILABLE_ARMY.some((building) => building.id === buildingId)) return 'army'
+  if (AVAILABLE_RESOURCES.some((building) => building.id === buildingId)) return 'resources'
+  if (AVAILABLE_TROOPS.some((building) => building.id === buildingId)) return 'troops'
+  if (AVAILABLE_WALLS.some((building) => building.id === buildingId)) return 'walls'
+  return 'defences'
+}
+
 const RESOURCE_ICONS = {
   gold: '/src/assets/magic-items/gold.png',
   elixir: '/src/assets/magic-items/elixir.png',
@@ -129,11 +138,19 @@ const parseSecondsToDropdowns = (seconds) => {
   return { days, hours, minutes, seconds: remaining }
 }
 
+const createCopyUnlocks = (count, unlockedCount = 1) =>
+  Array.from({ length: count }, (_, index) => index < unlockedCount)
+
+const normalizeCopyUnlocks = (count, existingUnlocks = [], startsUnlocked = true) =>
+  Array.from({ length: count }, (_, index) => existingUnlocks[index] ?? (index === 0 ? startsUnlocked : false))
+
 const getDefaultBuildingData = (townhallLevel) => {
   if (townhallLevel === 2) {
     return {
       canon: {
         buildings_unlocked: 2,
+        starts_unlocked: true,
+        copy_unlocks: createCopyUnlocks(2, 1),
         levels: [
           { level: 1, cost: 250, resource: 'gold', time: '5sec' },
           { level: 2, cost: 1000, resource: 'gold', time: '30sec' },
@@ -142,6 +159,8 @@ const getDefaultBuildingData = (townhallLevel) => {
       },
       archer_tower: {
         buildings_unlocked: 1,
+        starts_unlocked: true,
+        copy_unlocks: createCopyUnlocks(1, 1),
         levels: [
           { level: 1, cost: 1000, resource: 'gold', time: '15sec' },
           { level: 2, cost: 2000, resource: 'gold', time: '2min' },
@@ -149,6 +168,8 @@ const getDefaultBuildingData = (townhallLevel) => {
       },
       army_camp: {
         buildings_unlocked: 1,
+        starts_unlocked: true,
+        copy_unlocks: createCopyUnlocks(1, 1),
         levels: [
           { level: 1, cost: 200, resource: 'elixir', time: '1min' },
           { level: 2, cost: 2000, resource: 'elixir', time: '5min' },
@@ -156,6 +177,8 @@ const getDefaultBuildingData = (townhallLevel) => {
       },
       barracks: {
         buildings_unlocked: 1,
+        starts_unlocked: true,
+        copy_unlocks: createCopyUnlocks(1, 1),
         levels: [
           { level: 1, cost: 100, resource: 'elixir', time: '10sec' },
           { level: 2, cost: 500, resource: 'elixir', time: '15sec' },
@@ -165,12 +188,16 @@ const getDefaultBuildingData = (townhallLevel) => {
       },
       clan_castle: {
         buildings_unlocked: 1,
+        starts_unlocked: true,
+        copy_unlocks: createCopyUnlocks(1, 1),
         levels: [
           { level: 1, cost: 10000, resource: 'elixir', time: '0sec' },
         ],
       },
       gold_mine: {
         buildings_unlocked: 2,
+        starts_unlocked: true,
+        copy_unlocks: createCopyUnlocks(2, 1),
         levels: [
           { level: 1, cost: 150, resource: 'elixir', time: '5sec' },
           { level: 2, cost: 300, resource: 'elixir', time: '15sec' },
@@ -180,6 +207,8 @@ const getDefaultBuildingData = (townhallLevel) => {
       },
       elixir_collector: {
         buildings_unlocked: 2,
+        starts_unlocked: true,
+        copy_unlocks: createCopyUnlocks(2, 1),
         levels: [
           { level: 1, cost: 150, resource: 'gold', time: '5sec' },
           { level: 2, cost: 300, resource: 'gold', time: '15sec' },
@@ -189,6 +218,8 @@ const getDefaultBuildingData = (townhallLevel) => {
       },
       gold_storage: {
         buildings_unlocked: 1,
+        starts_unlocked: true,
+        copy_unlocks: createCopyUnlocks(1, 1),
         levels: [
           { level: 1, cost: 300, resource: 'elixir', time: '10sec' },
           { level: 2, cost: 750, resource: 'elixir', time: '2min' },
@@ -197,6 +228,8 @@ const getDefaultBuildingData = (townhallLevel) => {
       },
       elixir_storage: {
         buildings_unlocked: 1,
+        starts_unlocked: true,
+        copy_unlocks: createCopyUnlocks(1, 1),
         levels: [
           { level: 1, cost: 300, resource: 'gold', time: '10sec' },
           { level: 2, cost: 750, resource: 'gold', time: '2min' },
@@ -205,27 +238,37 @@ const getDefaultBuildingData = (townhallLevel) => {
       },
       walls: {
         buildings_unlocked: 25,
+        starts_unlocked: true,
+        copy_unlocks: createCopyUnlocks(25, 1),
         levels: [
           { level: 1, cost: 0, resource: 'gold', time: '0sec' },
           { level: 2, cost: 1000, resource: 'gold', time: '0sec' },
         ],
       },
       barbarian: {
+        starts_unlocked: true,
+        copy_unlocks: createCopyUnlocks(1, 1),
         levels: [
           { level: 1, cost: 0, resource: 'elixir', time: '0sec' },
         ],
       },
       archer: {
+        starts_unlocked: true,
+        copy_unlocks: createCopyUnlocks(1, 1),
         levels: [
           { level: 1, cost: 0, resource: 'elixir', time: '0sec' },
         ],
       },
       giant: {
+        starts_unlocked: true,
+        copy_unlocks: createCopyUnlocks(1, 1),
         levels: [
           { level: 1, cost: 0, resource: 'elixir', time: '0sec' },
         ],
       },
       goblin: {
+        starts_unlocked: true,
+        copy_unlocks: createCopyUnlocks(1, 1),
         levels: [
           { level: 1, cost: 0, resource: 'elixir', time: '0sec' },
         ],
@@ -245,6 +288,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
   const [isEditing, setIsEditing] = useState(false)
   const [editingLevels, setEditingLevels] = useState([])
   const [editingBuildingCount, setEditingBuildingCount] = useState(0)
+  const [editingCopyUnlocks, setEditingCopyUnlocks] = useState([])
   const [savingLoading, setSavingLoading] = useState(false)
   const [loading, setLoading] = useState(true)
   const [timeModalOpen, setTimeModalOpen] = useState(false)
@@ -265,6 +309,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
 
       setLoading(true)
       try {
+        const categoryField = getBuildingCategory(buildingId)
         // Load static data
         const defaultData = getDefaultBuildingData(parseInt(townhallLevel))
         let staticBuildingData = defaultData[buildingId] || { buildings_unlocked: 0, levels: [] }
@@ -273,31 +318,63 @@ export default function BuildingEditorPage({ username, onLogout }) {
         // Fetch dynamic data from database
         const { data, error } = await supabase
           .from('townhall_buildings')
-          .select('defences')
+          .select('*')
           .eq('townhall_level', parseInt(townhallLevel))
           .single()
 
         if (error && error.code !== 'PGRST116') throw error
         
-        if (data && data.defences?.[buildingId]) {
-          const buildingData = data.defences[buildingId]
+        const categoryData = categoryField === 'walls'
+          ? data?.walls
+          : data?.[categoryField]
+
+        const buildingData = categoryField === 'walls'
+          ? categoryData
+          : Array.isArray(categoryData)
+            ? categoryData.find((entry) => entry?.id === buildingId)
+            : categoryData?.[buildingId]
+
+        const hasSavedLevels = Array.isArray(buildingData?.levels) && buildingData.levels.length > 0
+        const resolvedLevels = hasSavedLevels
+          ? JSON.parse(JSON.stringify(buildingData.levels))
+          : JSON.parse(JSON.stringify(staticBuildingData.levels || []))
+
+        if (buildingData) {
           // Only update if still not editing
           if (!isEditingRef.current) {
-            setDynamicData(buildingData)
-            const levelsData = JSON.parse(JSON.stringify(buildingData.levels))
-            setEditingLevels(levelsData)
-            setEditingBuildingCount(buildingData.buildings_unlocked)
+            setDynamicData({
+              ...buildingData,
+              levels: resolvedLevels,
+            })
+            setEditingLevels(resolvedLevels)
+            setEditingBuildingCount(buildingData.buildings_unlocked || staticBuildingData.buildings_unlocked || 0)
+            setEditingCopyUnlocks(
+              normalizeCopyUnlocks(
+                buildingData.buildings_unlocked || staticBuildingData.buildings_unlocked || 0,
+                buildingData.copy_unlocks || staticBuildingData.copy_unlocks || [],
+                buildingData.starts_unlocked ?? staticBuildingData.starts_unlocked ?? true,
+              )
+            )
           }
         } else {
           // No database record yet - use static data as initial dynamic data
           if (!isEditingRef.current) {
+            const draftLevels = JSON.parse(JSON.stringify(staticBuildingData.levels || []))
+            const draftCount = staticBuildingData.buildings_unlocked || 0
+            const draftUnlocks = normalizeCopyUnlocks(
+              draftCount,
+              staticBuildingData.copy_unlocks || [],
+              staticBuildingData.starts_unlocked ?? true,
+            )
+
             setDynamicData({
-              buildings_unlocked: staticBuildingData.buildings_unlocked || 0,
-              levels: staticBuildingData.levels || []
+              buildings_unlocked: draftCount,
+              copy_unlocks: draftUnlocks,
+              levels: draftLevels,
             })
-            const levelsData = JSON.parse(JSON.stringify(staticBuildingData.levels || []))
-            setEditingLevels(levelsData)
-            setEditingBuildingCount(staticBuildingData.buildings_unlocked || 0)
+            setEditingLevels(draftLevels)
+            setEditingBuildingCount(draftCount)
+            setEditingCopyUnlocks(draftUnlocks)
           }
         }
       } catch (err) {
@@ -355,6 +432,20 @@ export default function BuildingEditorPage({ username, onLogout }) {
     setEditingLevels(toUpdate)
   }
 
+  const handleEditingBuildingCountChange = (value) => {
+    const nextCount = Math.max(0, parseInt(value) || 0)
+    setEditingBuildingCount(nextCount)
+    setEditingCopyUnlocks((current) => normalizeCopyUnlocks(nextCount, current, current[0] ?? true))
+  }
+
+  const handleToggleCopyUnlock = (copyIndex) => {
+    setEditingCopyUnlocks((current) => {
+      const nextUnlocks = normalizeCopyUnlocks(editingBuildingCount, current, current[0] ?? true)
+      nextUnlocks[copyIndex] = !nextUnlocks[copyIndex]
+      return nextUnlocks
+    })
+  }
+
   const openTimeModal = (levelIndex) => {
     const level = editingLevels[levelIndex]
     const seconds = parseTimeStringToSeconds(level.time)
@@ -402,21 +493,40 @@ export default function BuildingEditorPage({ username, onLogout }) {
       // If row doesn't exist (PGRST116), that's OK - we'll create it
       if (fetchError && fetchError.code !== 'PGRST116') throw fetchError
 
-      // Build defences object
-      const defences = currentData?.defences || {}
-      defences[buildingId] = {
+      const categoryField = getBuildingCategory(buildingId)
+      const updatedBuildingData = {
         buildings_unlocked: editingBuildingCount,
+        starts_unlocked: editingCopyUnlocks[0] ?? true,
+        copy_unlocks: normalizeCopyUnlocks(editingBuildingCount, editingCopyUnlocks, true),
         levels: editingLevels,
       }
 
-      // Prepare complete record
+      // Build complete record with the correct category updated
       const recordToSave = {
         townhall_level: parseInt(townhallLevel),
-        defences: defences,
+        defences: currentData?.defences || {},
         army: currentData?.army || {},
         resources: currentData?.resources || {},
         troops: currentData?.troops || {},
         walls: currentData?.walls || {},
+        updated_at: new Date().toISOString(),
+      }
+
+      if (categoryField === 'walls') {
+        recordToSave.walls = updatedBuildingData
+      } else {
+        const existingCategory = Array.isArray(recordToSave[categoryField]) ? recordToSave[categoryField] : []
+        const nextCategory = [...existingCategory]
+        const existingIndex = nextCategory.findIndex((entry) => entry?.id === buildingId)
+        const nextEntry = { id: buildingId, ...updatedBuildingData }
+
+        if (existingIndex >= 0) {
+          nextCategory[existingIndex] = nextEntry
+        } else {
+          nextCategory.push(nextEntry)
+        }
+
+        recordToSave[categoryField] = nextCategory
       }
 
       // Upsert with proper conflict handling
@@ -431,6 +541,8 @@ export default function BuildingEditorPage({ username, onLogout }) {
       // Update dynamic data with what we just saved
       setDynamicData({
         buildings_unlocked: editingBuildingCount,
+        starts_unlocked: editingCopyUnlocks[0] ?? true,
+        copy_unlocks: normalizeCopyUnlocks(editingBuildingCount, editingCopyUnlocks, true),
         levels: editingLevels,
       })
       setIsEditing(false)
@@ -470,6 +582,19 @@ export default function BuildingEditorPage({ username, onLogout }) {
   // Detect if there are changes
   const hasChanges = () => {
     if (editingBuildingCount !== (dynamicData.buildings_unlocked || 0)) {
+      return true
+    }
+    const currentUnlocks = normalizeCopyUnlocks(
+      editingBuildingCount,
+      editingCopyUnlocks,
+      dynamicData.starts_unlocked ?? true,
+    )
+    const originalUnlocks = normalizeCopyUnlocks(
+      dynamicData.buildings_unlocked || 0,
+      dynamicData.copy_unlocks || [],
+      dynamicData.starts_unlocked ?? true,
+    )
+    if (currentUnlocks.length !== originalUnlocks.length || currentUnlocks.some((value, index) => value !== originalUnlocks[index])) {
       return true
     }
     if (editingLevels.length !== (dynamicData.levels || []).length) {
@@ -584,12 +709,29 @@ export default function BuildingEditorPage({ username, onLogout }) {
                   <input
                     type="number"
                     value={editingBuildingCount}
-                    onChange={(e) => setEditingBuildingCount(parseInt(e.target.value) || 0)}
+                    onChange={(e) => handleEditingBuildingCountChange(e.target.value)}
                     min="0"
                     className={styles.headingCountInput}
                   />
                 )}
               </div>
+              {isEditing && editingBuildingCount > 0 && (
+                <div className={styles.unlockPreview}>
+                  <div className={styles.unlockPreviewTitle}>Unlock preview</div>
+                  {Array.from({ length: editingBuildingCount }, (_, index) => (
+                    <div key={`unlock-preview-${index}`} className={styles.unlockPreviewRow}>
+                      <span className={styles.unlockPreviewCopy}>Copy {index + 1}</span>
+                      <button
+                        type="button"
+                        className={`${styles.unlockPreviewToggle} ${editingCopyUnlocks[index] ? styles.unlockPreviewToggleOn : styles.unlockPreviewToggleOff}`}
+                        onClick={() => handleToggleCopyUnlock(index)}
+                      >
+                        {editingCopyUnlocks[index] ? 'Unlocked' : 'Locked'}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
               
               {!isEditing && currentDynamicLevel.length > 0 && (
                 <div className={styles.levelsList}>

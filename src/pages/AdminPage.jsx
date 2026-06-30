@@ -48,20 +48,20 @@ const formatCost = (value) => {
 const getDefaultBuildingData = (townhallLevel) => {
   if (parseInt(townhallLevel) === 2) {
     return {
-      canon: { buildings_unlocked: 2, levels: [{ level: 1, cost: 250, resource: 'gold', time: '5sec' }, { level: 2, cost: 1000, resource: 'gold', time: '30sec' }, { level: 3, cost: 4000, resource: 'gold', time: '2min' }] },
-      archer_tower: { buildings_unlocked: 1, levels: [{ level: 1, cost: 1000, resource: 'gold', time: '15sec' }, { level: 2, cost: 2000, resource: 'gold', time: '2min' }] },
-      army_camp: { buildings_unlocked: 1, levels: [{ level: 1, cost: 200, resource: 'elixir', time: '1min' }, { level: 2, cost: 2000, resource: 'elixir', time: '5min' }] },
-      barracks: { buildings_unlocked: 1, levels: [{ level: 1, cost: 100, resource: 'elixir', time: '10sec' }, { level: 2, cost: 500, resource: 'elixir', time: '15sec' }, { level: 3, cost: 2500, resource: 'elixir', time: '2min' }, { level: 4, cost: 5000, resource: 'elixir', time: '30min' }] },
-      clan_castle: { buildings_unlocked: 1, levels: [{ level: 1, cost: 10000, resource: 'elixir', time: '0sec' }] },
-      gold_mine: { buildings_unlocked: 2, levels: [{ level: 1, cost: 150, resource: 'elixir', time: '5sec' }, { level: 2, cost: 300, resource: 'elixir', time: '15sec' }, { level: 3, cost: 700, resource: 'elixir', time: '1min' }, { level: 4, cost: 1400, resource: 'elixir', time: '2min' }] },
-      elixir_collector: { buildings_unlocked: 2, levels: [{ level: 1, cost: 150, resource: 'gold', time: '5sec' }, { level: 2, cost: 300, resource: 'gold', time: '15sec' }, { level: 3, cost: 700, resource: 'gold', time: '1min' }, { level: 4, cost: 1400, resource: 'gold', time: '2min' }] },
-      gold_storage: { buildings_unlocked: 1, levels: [{ level: 1, cost: 300, resource: 'elixir', time: '10sec' }, { level: 2, cost: 750, resource: 'elixir', time: '2min' }, { level: 3, cost: 1500, resource: 'elixir', time: '5min' }] },
-      elixir_storage: { buildings_unlocked: 1, levels: [{ level: 1, cost: 300, resource: 'gold', time: '10sec' }, { level: 2, cost: 750, resource: 'gold', time: '2min' }, { level: 3, cost: 1500, resource: 'gold', time: '5min' }] },
-      walls: { buildings_unlocked: 25, levels: [{ level: 1, cost: 0, resource: 'gold', time: '0sec' }, { level: 2, cost: 1000, resource: 'gold', time: '0sec' }] },
-      barbarian: { levels: [{ level: 1, cost: 0, resource: 'elixir', time: '0sec' }] },
-      archer: { levels: [{ level: 1, cost: 0, resource: 'elixir', time: '0sec' }] },
-      giant: { levels: [{ level: 1, cost: 0, resource: 'elixir', time: '0sec' }] },
-      goblin: { levels: [{ level: 1, cost: 0, resource: 'elixir', time: '0sec' }] },
+      canon: { id: 'canon', image_path: '/src/assets/Defences/canon/18_', buildings_unlocked: 2, copy_unlocks: [true, false], levels: [{ level: 1, cost: 250, resource: 'gold', time: '5sec' }, { level: 2, cost: 1000, resource: 'gold', time: '30sec' }, { level: 3, cost: 4000, resource: 'gold', time: '2min' }] },
+      archer_tower: { id: 'archer_tower', image_path: '/src/assets/Defences/Archer_Tower/16_', buildings_unlocked: 1, copy_unlocks: [true], levels: [{ level: 1, cost: 1000, resource: 'gold', time: '15sec' }, { level: 2, cost: 2000, resource: 'gold', time: '2min' }] },
+      army_camp: { id: 'army_camp', image_path: '/src/assets/Army/Army_Camp/10_', buildings_unlocked: 1, copy_unlocks: [true], levels: [{ level: 1, cost: 200, resource: 'elixir', time: '1min' }, { level: 2, cost: 2000, resource: 'elixir', time: '5min' }] },
+      barracks: { id: 'barracks', image_path: '/src/assets/Army/Barracks/8_', buildings_unlocked: 1, copy_unlocks: [true], levels: [{ level: 1, cost: 100, resource: 'elixir', time: '10sec' }, { level: 2, cost: 500, resource: 'elixir', time: '15sec' }, { level: 3, cost: 2500, resource: 'elixir', time: '2min' }, { level: 4, cost: 5000, resource: 'elixir', time: '30min' }] },
+      clan_castle: { id: 'clan_castle', image_path: '/src/assets/Army/clan_castle/19_', buildings_unlocked: 1, copy_unlocks: [true], levels: [{ level: 1, cost: 10000, resource: 'elixir', time: '0sec' }] },
+      gold_mine: { id: 'gold_mine', image_path: '/src/assets/Resources/goldmine/2_', buildings_unlocked: 2, copy_unlocks: [true, false], levels: [{ level: 1, cost: 150, resource: 'elixir', time: '5sec' }, { level: 2, cost: 300, resource: 'elixir', time: '15sec' }, { level: 3, cost: 700, resource: 'elixir', time: '1min' }, { level: 4, cost: 1400, resource: 'elixir', time: '2min' }] },
+      elixir_collector: { id: 'elixir_collector', image_path: '/src/assets/Resources/elixir_collector/3_', buildings_unlocked: 2, copy_unlocks: [true, false], levels: [{ level: 1, cost: 150, resource: 'gold', time: '5sec' }, { level: 2, cost: 300, resource: 'gold', time: '15sec' }, { level: 3, cost: 700, resource: 'gold', time: '1min' }, { level: 4, cost: 1400, resource: 'gold', time: '2min' }] },
+      gold_storage: { id: 'gold_storage', image_path: '/src/assets/Resources/gold_storage/5_', buildings_unlocked: 1, copy_unlocks: [true], levels: [{ level: 1, cost: 300, resource: 'elixir', time: '10sec' }, { level: 2, cost: 750, resource: 'elixir', time: '2min' }, { level: 3, cost: 1500, resource: 'elixir', time: '5min' }] },
+      elixir_storage: { id: 'elixir_storage', image_path: '/src/assets/Resources/elixi_storage/6_', buildings_unlocked: 1, copy_unlocks: [true], levels: [{ level: 1, cost: 300, resource: 'gold', time: '10sec' }, { level: 2, cost: 750, resource: 'gold', time: '2min' }, { level: 3, cost: 1500, resource: 'gold', time: '5min' }] },
+      walls: { id: 'walls', image_path: '/src/assets/Walls/60_', buildings_unlocked: 25, copy_unlocks: Array.from({ length: 25 }, (_, index) => index === 0), levels: [{ level: 1, cost: 0, resource: 'gold', time: '0sec' }, { level: 2, cost: 1000, resource: 'gold', time: '0sec' }] },
+      barbarian: { id: 'barbarian', image_path: '/src/assets/Troops/Barbarian/31_', copy_unlocks: [true], levels: [{ level: 1, cost: 0, resource: 'elixir', time: '0sec' }] },
+      archer: { id: 'archer', image_path: '/src/assets/Troops/Archer/32_', copy_unlocks: [true], levels: [{ level: 1, cost: 0, resource: 'elixir', time: '0sec' }] },
+      giant: { id: 'giant', image_path: '/src/assets/Troops/Giant/33_', copy_unlocks: [true], levels: [{ level: 1, cost: 0, resource: 'elixir', time: '0sec' }] },
+      goblin: { id: 'goblin', image_path: '/src/assets/Troops/Goblin/34_', copy_unlocks: [true], levels: [{ level: 1, cost: 0, resource: 'elixir', time: '0sec' }] },
     }
   }
   return {}
@@ -107,6 +107,7 @@ export default function AdminPage({ username, onLogout }) {
 
     const fetchDynamicData = async () => {
       try {
+        const staticDefaults = getDefaultBuildingData(townhallLevel)
         const { data, error } = await supabase
           .from('townhall_buildings')
           .select('*')
@@ -115,38 +116,28 @@ export default function AdminPage({ username, onLogout }) {
 
         if (data) {
           const merged = {}
+
+          const normalizeCategory = (category) => {
+            if (!category) return []
+            if (Array.isArray(category)) return category
+            return Object.entries(category).map(([key, value]) => ({ id: key, ...(value || {}) }))
+          }
           
           // Merge all building categories into one object
-          if (data.defences) {
-            Object.entries(data.defences).forEach(([key, val]) => {
-              merged[key] = val
-            })
-          }
-          if (data.army) {
-            Object.entries(data.army).forEach(([key, val]) => {
-              merged[key] = val
-            })
-          }
-          if (data.resources) {
-            Object.entries(data.resources).forEach(([key, val]) => {
-              merged[key] = val
-            })
-          }
-          if (data.troops) {
-            Object.entries(data.troops).forEach(([key, val]) => {
-              merged[key] = val
-            })
-          }
+          ;[...normalizeCategory(data.defences), ...normalizeCategory(data.army), ...normalizeCategory(data.resources), ...normalizeCategory(data.troops)].forEach((building) => {
+            merged[building.id] = building
+          })
           if (data.walls) {
-            Object.entries(data.walls).forEach(([key, val]) => {
-              merged[key] = val
-            })
+            merged.walls = data.walls
           }
           
           setDynamicData(merged)
+        } else {
+          setDynamicData(staticDefaults)
         }
       } catch (err) {
         console.error('Error fetching dynamic data:', err)
+        setDynamicData(getDefaultBuildingData(townhallLevel))
       }
     }
 
@@ -159,6 +150,8 @@ export default function AdminPage({ username, onLogout }) {
 
   const handleBackClick = () => {
     navigate('/admin')
+    const createCopyUnlocks = (count, unlockedCount = 1) =>
+      Array.from({ length: count }, (_, index) => index < unlockedCount)
   }
 
   const handleBuildingClick = (buildingId) => {
