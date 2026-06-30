@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import styles from './UserPage.module.css'
+import RefreshIcon from '@mui/icons-material/Refresh'
+import CloudUploadIcon from '@mui/icons-material/CloudUpload'
 import Header from '../components/Header'
 import { supabase } from '../supabaseClient'
 
@@ -91,6 +93,16 @@ export default function UserPage({ username, onLogout, userId }) {
       }
       const data = await res.json()
       setPlayerData(data)
+
+      // Persist fetched village automatically for signed-in users
+      if (userId) {
+        const saved = await upsertVillageFromPlayer(data)
+        if (saved) {
+          setActiveVillage(saved)
+          await loadVillages()
+          setViewMode('loaded')
+        }
+      }
     } catch (e) {
       setError('Failed to fetch player data')
     } finally {
@@ -153,6 +165,53 @@ export default function UserPage({ username, onLogout, userId }) {
     setSaving(false)
   }
 
+  // Upsert a village row for the current user from fetched player data
+  const upsertVillageFromPlayer = async (player) => {
+    if (!userId || !player?.tag) return null
+
+    const cleanTag = String(player.tag).trim().replace(/^#/, '').toUpperCase()
+
+    // Check existing
+    const { data: existing } = await supabase
+      .from('user_villages')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('player_tag', cleanTag)
+      .maybeSingle()
+
+    const row = {
+      user_id: userId,
+      player_tag: cleanTag,
+      player_name: player.name,
+      townhall_level: player.townHallLevel,
+      exp_level: player.expLevel,
+      clan_name: player.clan?.name || null,
+      clan_badge_url: player.clan?.badgeUrls?.small || null,
+      clan_level: player.clan?.clanLevel || null,
+    }
+
+    if (existing) {
+      const { data, error } = await supabase
+        .from('user_villages')
+        .update(row)
+        .eq('id', existing.id)
+        .select()
+        .single()
+
+      if (data) return data
+      return null
+    }
+
+    const { data, error } = await supabase
+      .from('user_villages')
+      .insert(row)
+      .select()
+      .single()
+
+    if (data) return data
+    return null
+  }
+
   const handleSelectVillage = (village) => {
     setActiveVillage(village)
     setViewMode('loaded')
@@ -161,13 +220,15 @@ export default function UserPage({ username, onLogout, userId }) {
   }
 
   const handleRefreshVillage = async () => {
-    if (!activeVillage?.player_tag) return
+    // Determine the tag to refresh from: active village -> loaded playerData -> tag input
+    const sourceTag = activeVillage?.player_tag || playerData?.tag || tag
+    if (!sourceTag) return
 
     setRefreshingVillage(true)
     setError('')
 
     try {
-      const cleanTag = activeVillage.player_tag.trim().replace(/^#/, '').toUpperCase()
+      const cleanTag = String(sourceTag).trim().replace(/^#/, '').toUpperCase()
       const res = await fetch(`/api/coc/players/%23${cleanTag}`)
 
       if (!res.ok) {
@@ -176,33 +237,47 @@ export default function UserPage({ username, onLogout, userId }) {
       }
 
       const data = await res.json()
-      const updatedVillage = {
-        ...activeVillage,
-        player_name: data.name,
-        townhall_level: data.townHallLevel,
-        exp_level: data.expLevel,
-        clan_name: data.clan?.name || null,
-        clan_badge_url: data.clan?.badgeUrls?.small || null,
-        clan_level: data.clan?.clanLevel || null,
+
+      // If signed in, upsert the village so fetch results persist
+      if (userId) {
+        const saved = await upsertVillageFromPlayer(data)
+        if (saved) {
+          setActiveVillage(saved)
+          await loadVillages()
+        }
+      } else {
+        // No signed-in user: if we have an activeVillage row id, update that row
+        if (activeVillage?.id) {
+          const updatedVillage = {
+            ...activeVillage,
+            player_name: data.name,
+            townhall_level: data.townHallLevel,
+            exp_level: data.expLevel,
+            clan_name: data.clan?.name || null,
+            clan_badge_url: data.clan?.badgeUrls?.small || null,
+            clan_level: data.clan?.clanLevel || null,
+          }
+
+          const { error: updateError } = await supabase
+            .from('user_villages')
+            .update({
+              player_name: updatedVillage.player_name,
+              townhall_level: updatedVillage.townhall_level,
+              exp_level: updatedVillage.exp_level,
+              clan_name: updatedVillage.clan_name,
+              clan_badge_url: updatedVillage.clan_badge_url,
+              clan_level: updatedVillage.clan_level,
+            })
+            .eq('id', activeVillage.id)
+
+          if (updateError) throw updateError
+
+          setActiveVillage(updatedVillage)
+        }
+
+        // Update preview data so user can see the refreshed info
+        setPlayerData(data)
       }
-
-      const { error: updateError } = await supabase
-        .from('user_villages')
-        .update({
-          player_name: updatedVillage.player_name,
-          townhall_level: updatedVillage.townhall_level,
-          exp_level: updatedVillage.exp_level,
-          clan_name: updatedVillage.clan_name,
-          clan_badge_url: updatedVillage.clan_badge_url,
-          clan_level: updatedVillage.clan_level,
-        })
-        .eq('id', activeVillage.id)
-
-      if (updateError) throw updateError
-
-      setActiveVillage(updatedVillage)
-      setPlayerData(data)
-      await loadVillages()
     } catch (refreshError) {
       setError(refreshError.message || 'Failed to refresh village')
     } finally {
@@ -505,6 +580,29 @@ export default function UserPage({ username, onLogout, userId }) {
   const visibleDefenseBuildings = structureCatalog.defences.filter((building) => ['canon', 'archer_tower'].includes(building.id))
   const visibleResourceBuildings = structureCatalog.resources.filter((building) => ['gold_mine', 'elixir_collector', 'gold_storage', 'elixir_storage'].includes(building.id))
   const visibleArmyBuildings = structureCatalog.army.filter((building) => building.id === 'army_camp')
+
+  const computeStructuresCompletion = () => {
+    const buildings = [...structureCatalog.defences, ...structureCatalog.army, ...structureCatalog.resources, ...structureCatalog.troops]
+    if (!buildings || buildings.length === 0) return 0
+    let totalRatio = 0
+    let count = 0
+
+    buildings.forEach((building) => {
+      const maxLevel = Math.max(...(building.levels || []).map((l) => l.level), 0)
+      const rows = Math.max(1, building.buildings_unlocked || (building.levels?.length || 1))
+      const levelsArray = structureLevels[building.id] || Array.from({ length: rows }, () => getDefaultRowLevel(building, 0, true))
+
+      for (let i = 0; i < rows; i++) {
+        const cur = Number(levelsArray[i] || 0)
+        if (maxLevel > 0) totalRatio += (cur / maxLevel)
+        else totalRatio += 0
+        count += 1
+      }
+    })
+
+    if (count === 0) return 0
+    return Math.round((totalRatio / count) * 100)
+  }
 
   useEffect(() => {
     const townhallLevel = activeVillage?.townhall_level
@@ -809,35 +907,102 @@ export default function UserPage({ username, onLogout, userId }) {
               </section>
             </div>
           ) : showingLoaded ? (
-            <div className={styles.loadedFlowCard}>
-              <div className={styles.loadedFlowTop}>
-                <div className={styles.loadedFlowLeft}>
-                  <div className={styles.loadedFlowTitle}>Town Hall {activeVillage?.townhall_level || playerData?.townHallLevel || 0}</div>
-                  <div className={styles.loadedFlowMeta}>{activeVillage?.player_name || playerData?.name || 'Village Loaded'}</div>
-                  {activeVillage?.clan_name && <div className={styles.loadedFlowClan}>{activeVillage.clan_name}</div>}
+            <div className={styles.centeredPlayerHeader}>
+              <div className={styles.centeredPlayerName}>{activeVillage?.player_name || playerData?.name || 'Village Loaded'}</div>
+              <div className={styles.centeredPlayerTag}>{activeVillage?.player_tag || playerData?.tag || ''}</div>
+
+              <div className={styles.headerDivider} />
+
+              <div className={styles.detailedColumns}>
+                {/* Left: Current Townhall */}
+                <div className={styles.leftPanel}>
+                  <div className={styles.thHeader}>
+                    <h2>Town Hall {activeVillage?.townhall_level || playerData?.townHallLevel || 0}</h2>
+                    {activeVillage?.clan_name && <div className={styles.clanName}>{activeVillage.clan_name}</div>}
+                  </div>
+
+                  <div className={styles.thBody}>
+                    <div className={styles.thImageWrap}>
+                      <img
+                        src={`/src/assets/townhall/1_${activeVillage?.townhall_level || playerData?.townHallLevel || 2}.png`}
+                        alt={`TH ${activeVillage?.townhall_level || playerData?.townHallLevel || 2}`}
+                        className={styles.currentThImageSmall}
+                      />
+
+                      <div className={styles.thButtonsRow}>
+                        <button className={styles.leftApiBtn} onClick={handleRefreshVillage} disabled={refreshingVillage} title="API">
+                          <RefreshIcon className={`${styles.btnIcon} ${refreshingVillage ? styles.rotating : ''}`} />
+                          API
+                        </button>
+                        <button className={styles.leftUploadBtn} title="Upload">
+                          <CloudUploadIcon className={styles.btnIcon} />
+                          Upload
+                        </button>
+                      </div>
+
+                      <button className={styles.switchBuilderBtn}>Switch to Builder Base</button>
+                    </div>
+
+                    <div className={styles.progressBlock}>
+                      <div className={styles.progressLabel}>Completion:</div>
+                      <div className={styles.progressBars}>
+                          <div className={styles.progressRow}>
+                            <div className={styles.progressName}>Structures</div>
+                            <div className={styles.progressBarWrap}>
+                              <div className={styles.progressBarInner} style={{width: `${Math.max(0, computeStructuresCompletion())}%`}}>
+                                <span className={styles.progressInnerLabel}>{Math.max(0, computeStructuresCompletion())}%</span>
+                              </div>
+                            </div>
+                          </div>
+
+                        <div className={styles.progressRow}>
+                          <div className={styles.progressName}>Walls</div>
+                          <div className={styles.progressBarWrap}>
+                            <div className={styles.progressBarInner} style={{width: `${wallPieces ? Math.round((wallBuilt/(wallPieces||1))*100) : 0}%`}}>
+                              <span className={styles.progressInnerLabel}>{wallPieces ? Math.round((wallBuilt/(wallPieces||1))*100) : 0}%</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
-                <div className={styles.loadedFlowPreview}>
-                  <img
-                    src={`/src/assets/townhall/1_${activeVillage?.townhall_level || playerData?.townHallLevel || 2}.png`}
-                    alt={`TH ${activeVillage?.townhall_level || playerData?.townHallLevel || 2}`}
-                    className={styles.loadedFlowImage}
-                  />
+                {/* Middle: Next Townhall */}
+                <div className={styles.middlePanel}>
+                  <div className={styles.nextThBox}>
+                    <h4>Next Town Hall:</h4>
+                    <div className={styles.nextThPreview}>
+                      <img src={`/src/assets/townhall/1_${(activeVillage?.townhall_level||playerData?.townHallLevel||2)+1}.png`} alt="Next TH" className={styles.nextThImage} />
+                      <div className={styles.nextThInfo}>
+                        <div className={styles.nextThCost}><strong>Cost:</strong> <span className={styles.costValue}>—</span></div>
+                        <div className={styles.nextThDuration}><strong>Duration:</strong> <span className={styles.durationValue}>—</span></div>
+                        <button className={styles.startUpgradeBtn}>Start TH Upgrade</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right: Mass Update & Boosts */}
+                <div className={styles.rightPanel}>
+                  <div className={styles.massUpdateBox}>
+                    <h4>Mass Update:</h4>
+                    <div className={styles.massButtons}>
+                      <button className={`${styles.massBtn} ${styles.active}`}>Structures</button>
+                      <button className={styles.massBtn}>Walls</button>
+                    </div>
+                  </div>
+
+                  <div className={styles.boostsBox}>
+                    <h4>Boosts:</h4>
+                    <div className={styles.boostButtonsRow}>
+                      <button className={styles.builderBoostBtn}>Use Builder Boost</button>
+                      <button className={styles.researchBoostBtn}>Use Research Boost</button>
+                    </div>
+                    <div className={styles.boostNote}>Season Boosts are available at Town Hall 7</div>
+                  </div>
                 </div>
               </div>
-
-              <div className={styles.loadedFlowActions}>
-                <button className={styles.loadedFlowApiBtn} onClick={handleRefreshVillage} disabled={refreshingVillage}>
-                  {refreshingVillage ? 'Refreshing...' : 'API'}
-                </button>
-                <button className={styles.loadedFlowUploadBtn} onClick={() => {}}>
-                  Upload
-                </button>
-              </div>
-
-              <button className={styles.loadedFlowSwitchBtn} onClick={handleSetupVillageStructures}>
-                Setup Village Structures
-              </button>
             </div>
           ) : showingStructures ? (
             <div className={styles.structuresFlowCard}>
