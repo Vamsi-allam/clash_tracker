@@ -298,6 +298,10 @@ export default function UserPage({ username, onLogout, userId }) {
   const showingWalls = viewMode === 'walls'
 
   const clanBadgeUrl = getProxiedAssetUrl(playerData?.clan?.badgeUrls?.small)
+  const currentTownHallLevel = Number(activeVillage?.townhall_level || playerData?.townHallLevel || 0)
+  const maxTownHallLevel = 18
+  const hasReachedMaxTownHall = currentTownHallLevel >= maxTownHallLevel
+  const nextTownHallLevel = Math.min(currentTownHallLevel + 1, maxTownHallLevel)
 
   const normalizeTownhallBuildings = (data) => {
     const normalizeStructures = (structures) => {
@@ -947,21 +951,19 @@ export default function UserPage({ username, onLogout, userId }) {
                       <div className={styles.progressLabel}>Completion:</div>
                       <div className={styles.progressBars}>
                           <div className={styles.progressRow}>
-                            <div className={styles.progressName}>Structures</div>
                             <div className={styles.progressBarWrap}>
-                              <div className={styles.progressBarInner} style={{width: `${Math.max(0, computeStructuresCompletion())}%`}}>
-                                <span className={styles.progressInnerLabel}>{Math.max(0, computeStructuresCompletion())}%</span>
-                              </div>
+                              <div className={styles.progressBarInner} style={{width: `${Math.max(0, computeStructuresCompletion())}%`}} />
+                              <span className={styles.progressOverlayLabel}>{Math.max(0, computeStructuresCompletion())}%</span>
                             </div>
+                            <div className={styles.progressName}>Structures</div>
                           </div>
 
                         <div className={styles.progressRow}>
-                          <div className={styles.progressName}>Walls</div>
                           <div className={styles.progressBarWrap}>
-                            <div className={styles.progressBarInner} style={{width: `${wallPieces ? Math.round((wallBuilt/(wallPieces||1))*100) : 0}%`}}>
-                              <span className={styles.progressInnerLabel}>{wallPieces ? Math.round((wallBuilt/(wallPieces||1))*100) : 0}%</span>
-                            </div>
+                            <div className={styles.progressBarInner} style={{width: `${wallPieces ? Math.round((wallBuilt/(wallPieces||1))*100) : 0}%`}} />
+                            <span className={styles.progressOverlayLabel}>{wallPieces ? Math.round((wallBuilt/(wallPieces||1))*100) : 0}%</span>
                           </div>
+                          <div className={styles.progressName}>Walls</div>
                         </div>
                       </div>
                     </div>
@@ -971,15 +973,38 @@ export default function UserPage({ username, onLogout, userId }) {
                 {/* Middle: Next Townhall */}
                 <div className={styles.middlePanel}>
                   <div className={styles.nextThBox}>
-                    <h4>Next Town Hall:</h4>
-                    <div className={styles.nextThPreview}>
-                      <img src={`/src/assets/townhall/1_${(activeVillage?.townhall_level||playerData?.townHallLevel||2)+1}.png`} alt="Next TH" className={styles.nextThImage} />
-                      <div className={styles.nextThInfo}>
-                        <div className={styles.nextThCost}><strong>Cost:</strong> <span className={styles.costValue}>—</span></div>
-                        <div className={styles.nextThDuration}><strong>Duration:</strong> <span className={styles.durationValue}>—</span></div>
-                        <button className={styles.startUpgradeBtn}>Start TH Upgrade</button>
+                    <h4 className={styles.nextThHeading}>Next Town Hall:</h4>
+
+                    {hasReachedMaxTownHall ? (
+                      <div className={styles.nextThMaxMessage}>Your Town Hall is fully upgraded.</div>
+                    ) : (
+                      <div className={styles.nextThPreview}>
+                        <div className={styles.nextThImageWrap}>
+                          <img src={`/src/assets/townhall/1_${nextTownHallLevel}.png`} alt={`TH ${nextTownHallLevel}`} className={styles.nextThImage} />
+                          <div className={styles.nextThLevel}>TH {nextTownHallLevel}</div>
+                        </div>
+
+                        <div className={styles.nextThInfo}>
+                          <div className={styles.nextThStatsCard}>
+                            <div className={styles.nextThStatRow}>
+                              <span className={styles.nextThStatLabel}>Cost:</span>
+                              <span className={`${styles.nextThStatValue} ${currentTownHallLevel === 2 ? styles.nextThCostValue : ''}`}>
+                                {currentTownHallLevel === 2 ? '4K' : '—'}
+                              </span>
+                            </div>
+                            <div className={styles.nextThStatRow}>
+                              <span className={styles.nextThStatLabel}>Duration:</span>
+                              <span className={styles.nextThStatValue}>{currentTownHallLevel === 2 ? '30m' : '—'}</span>
+                            </div>
+                          </div>
+
+                          <div className={styles.nextThActionRow}>
+                            <button className={styles.startUpgradeBtn}>Start TH Upgrade</button>
+                            <span className={styles.nextThHelp}>?</span>
+                          </div>
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 </div>
 
