@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import styles from './UserPage.module.css'
 import Header from '../components/Header'
 import { supabase } from '../supabaseClient'
@@ -44,6 +44,16 @@ export default function UserPage({ username, onLogout, userId }) {
   const [structureCatalog, setStructureCatalog] = useState({ defences: [], army: [], resources: [], troops: [] })
   const [structureLevels, setStructureLevels] = useState({})
   const [structuresLoading, setStructuresLoading] = useState(false)
+  const activeVillageRef = useRef(null)
+  const viewModeRef = useRef('search')
+
+  useEffect(() => {
+    activeVillageRef.current = activeVillage
+  }, [activeVillage])
+
+  useEffect(() => {
+    viewModeRef.current = viewMode
+  }, [viewMode])
 
   useEffect(() => {
     loadVillages()
@@ -162,72 +172,106 @@ export default function UserPage({ username, onLogout, userId }) {
 
   const clanBadgeUrl = getProxiedAssetUrl(playerData?.clan?.badgeUrls?.small)
 
-  const loadTownhallStructures = async (townhallLevel) => {
-    if (!townhallLevel) return
+  const normalizeTownhallBuildings = (data) => {
+    const normalizeStructures = (structures) => {
+      if (!structures) return []
+      const normalizedList = Array.isArray(structures)
+        ? structures.map((value) => ({ ...(value || {}) }))
+        : Object.entries(structures).map(([key, value]) => ({ id: key, ...(value || {}) }))
 
-    setStructuresLoading(true)
-
-    try {
-      const { data } = await supabase
-        .from('townhall_buildings')
-        .select('*')
-        .eq('townhall_level', townhallLevel)
-        .single()
-
-      const normalizeStructures = (structures) => {
-        if (!structures) return []
-        const normalizedList = Array.isArray(structures)
-          ? structures.map((value) => ({ ...(value || {}) }))
-          : Object.entries(structures).map(([key, value]) => ({ id: key, ...(value || {}) }))
-
-        const dedupedById = new Map()
-        normalizedList.forEach((building) => {
-          if (!building.id) return
-          if (townhallLevel === 2 && building.id === 'canon') {
-            building.buildings_unlocked = Math.max(2, Number(building.buildings_unlocked || 0))
-          }
-          dedupedById.set(building.id, building)
-        })
-
-        return Array.from(dedupedById.values())
-      }
-
-      const sortDefences = (structures) => {
-        const priority = {
-          canon: 0,
-          archer_tower: 1,
+      const dedupedById = new Map()
+      normalizedList.forEach((building) => {
+        if (!building.id) return
+        if (Number(data?.townhall_level) === 2 && building.id === 'canon') {
+          building.buildings_unlocked = Math.max(2, Number(building.buildings_unlocked || 0))
         }
+        dedupedById.set(building.id, building)
+      })
 
-        return [...structures].sort((left, right) => {
-          const leftPriority = priority[left.id] ?? 100
-          const rightPriority = priority[right.id] ?? 100
-          if (leftPriority !== rightPriority) return leftPriority - rightPriority
-          return left.name.localeCompare(right.name)
-        })
+      return Array.from(dedupedById.values())
+    }
+
+    const sortDefences = (structures) => {
+      const priority = {
+        canon: 0,
+        archer_tower: 1,
       }
+
+      return [...structures].sort((left, right) => {
+        const leftPriority = priority[left.id] ?? 100
+        const rightPriority = priority[right.id] ?? 100
+        if (leftPriority !== rightPriority) return leftPriority - rightPriority
+        return (left.name || formatStructureName(left.id)).localeCompare(right.name || formatStructureName(right.id))
+      })
+    }
+
+    const normalizedDefences = sortDefences(normalizeStructures(data?.defences))
+    const normalizedArmy = normalizeStructures(data?.army)
+    const normalizedResources = normalizeStructures(data?.resources)
+    const normalizedTroops = normalizeStructures(data?.troops)
+
+    return {
+      defences: normalizedDefences,
+      army: normalizedArmy,
+      resources: normalizedResources,
+      troops: normalizedTroops,
+    }
+  }
+
+  const loadTownhallSnapshot = async (townhallLevel, options = {}) => {
+    if (!townhallLevel) return null
+
+    const { loadStructures = false, loadWalls = false } = options
+
+    const { data } = await supabase
+      .from('townhall_buildings')
+      .select('*')
+      .eq('townhall_level', townhallLevel)
+      .single()
+
+    const normalizedData = normalizeTownhallBuildings(data)
+
+    if (loadStructures) {
+      setStructureCatalog(normalizedData)
 
       const createInitialLevels = (building) => {
         const count = Math.max(1, building.buildings_unlocked || 1)
         return Array.from({ length: count }, (_, index) => getDefaultRowLevel(building, index, isCopyUnlocked(building, index)))
       }
 
-      const normalizedDefences = sortDefences(normalizeStructures(data?.defences))
-      const normalizedArmy = normalizeStructures(data?.army)
-      const normalizedResources = normalizeStructures(data?.resources)
-      const normalizedTroops = normalizeStructures(data?.troops)
-
-      setStructureCatalog({
-        defences: normalizedDefences,
-        army: normalizedArmy,
-        resources: normalizedResources,
-        troops: normalizedTroops,
-      })
-
       const initialLevels = {}
-      ;[...normalizedDefences, ...normalizedArmy, ...normalizedResources, ...normalizedTroops].forEach((building) => {
+      ;[...normalizedData.defences, ...normalizedData.army, ...normalizedData.resources, ...normalizedData.troops].forEach((building) => {
         initialLevels[building.id] = createInitialLevels(building)
       })
       setStructureLevels(initialLevels)
+    }
+
+    if (loadWalls) {
+      const initialCounts = {}
+      const wallLevels = data?.walls?.levels || []
+
+      wallLevels.forEach((wallLevel) => {
+        initialCounts[wallLevel.level] = 0
+      })
+
+      setWallConfig(data?.walls || null)
+      setWallCounts(initialCounts)
+    }
+
+    return data || null
+  }
+
+  const loadTownhallStructures = async (townhallLevel) => {
+    if (!townhallLevel) return
+
+    setStructuresLoading(true)
+
+    try {
+      const data = await loadTownhallSnapshot(townhallLevel, { loadStructures: true })
+      if (!data) {
+        setStructureCatalog({ defences: [], army: [], resources: [], troops: [] })
+        setStructureLevels({})
+      }
     } catch (fetchError) {
       console.error('Failed to load townhall structures:', fetchError)
       setStructureCatalog({ defences: [], army: [], resources: [], troops: [] })
@@ -244,7 +288,7 @@ export default function UserPage({ username, onLogout, userId }) {
 
   const handleSetAllToZero = () => {
     const resetLevels = {}
-    ;[...structureCatalog.defences, ...structureCatalog.army, ...structureCatalog.resources].forEach((building) => {
+    ;[...visibleDefenseBuildings, ...visibleArmyBuildings, ...visibleResourceBuildings].forEach((building) => {
       const rowCount = Math.max(1, building.buildings_unlocked || building.levels?.length || 1)
       resetLevels[building.id] = Array.from({ length: rowCount }, (_, index) => getDefaultRowLevel(building, index, isCopyUnlocked(building, index)))
     })
@@ -253,7 +297,7 @@ export default function UserPage({ username, onLogout, userId }) {
 
   const handleSetAllToMax = () => {
     const maxedLevels = {}
-    ;[...structureCatalog.defences, ...structureCatalog.army, ...structureCatalog.resources].forEach((building) => {
+    ;[...visibleDefenseBuildings, ...visibleArmyBuildings, ...visibleResourceBuildings].forEach((building) => {
       const rowCount = Math.max(1, building.buildings_unlocked || building.levels?.length || 1)
       const maxLevel = Math.max(...(building.levels || []).map((level) => level.level), 0)
       maxedLevels[building.id] = Array.from({ length: rowCount }, () => maxLevel)
@@ -271,21 +315,11 @@ export default function UserPage({ username, onLogout, userId }) {
     setWallLoading(true)
 
     try {
-      const { data } = await supabase
-        .from('townhall_buildings')
-        .select('townhall_level, walls, defences, army, resources, troops')
-        .eq('townhall_level', activeVillage.townhall_level)
-        .single()
-
-      const initialCounts = {}
-      const wallLevels = data?.walls?.levels || []
-
-      wallLevels.forEach((wallLevel) => {
-        initialCounts[wallLevel.level] = 0
-      })
-
-      setWallConfig(data?.walls || null)
-      setWallCounts(initialCounts)
+      const data = await loadTownhallSnapshot(activeVillage.townhall_level, { loadWalls: true })
+      if (!data) {
+        setWallConfig(null)
+        setWallCounts({})
+      }
     } catch (fetchError) {
       console.error('Failed to load wall config:', fetchError)
       setWallConfig(null)
@@ -316,6 +350,45 @@ export default function UserPage({ username, onLogout, userId }) {
   const wallPieces = wallConfig?.buildings_unlocked || 0
   const wallBuilt = Object.values(wallCounts).reduce((total, value) => total + Number(value || 0), 0)
   const remainingWalls = Math.max(wallPieces - wallBuilt, 0)
+  const visibleDefenseBuildings = structureCatalog.defences.filter((building) => ['canon', 'archer_tower'].includes(building.id))
+  const visibleResourceBuildings = structureCatalog.resources.filter((building) => ['gold_mine', 'elixir_collector', 'gold_storage', 'elixir_storage'].includes(building.id))
+  const visibleArmyBuildings = structureCatalog.army.filter((building) => building.id === 'army_camp')
+
+  useEffect(() => {
+    const townhallLevel = activeVillage?.townhall_level
+    if (!townhallLevel) return
+
+    const channel = supabase
+      .channel(`townhall_buildings_${townhallLevel}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'townhall_buildings',
+          filter: `townhall_level=eq.${townhallLevel}`,
+        },
+        async (payload) => {
+          const currentVillage = activeVillageRef.current
+          const currentView = viewModeRef.current
+          if (!currentVillage || currentVillage.townhall_level !== townhallLevel) return
+
+          if (currentView === 'structures') {
+            await loadTownhallSnapshot(townhallLevel, { loadStructures: true })
+            return
+          }
+
+          if (currentView === 'walls') {
+            await loadTownhallSnapshot(townhallLevel, { loadWalls: true })
+          }
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [activeVillage?.townhall_level])
 
   const isCopyUnlocked = (building, rowIndex) => {
     if (Array.isArray(building?.copy_unlocks) && building.copy_unlocks[rowIndex] != null) {
@@ -387,7 +460,7 @@ export default function UserPage({ username, onLogout, userId }) {
           <div className={styles.defenceButtonGroup}>
             {buttonLevels.map((levelNumber) => (
               <button key={levelNumber} className={styles.defenceLevelBtn} onClick={() => {
-                const nextLevels = Array.from({ length: rowCount }, (_, index) => (index === 0 ? levelNumber : 0))
+                const nextLevels = Array.from({ length: rowCount }, () => levelNumber)
                 setStructureLevels((current) => ({
                   ...current,
                   [building.id]: nextLevels,
@@ -642,7 +715,6 @@ export default function UserPage({ username, onLogout, userId }) {
                     <div className={styles.structuresFooterButtons}>
                       <button className={styles.structuresDangerBtn} onClick={handleSetAllToZero}>Set all to 0</button>
                       <button className={styles.structuresDangerBtn} onClick={handleSetAllToMax}>Set all to max</button>
-                      <button className={styles.structuresSecondaryBtn} onClick={handleProceedToWalls}>Proceed</button>
                     </div>
                   </div>
 
@@ -652,20 +724,24 @@ export default function UserPage({ username, onLogout, userId }) {
                   <div className={styles.structuresDatabaseSection}>
                     <h2 className={styles.structuresDatabaseTitle}>Defences</h2>
                     <div className={styles.structuresDatabaseGrid}>
-                      {defenceBuildings.map((building, index) => renderStructureCard(building, `defences-${building.id}-${index}`))}
+                      {visibleDefenseBuildings.map((building, index) => renderStructureCard(building, `defences-${building.id}-${index}`))}
                     </div>
 
                     <h2 className={styles.structuresDatabaseTitle}>Resources</h2>
                     <div className={styles.structuresDatabaseGrid}>
-                      {structureCatalog.resources.map((building, index) => renderStructureCard(building, `resources-${building.id}-${index}`))}
+                      {visibleResourceBuildings.map((building, index) => renderStructureCard(building, `resources-${building.id}-${index}`))}
                     </div>
 
                     <h2 className={styles.structuresDatabaseTitle}>Army</h2>
                     <div className={styles.structuresDatabaseGrid}>
-                      {structureCatalog.army.map((building, index) => renderStructureCard(building, `army-${building.id}-${index}`))}
+                      {visibleArmyBuildings.map((building, index) => renderStructureCard(building, `army-${building.id}-${index}`))}
                     </div>
                   </div>
                 </section>
+
+                <div className={styles.structuresProceedBar}>
+                  <button className={styles.structuresSecondaryBtn} onClick={handleProceedToWalls}>Proceed</button>
+                </div>
               </div>
             </div>
           ) : showingWalls ? (
