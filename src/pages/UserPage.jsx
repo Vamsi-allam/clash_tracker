@@ -2,6 +2,10 @@ import { useState, useEffect, useRef } from 'react'
 import styles from './UserPage.module.css'
 import RefreshIcon from '@mui/icons-material/Refresh'
 import CloudUploadIcon from '@mui/icons-material/CloudUpload'
+import GridViewIcon from '@mui/icons-material/GridView'
+import BorderAllIcon from '@mui/icons-material/BorderAll'
+import builderBoostImg from '../assets/magic-items/builder-boost.png'
+import researchBoostImg from '../assets/magic-items/research-boost.png'
 import Header from '../components/Header'
 import { supabase } from '../supabaseClient'
 
@@ -1013,16 +1017,28 @@ export default function UserPage({ username, onLogout, userId }) {
                   <div className={styles.massUpdateBox}>
                     <h4>Mass Update:</h4>
                     <div className={styles.massButtons}>
-                      <button className={`${styles.massBtn} ${styles.active}`}>Structures</button>
-                      <button className={styles.massBtn}>Walls</button>
+                      <button className={`${styles.massBtn} ${styles.active}`}>
+                        <GridViewIcon className={styles.massButtonIcon} />
+                        Structures
+                      </button>
+                      <button className={styles.massBtn}>
+                        <BorderAllIcon className={styles.massButtonIcon} />
+                        Walls
+                      </button>
                     </div>
                   </div>
 
                   <div className={styles.boostsBox}>
                     <h4>Boosts:</h4>
                     <div className={styles.boostButtonsRow}>
-                      <button className={styles.builderBoostBtn}>Use Builder Boost</button>
-                      <button className={styles.researchBoostBtn}>Use Research Boost</button>
+                      <button className={styles.builderBoostBtn}>
+                        <img src={builderBoostImg} alt="Builder Boost" className={styles.boostButtonImg} />
+                        Use Builder Boost
+                      </button>
+                      <button className={styles.researchBoostBtn}>
+                        <img src={researchBoostImg} alt="Research Boost" className={styles.boostButtonImg} />
+                        Use Research Boost
+                      </button>
                     </div>
                     <div className={styles.boostNote}>Season Boosts are available at Town Hall 7</div>
                   </div>
