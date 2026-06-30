@@ -282,6 +282,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
   const { townhallLevel, buildingId } = useParams()
   const navigate = useNavigate()
   const isEditingRef = useRef(false)
+  const isWallBuilding = buildingId === 'walls'
 
   const [staticData, setStaticData] = useState({})
   const [dynamicData, setDynamicData] = useState({})
@@ -715,7 +716,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
                   />
                 )}
               </div>
-              {isEditing && editingBuildingCount > 0 && (
+              {isEditing && !isWallBuilding && editingBuildingCount > 0 && (
                 <div className={styles.unlockPreview}>
                   <div className={styles.unlockPreviewTitle}>Unlock preview</div>
                   {Array.from({ length: editingBuildingCount }, (_, index) => (

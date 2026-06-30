@@ -299,7 +299,7 @@
 }
 
 .loadedFlowCard {
-  min-height: 150px;
+  min-height: 260px;
   padding: 24px 28px 28px;
   border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 2px;
@@ -309,30 +309,85 @@
   gap: 14px;
 }
 
-.loadedFlowHeader {
-  font-size: 1.55rem;
+.loadedFlowTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.loadedFlowLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.loadedFlowTitle {
+  color: #5fa0ea;
+  font-size: 1.65rem;
   font-weight: 800;
-  color: #3f79c8;
+  line-height: 1.1;
 }
 
-.loadedFlowText {
-  margin: 0;
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 0.95rem;
-  line-height: 1.6;
+.loadedFlowMeta {
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 0.98rem;
+  font-weight: 700;
 }
 
-.loadedFlowBtn {
-  align-self: flex-start;
-  padding: 11px 18px;
+.loadedFlowClan {
+  color: var(--accent-2);
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.loadedFlowPreview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 180px;
+}
+
+.loadedFlowImage {
+  width: 180px;
+  height: 180px;
+  object-fit: contain;
+}
+
+.loadedFlowActions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.loadedFlowApiBtn,
+.loadedFlowUploadBtn,
+.loadedFlowSwitchBtn {
   border: 1px solid rgba(0, 0, 0, 0.25);
   border-radius: 3px;
-  background: linear-gradient(180deg, #74b529 0%, #63a820 100%);
   color: #f4f4f4;
   font-size: 0.92rem;
   font-weight: 700;
-  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.5);
   cursor: pointer;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.5);
+}
+
+.loadedFlowApiBtn {
+  padding: 10px 16px;
+  background: linear-gradient(180deg, #5f8fd1 0%, #4e7ec4 100%);
+}
+
+.loadedFlowUploadBtn {
+  padding: 10px 16px;
+  background: linear-gradient(180deg, #74b529 0%, #63a820 100%);
+}
+
+.loadedFlowSwitchBtn {
+  align-self: flex-start;
+  margin-top: auto;
+  padding: 11px 18px;
+  background: linear-gradient(180deg, #5f8fd1 0%, #4e7ec4 100%);
 }
 
 .structuresFlowCard {
@@ -498,6 +553,12 @@
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+}
+
+.structuresProceedBar {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
 }
 
 .structuresDangerBtn,

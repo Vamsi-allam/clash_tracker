@@ -44,6 +44,7 @@ export default function UserPage({ username, onLogout, userId }) {
   const [structureCatalog, setStructureCatalog] = useState({ defences: [], army: [], resources: [], troops: [] })
   const [structureLevels, setStructureLevels] = useState({})
   const [structuresLoading, setStructuresLoading] = useState(false)
+  const [refreshingVillage, setRefreshingVillage] = useState(false)
   const activeVillageRef = useRef(null)
   const viewModeRef = useRef('search')
 
@@ -144,7 +145,8 @@ export default function UserPage({ username, onLogout, userId }) {
     } else if (data) {
       await loadVillages()
       setActiveVillage(data)
-      setViewMode('loaded')
+      loadTownhallStructures(data.townhall_level)
+      setViewMode('structures')
       setPlayerData(null)
       setTag('')
     }
@@ -156,6 +158,56 @@ export default function UserPage({ username, onLogout, userId }) {
     setViewMode('loaded')
     setPlayerData(null)
     setTag('')
+  }
+
+  const handleRefreshVillage = async () => {
+    if (!activeVillage?.player_tag) return
+
+    setRefreshingVillage(true)
+    setError('')
+
+    try {
+      const cleanTag = activeVillage.player_tag.trim().replace(/^#/, '').toUpperCase()
+      const res = await fetch(`/api/coc/players/%23${cleanTag}`)
+
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.message || 'Failed to refresh village')
+      }
+
+      const data = await res.json()
+      const updatedVillage = {
+        ...activeVillage,
+        player_name: data.name,
+        townhall_level: data.townHallLevel,
+        exp_level: data.expLevel,
+        clan_name: data.clan?.name || null,
+        clan_badge_url: data.clan?.badgeUrls?.small || null,
+        clan_level: data.clan?.clanLevel || null,
+      }
+
+      const { error: updateError } = await supabase
+        .from('user_villages')
+        .update({
+          player_name: updatedVillage.player_name,
+          townhall_level: updatedVillage.townhall_level,
+          exp_level: updatedVillage.exp_level,
+          clan_name: updatedVillage.clan_name,
+          clan_badge_url: updatedVillage.clan_badge_url,
+          clan_level: updatedVillage.clan_level,
+        })
+        .eq('id', activeVillage.id)
+
+      if (updateError) throw updateError
+
+      setActiveVillage(updatedVillage)
+      setPlayerData(data)
+      await loadVillages()
+    } catch (refreshError) {
+      setError(refreshError.message || 'Failed to refresh village')
+    } finally {
+      setRefreshingVillage(false)
+    }
   }
 
   const handleAddVillage = () => {
@@ -234,9 +286,24 @@ export default function UserPage({ username, onLogout, userId }) {
     if (loadStructures) {
       setStructureCatalog(normalizedData)
 
+      let savedStructureRows = []
+      if (activeVillageRef.current?.id) {
+        const { data: structureRows } = await supabase
+          .from('user_village_buildings')
+          .select('building_id, current_level, quantity')
+          .eq('village_id', activeVillageRef.current.id)
+          .not('building_id', 'like', 'walls-%')
+
+        savedStructureRows = structureRows || []
+      }
+
       const createInitialLevels = (building) => {
         const count = Math.max(1, building.buildings_unlocked || 1)
-        return Array.from({ length: count }, (_, index) => getDefaultRowLevel(building, index, isCopyUnlocked(building, index)))
+        return Array.from({ length: count }, (_, index) => {
+          const savedRow = savedStructureRows.find((row) => row.building_id === `${building.id}-${index + 1}`)
+          if (savedRow) return Number(savedRow.current_level || 0)
+          return getDefaultRowLevel(building, index, isCopyUnlocked(building, index))
+        })
       }
 
       const initialLevels = {}
@@ -250,8 +317,20 @@ export default function UserPage({ username, onLogout, userId }) {
       const initialCounts = {}
       const wallLevels = data?.walls?.levels || []
 
+      let savedWallRows = []
+      if (activeVillageRef.current?.id) {
+        const { data: wallRows } = await supabase
+          .from('user_village_buildings')
+          .select('building_id, current_level, quantity')
+          .eq('village_id', activeVillageRef.current.id)
+          .like('building_id', 'walls-%')
+
+        savedWallRows = wallRows || []
+      }
+
       wallLevels.forEach((wallLevel) => {
-        initialCounts[wallLevel.level] = 0
+        const savedRow = savedWallRows.find((row) => row.building_id === `walls-${wallLevel.level}`)
+        initialCounts[wallLevel.level] = Number(savedRow?.quantity || 0)
       })
 
       setWallConfig(data?.walls || null)
@@ -332,9 +411,15 @@ export default function UserPage({ username, onLogout, userId }) {
   }
 
   const handleWallCountChange = (levelNumber, value) => {
+    const otherWalls = Object.entries(wallCounts).reduce((total, [levelKey, count]) => {
+      if (Number(levelKey) === Number(levelNumber)) return total
+      return total + Number(count || 0)
+    }, 0)
+    const maxForThisLevel = Math.max(wallPieces - otherWalls, 0)
+
     setWallCounts((current) => ({
       ...current,
-      [levelNumber]: Number(value),
+      [levelNumber]: Math.min(Math.max(Number(value) || 0, 0), maxForThisLevel),
     }))
   }
 
@@ -346,10 +431,77 @@ export default function UserPage({ username, onLogout, userId }) {
     setWallCounts(resetCounts)
   }
 
+  const handleUpdateWalls = async () => {
+    if (!activeVillage?.id || !wallConfig) return
+
+    setWallLoading(true)
+    setError('')
+
+    try {
+      const wallRowsToSave = (wallConfig.levels || [])
+        .map((wallLevel) => ({
+          village_id: activeVillage.id,
+          building_id: `walls-${wallLevel.level}`,
+          building_name: 'Walls',
+          current_level: wallLevel.level,
+          quantity: Number(wallCounts[wallLevel.level] || 0),
+        }))
+        .filter((row) => row.quantity > 0)
+
+      const structureRowsToSave = [...visibleDefenseBuildings, ...visibleArmyBuildings, ...visibleResourceBuildings]
+        .flatMap((building) => {
+          const currentLevels = structureLevels[building.id] || []
+          const rowCount = Math.max(1, building.buildings_unlocked || currentLevels.length || 1)
+
+          return Array.from({ length: rowCount }, (_, index) => ({
+            village_id: activeVillage.id,
+            building_id: `${building.id}-${index + 1}`,
+            building_name: building.name || formatStructureName(building.id),
+            current_level: Number(currentLevels[index] ?? getDefaultRowLevel(building, index, isCopyUnlocked(building, index))),
+            quantity: 1,
+          }))
+        })
+        .filter((row) => row.current_level >= 0)
+
+      const { error: deleteError } = await supabase
+        .from('user_village_buildings')
+        .delete()
+        .eq('village_id', activeVillage.id)
+
+      if (deleteError) throw deleteError
+
+      const rowsToInsert = [...structureRowsToSave, ...wallRowsToSave]
+
+      if (rowsToInsert.length > 0) {
+        const { error: insertError } = await supabase
+          .from('user_village_buildings')
+          .insert(rowsToInsert)
+
+        if (insertError) throw insertError
+      }
+
+      setViewMode('loaded')
+      alert('Walls saved successfully!')
+    } catch (saveError) {
+      setError(saveError.message || 'Failed to save walls')
+    } finally {
+      setWallLoading(false)
+    }
+  }
+
   const wallLevels = wallConfig?.levels || []
   const wallPieces = wallConfig?.buildings_unlocked || 0
   const wallBuilt = Object.values(wallCounts).reduce((total, value) => total + Number(value || 0), 0)
   const remainingWalls = Math.max(wallPieces - wallBuilt, 0)
+  const wallMaxLevel = wallLevels.length > 0 ? Math.max(...wallLevels.map((wallLevel) => wallLevel.level || 0)) : 0
+  const getWallRowMax = (levelNumber) => {
+    const otherWalls = Object.entries(wallCounts).reduce((total, [levelKey, count]) => {
+      if (Number(levelKey) === Number(levelNumber)) return total
+      return total + Number(count || 0)
+    }, 0)
+
+    return Math.max(wallPieces - otherWalls, 0)
+  }
   const visibleDefenseBuildings = structureCatalog.defences.filter((building) => ['canon', 'archer_tower'].includes(building.id))
   const visibleResourceBuildings = structureCatalog.resources.filter((building) => ['gold_mine', 'elixir_collector', 'gold_storage', 'elixir_storage'].includes(building.id))
   const visibleArmyBuildings = structureCatalog.army.filter((building) => building.id === 'army_camp')
@@ -658,12 +810,33 @@ export default function UserPage({ username, onLogout, userId }) {
             </div>
           ) : showingLoaded ? (
             <div className={styles.loadedFlowCard}>
-              <div className={styles.loadedFlowHeader}>Village Loaded</div>
-              <p className={styles.loadedFlowText}>
-                Your village has been successfully loaded. Click the button below to setup the structures:
-              </p>
-              <button className={styles.loadedFlowBtn} onClick={handleSetupVillageStructures}>
-                Setup Village Structures ▸
+              <div className={styles.loadedFlowTop}>
+                <div className={styles.loadedFlowLeft}>
+                  <div className={styles.loadedFlowTitle}>Town Hall {activeVillage?.townhall_level || playerData?.townHallLevel || 0}</div>
+                  <div className={styles.loadedFlowMeta}>{activeVillage?.player_name || playerData?.name || 'Village Loaded'}</div>
+                  {activeVillage?.clan_name && <div className={styles.loadedFlowClan}>{activeVillage.clan_name}</div>}
+                </div>
+
+                <div className={styles.loadedFlowPreview}>
+                  <img
+                    src={`/src/assets/townhall/1_${activeVillage?.townhall_level || playerData?.townHallLevel || 2}.png`}
+                    alt={`TH ${activeVillage?.townhall_level || playerData?.townHallLevel || 2}`}
+                    className={styles.loadedFlowImage}
+                  />
+                </div>
+              </div>
+
+              <div className={styles.loadedFlowActions}>
+                <button className={styles.loadedFlowApiBtn} onClick={handleRefreshVillage} disabled={refreshingVillage}>
+                  {refreshingVillage ? 'Refreshing...' : 'API'}
+                </button>
+                <button className={styles.loadedFlowUploadBtn} onClick={() => {}}>
+                  Upload
+                </button>
+              </div>
+
+              <button className={styles.loadedFlowSwitchBtn} onClick={handleSetupVillageStructures}>
+                Setup Village Structures
               </button>
             </div>
           ) : showingStructures ? (
@@ -742,6 +915,7 @@ export default function UserPage({ username, onLogout, userId }) {
                 <div className={styles.structuresProceedBar}>
                   <button className={styles.structuresSecondaryBtn} onClick={handleProceedToWalls}>Proceed</button>
                 </div>
+
               </div>
             </div>
           ) : showingWalls ? (
@@ -773,7 +947,7 @@ export default function UserPage({ username, onLogout, userId }) {
                           <input
                             type="range"
                             min="0"
-                            max={wallPieces}
+                            max={getWallRowMax(wallLevel.level)}
                             step="1"
                             value={wallCounts[wallLevel.level] || 0}
                             onChange={(e) => handleWallCountChange(wallLevel.level, e.target.value)}
@@ -793,9 +967,12 @@ export default function UserPage({ username, onLogout, userId }) {
                     <div className={styles.wallsOverviewStatBlock}>
                       <div className={styles.wallsOverviewLabel}>Maximum Level:</div>
                       <div className={styles.wallsOverviewValueRow}>
-                        <img src={`${wallConfig?.image_path || '/src/assets/Walls/60_'}1.png`} alt="Wall" className={styles.wallsMiniIcon} />
-                                                <img src={`${wallConfig?.image_path || '/src/assets/Walls/60_'}1.png`} alt="Wall" className={styles.wallsMiniIcon} />
-                        <span>{wallLevels.length || 0}</span>
+                        <img
+                          src={`${wallConfig?.image_path || '/src/assets/Walls/60_'}${wallMaxLevel || 1}.png`}
+                          alt={`Wall Level ${wallMaxLevel || 1}`}
+                          className={styles.wallsMiniIcon}
+                        />
+                        <span>{wallMaxLevel || 0}</span>
                       </div>
                     </div>
 
@@ -813,7 +990,9 @@ export default function UserPage({ username, onLogout, userId }) {
 
                   <div className={styles.wallsOverviewActions}>
                     <button className={styles.wallsCancelBtn} onClick={handleBackToLoaded}>✕ Cancel</button>
-                    <button className={styles.wallsUpdateBtn}>✓ Update</button>
+                    <button className={styles.wallsUpdateBtn} onClick={handleUpdateWalls} disabled={wallLoading}>
+                      {wallLoading ? 'Saving...' : '✓ Update'}
+                    </button>
                   </div>
                 </div>
               </div>
