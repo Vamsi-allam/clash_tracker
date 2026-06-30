@@ -51,6 +51,7 @@ export default function UserPage({ username, onLogout, userId }) {
   const [structureLevels, setStructureLevels] = useState({})
   const [structuresLoading, setStructuresLoading] = useState(false)
   const [refreshingVillage, setRefreshingVillage] = useState(false)
+  const [activeLoadedTab, setActiveLoadedTab] = useState('defences')
   const activeVillageRef = useRef(null)
   const viewModeRef = useRef('search')
 
@@ -948,7 +949,9 @@ export default function UserPage({ username, onLogout, userId }) {
                         </button>
                       </div>
 
-                      <button className={styles.switchBuilderBtn}>Switch to Builder Base</button>
+                      <div className={styles.switchBuilderBox}>
+                        <button className={styles.switchBuilderBtn}>Switch to Builder Base</button>
+                      </div>
                     </div>
 
                     <div className={styles.progressBlock}>
@@ -972,6 +975,7 @@ export default function UserPage({ username, onLogout, userId }) {
                       </div>
                     </div>
                   </div>
+
                 </div>
 
                 {/* Middle: Next Townhall */}
@@ -1044,6 +1048,121 @@ export default function UserPage({ username, onLogout, userId }) {
                   </div>
                 </div>
               </div>
+
+                <div className={styles.upgradeKeyBox}>
+                  <span className={styles.upgradeKeyLabel}>Key:</span>
+                  <div className={styles.upgradeKeyItem}>
+                    <span className={`${styles.upgradeKeySwatch} ${styles.upgradeKeyComplete}`} />
+                    <span className={styles.upgradeKeyText}>Complete</span>
+                  </div>
+                  <div className={styles.upgradeKeyItem}>
+                    <span className={`${styles.upgradeKeySwatch} ${styles.upgradeKeyUpgrading}`} />
+                    <span className={styles.upgradeKeyText}>Upgrading</span>
+                  </div>
+                  <div className={styles.upgradeKeyItem}>
+                    <span className={`${styles.upgradeKeySwatch} ${styles.upgradeKeyOutstanding}`} />
+                    <span className={styles.upgradeKeyText}>Outstanding upgrades</span>
+                  </div>
+                </div>
+
+                <div className={styles.loadedTabShell}>
+                  <div className={styles.loadedTabBar}>
+                    {['defences', 'army', 'resources', 'troops', 'walls'].map((tab) => (
+                      <button
+                        type="button"
+                        key={tab}
+                        className={`${styles.loadedTabBtn} ${activeLoadedTab === tab ? styles.loadedTabBtnActive : ''}`}
+                        onMouseDown={() => setActiveLoadedTab(tab)}
+                        onTouchStart={() => setActiveLoadedTab(tab)}
+                      >
+                        {tab === 'defences'
+                          ? 'Defenses'
+                          : tab === 'army'
+                            ? 'Army'
+                            : tab === 'resources'
+                              ? 'Resources'
+                              : tab === 'troops'
+                                ? 'Troops'
+                                : 'Walls'}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className={styles.loadedTabBody}>
+                    <div className={styles.loadedTabMain}>
+                      {activeLoadedTab === 'defences' && (
+                        <div className={styles.loadedTabSection}>
+                          <h3 className={styles.loadedTabSectionTitle}>Defenses</h3>
+                          <div className={styles.structuresDatabaseGrid}>
+                            {visibleDefenseBuildings.map((building, index) => renderStructureCard(building, `tab-defences-${building.id}-${index}`))}
+                          </div>
+                        </div>
+                      )}
+
+                      {activeLoadedTab === 'army' && (
+                        <div className={styles.loadedTabSection}>
+                          <h3 className={styles.loadedTabSectionTitle}>Army</h3>
+                          <div className={styles.structuresDatabaseGrid}>
+                            {visibleArmyBuildings.map((building, index) => renderStructureCard(building, `tab-army-${building.id}-${index}`))}
+                          </div>
+                        </div>
+                      )}
+
+                      {activeLoadedTab === 'resources' && (
+                        <div className={styles.loadedTabSection}>
+                          <h3 className={styles.loadedTabSectionTitle}>Resources</h3>
+                          <div className={styles.structuresDatabaseGrid}>
+                            {visibleResourceBuildings.map((building, index) => renderStructureCard(building, `tab-resources-${building.id}-${index}`))}
+                          </div>
+                        </div>
+                      )}
+
+                      {activeLoadedTab === 'troops' && (
+                        <div className={styles.loadedTabSection}>
+                          <h3 className={styles.loadedTabSectionTitle}>Troops</h3>
+                          <div className={styles.structuresDatabaseGrid}>
+                            {(structureCatalog.troops || []).map((building, index) => renderStructureCard(building, `tab-troops-${building.id}-${index}`))}
+                          </div>
+                        </div>
+                      )}
+
+                      {activeLoadedTab === 'walls' && (
+                        <div className={styles.loadedTabSection}>
+                          <h3 className={styles.loadedTabSectionTitle}>Walls</h3>
+                          <div className={styles.loadedWallsSummary}>
+                            <div className={styles.loadedWallsRow}>
+                              <span>Built</span>
+                              <strong>{wallBuilt} / {wallPieces}</strong>
+                            </div>
+                            <div className={styles.loadedWallsRow}>
+                              <span>Remaining</span>
+                              <strong>{remainingWalls}</strong>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                    </div>
+
+                    <div className={styles.loadedRemainingCard}>
+                      <h3 className={styles.loadedRemainingTitle}>Remaining (Beta)</h3>
+                      <div className={styles.loadedRemainingTable}>
+                        <div className={styles.loadedRemainingHeadRow}>
+                          <span>Resource</span>
+                          <span>Total</span>
+                        </div>
+                        <div className={styles.loadedRemainingRow}>
+                          <span>Walls</span>
+                          <strong>{remainingWalls}</strong>
+                        </div>
+                        <div className={styles.loadedRemainingRow}>
+                          <span>Time</span>
+                          <strong>Complete</strong>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
             </div>
           ) : showingStructures ? (
             <div className={styles.structuresFlowCard}>

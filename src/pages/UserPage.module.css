@@ -327,7 +327,7 @@
 
 .detailedColumns {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: 1.2fr 0.8fr 1.2fr;
   gap: 8px;
   align-items: start;
 }
@@ -372,7 +372,7 @@
 .rotating { display: inline-block; animation: spin 0.9s linear infinite }
 @keyframes spin { to { transform: rotate(360deg) } }
 
-.headerDivider { width: calc(100% - 44px); height: 1px; background: rgba(255,255,255,0.12); margin: 14px auto }
+.headerDivider { width: calc(100% - 44px); height: 1px; background: rgba(255,255,255,0.35); margin: 14px auto }
 .thInfoRow { display:flex; flex-direction:column; align-items:center; gap:10px; padding-bottom: 6px }
 .thLevel { margin:0; color: #dfefff; font-weight:800; font-size:1.5rem }
 .thFooterButtons { display:flex; gap:10px; align-items:center }
@@ -457,7 +457,232 @@
 .apiSmallBtn { background: linear-gradient(180deg,#5f8fd1,#4e7ec4); color:#07111f }
 .uploadSmallBtn { background: linear-gradient(180deg,#74b529,#63a820); color:#07111f }
 
-.switchBuilderBtn { margin-top:6px; padding:6px 10px; background: linear-gradient(180deg,#4d88db,#3f79c8); color:#fff; border:none; border-radius:8px; font-weight:400; font-size:0.78rem }
+.switchBuilderBox { padding: 12px 16px; border-radius: 0; background: transparent; position: relative; margin-top: 12px; display: flex; justify-content: center }
+
+.switchBuilderBtn { padding:8px 14px; background: linear-gradient(180deg,#4d88db,#3f79c8); color:#fff; border:none; border-radius:0px; font-weight:600; font-size:0.85rem; cursor: pointer; width: 100%; text-align: center }
+
+.upgradeKeyBox {
+  margin-top: 10px;
+  padding: 16px 0 16px 30px;
+  width: 100%;
+  grid-column: 1 / -1;
+  justify-self: stretch;
+  display: flex;
+  align-items: center;
+  gap: 10px 14px;
+  flex-wrap: wrap;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-sizing: border-box;
+  position: relative;
+}
+
+.upgradeKeyBox::before,
+.upgradeKeyBox::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.upgradeKeyBox::before {
+  top: 0;
+}
+
+.upgradeKeyBox::after {
+  bottom: 0;
+}
+
+.upgradeKeyLabel {
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 0.92rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.upgradeKeyItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.upgradeKeySwatch {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  border-radius: 2px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+}
+
+.upgradeKeyComplete {
+  background: #a6e75e;
+}
+
+.upgradeKeyUpgrading {
+  background: #ffd36a;
+}
+
+.upgradeKeyOutstanding {
+  background: #cfcfcf;
+}
+
+.upgradeKeyText {
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 0.86rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.loadedTabShell {
+  margin-top: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.loadedTabBar {
+  display: flex;
+  gap: 0;
+  flex-wrap: nowrap;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.82);
+  border-radius: 0;
+  background: transparent;
+  overflow: hidden;
+}
+
+.loadedTabBtn {
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 14px 18px;
+  border: 1px solid rgba(255, 255, 255, 0.82);
+  border-top: none;
+  background: #c9c9c9;
+  color: rgba(58, 58, 58, 0.96);
+  font-weight: 400;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.loadedTabBtn:hover {
+  background: #c9c9c9;
+  color: rgba(58, 58, 58, 0.96);
+}
+
+.loadedTabBtn.loadedTabBtnActive:hover {
+  background: #4d88db;
+  color: #ffffff;
+}
+
+.loadedTabBtnActive {
+  background: #4d88db;
+  border-color: rgba(255, 255, 255, 0.82);
+  color: #ffffff;
+}
+
+.loadedTabBtn:last-child {
+  border-right: none;
+}
+
+.loadedTabBody {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
+  gap: 18px;
+  align-items: start;
+}
+
+.loadedTabMain {
+  min-width: 0;
+}
+
+.loadedTabSection {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.loadedTabSectionTitle {
+  margin: 0;
+  color: #6fb0ff;
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+
+.loadedWallsSummary,
+.loadedBuildersCard,
+.loadedStatsCard,
+.loadedRemainingCard {
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(10, 20, 38, 0.55);
+  padding: 16px;
+}
+
+.loadedWallsSummary,
+.loadedStatsCard,
+.loadedBuildersCard {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.loadedWallsRow,
+.loadedStatsRow,
+.loadedRemainingRow,
+.loadedRemainingHeadRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.loadedRemainingCard {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.loadedRemainingTitle {
+  margin: 0;
+  color: #6fb0ff;
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+.loadedRemainingTable {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.loadedRemainingHeadRow {
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 800;
+  font-size: 0.95rem;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.loadedRemainingRow {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.95rem;
+}
+
+.loadedRemainingRow strong,
+.loadedWallsRow strong,
+.loadedStatsRow strong {
+  color: #ffffff;
+}
+
+@media (max-width: 1100px) {
+  .loadedTabBody {
+    grid-template-columns: 1fr;
+  }
+}
 
 /* camera button removed */
 
