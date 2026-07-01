@@ -1238,7 +1238,7 @@ export default function UserPage({ username, onLogout, userId }) {
                     )}
                     <div className={styles.readOnlyLevelMeta}>
                       <div className={styles.readOnlyLevelValue}>{rowState.rowLevel}/{maxLevel}</div>
-                      {openActionRowKey === rowState.actionRowKey ? (
+                      {openActionRowKey === rowState.actionRowKey || rowState.pendingUpgrade ? (
                         <div className={styles.readOnlyActionChooserWrap}>
                           <div className={styles.readOnlyActionChooser}>
                             <button
