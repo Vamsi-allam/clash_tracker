@@ -1729,7 +1729,7 @@
 .readOnlyDetailsRow {
   min-height: 86px;
   display: grid;
-  grid-template-columns: minmax(220px, 0.9fr) minmax(300px, 1.2fr);
+  grid-template-columns: minmax(200px, 0.78fr) minmax(340px, 1.42fr);
   align-items: stretch;
   gap: 0;
   padding: 0;
@@ -1748,7 +1748,7 @@
   position: absolute;
   top: 0px;
   bottom: 0px;
-  left: clamp(220px, 42.8%, calc(100% - 300px));
+  left: clamp(200px, 35.5%, calc(100% - 340px));
   width: 1px;
   background: rgba(255, 255, 255, 0.16);
   pointer-events: none;
@@ -1765,7 +1765,9 @@
   align-items: stretch;
   gap: 8px;
   height: 100%;
-  padding: 10px 16px 12px;
+  padding: 10px 14px 12px;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .readOnlyRow:last-child,
@@ -1930,6 +1932,7 @@
   gap: 6px 18px;
   width: 100%;
   justify-items: start;
+  min-width: 0;
 }
 
 .readOnlyUpgradeItem {
@@ -1969,6 +1972,48 @@
   font-weight: 400;
   align-self: stretch;
   text-align: center;
+}
+
+.readOnlyUpgradeSummary > span {
+  display: inline-flex;
+  align-items: center;
+}
+
+.readOnlyUpgradeSummary > span:last-child {
+  margin-left: 10px;
+  color: #ffd84f;
+  font-weight: 700;
+}
+
+.readOnlyUpgradeProgressBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+}
+
+.readOnlyUpgradeProgressMeta {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  padding: 0 10px;
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 0.92rem;
+  font-weight: 400;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.readOnlyUpgradeProgressBlock .readOnlyUpgradeList {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px 12px;
+}
+
+.readOnlyUpgradeProgressBlock .readOnlyUpgradeSummary {
+  margin-top: 2px;
+  padding: 6px 8px;
 }
 
 .errorMsg {

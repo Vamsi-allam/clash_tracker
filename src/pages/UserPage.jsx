@@ -1169,6 +1169,16 @@ export default function UserPage({ username, onLogout, userId }) {
       const upgradeSummary = getUpgradeSummary(building, rowLevel)
       const pendingUpgrade = getPendingUpgradeForRow(activeVillage?.id, `${building.id}-${rowIndex + 1}`, rowIndex)
       const pendingRemainingSeconds = pendingUpgrade ? Math.max(0, Math.ceil((Number(pendingUpgrade.finishAt) - upgradeClock) / 1000)) : 0
+      const pendingDurationSeconds = pendingUpgrade ? Math.max(0, Number(pendingUpgrade.durationSeconds || 0)) : 0
+      const pendingProgressPercent = pendingUpgrade && pendingDurationSeconds > 0
+        ? Math.max(0, Math.min(100, Math.round(((pendingDurationSeconds - pendingRemainingSeconds) / pendingDurationSeconds) * 100)))
+        : 0
+      const visibleNextLevels = pendingUpgrade
+        ? upgradeSummary.nextLevels.filter((levelInfo) => Number(levelInfo.level) > Number(pendingUpgrade.toLevel))
+        : upgradeSummary.nextLevels
+      const pendingLevelInfo = pendingUpgrade ? visibleNextLevels[0] || null : null
+      const visibleTotalCost = visibleNextLevels.reduce((total, level) => total + Number(level.cost || 0), 0)
+      const visibleTotalSeconds = visibleNextLevels.reduce((total, level) => total + getTimeSeconds(level.time), 0)
       const actionRowKey = `${building.id}-${rowIndex + 1}`
 
       return {
@@ -1179,6 +1189,11 @@ export default function UserPage({ username, onLogout, userId }) {
         upgradeSummary,
         pendingUpgrade,
         pendingRemainingSeconds,
+        pendingProgressPercent,
+        pendingLevelInfo,
+        visibleNextLevels,
+        visibleTotalCost,
+        visibleTotalSeconds,
         statusIcon: rowLevel <= 0 ? (
           <HandymanOutlinedIcon className={styles.readOnlyActionIcon} />
         ) : (
@@ -1297,16 +1312,34 @@ export default function UserPage({ username, onLogout, userId }) {
                   </div>
 
                   <div className={styles.readOnlyDetailsRow}>
-                    {rowState.pendingUpgrade && (
-                      <div className={styles.readOnlyUpgradeSummary}>
-                        Upgrading - completes in {formatUpgradeClock(rowState.pendingRemainingSeconds)}
-                      </div>
-                    )}
+                    {rowState.pendingUpgrade ? (
+                      <div className={styles.readOnlyUpgradeProgressBlock}>
+                        <div className={styles.readOnlyUpgradeSummary}>
+                          <span>Upgrading - completes in {formatUpgradeClock(rowState.pendingRemainingSeconds)}</span>
+                          <span>{rowState.pendingProgressPercent}%</span>
+                        </div>
 
-                    {rowState.upgradeSummary.nextLevels.length > 0 ? (
+                        {rowState.visibleNextLevels.length > 0 && (
+                          <>
+                            <div className={styles.readOnlyUpgradeList}>
+                              {rowState.visibleNextLevels.map((levelInfo) => (
+                                <div key={`${building.id}-${rowState.rowIndex}-pending-lvl-${levelInfo.level}`} className={styles.readOnlyUpgradeItem}>
+                                  <span className={styles.readOnlyUpgradeLevel}>Lvl {levelInfo.level}:</span>
+                                  <span className={styles.readOnlyUpgradeCost}>{formatNumberShort(levelInfo.cost)}</span>
+                                  <span className={styles.readOnlyUpgradeTime}>{formatUpgradeTime(levelInfo.time)}</span>
+                                </div>
+                              ))}
+                            </div>
+                            <div className={styles.readOnlyUpgradeSummary}>
+                              {rowState.visibleNextLevels.length} Levels - {formatNumberShort(rowState.visibleTotalCost)} - {formatSeconds(rowState.visibleTotalSeconds)}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    ) : rowState.visibleNextLevels.length > 0 ? (
                       <>
                         <div className={styles.readOnlyUpgradeList}>
-                          {rowState.upgradeSummary.nextLevels.map((levelInfo) => (
+                          {rowState.visibleNextLevels.map((levelInfo) => (
                             <div key={`${building.id}-${rowState.rowIndex}-lvl-${levelInfo.level}`} className={styles.readOnlyUpgradeItem}>
                               <span className={styles.readOnlyUpgradeLevel}>Lvl {levelInfo.level}:</span>
                               <span className={styles.readOnlyUpgradeCost}>{formatNumberShort(levelInfo.cost)}</span>
@@ -1315,7 +1348,7 @@ export default function UserPage({ username, onLogout, userId }) {
                           ))}
                         </div>
                         <div className={styles.readOnlyUpgradeSummary}>
-                          {rowState.upgradeSummary.nextLevels.length} Levels - {formatNumberShort(rowState.upgradeSummary.totalCost)} - {rowState.upgradeSummary.totalTime}
+                          {rowState.visibleNextLevels.length} Levels - {formatNumberShort(rowState.visibleTotalCost)} - {formatSeconds(rowState.visibleTotalSeconds)}
                         </div>
                       </>
                     ) : (
