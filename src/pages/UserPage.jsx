@@ -7,6 +7,9 @@ import BorderAllIcon from '@mui/icons-material/BorderAll'
 import AccessTimeIcon from '@mui/icons-material/AccessTime'
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined'
 import SettingsIcon from '@mui/icons-material/Settings'
+import HandymanOutlinedIcon from '@mui/icons-material/HandymanOutlined'
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward'
+import CheckIcon from '@mui/icons-material/Check'
 import builderBoostImg from '../assets/magic-items/builder-boost.png'
 import researchBoostImg from '../assets/magic-items/research-boost.png'
 import Header from '../components/Header'
@@ -30,6 +33,45 @@ const formatStructureName = (structureId = '') => {
 const formatPlayerTag = (value = '') => {
   const cleanTag = String(value).trim().replace(/^#/, '').toUpperCase()
   return cleanTag ? `#${cleanTag}` : ''
+}
+
+const formatUpgradeClock = (remainingSeconds) => {
+  const safeSeconds = Math.max(0, Math.ceil(Number(remainingSeconds || 0)))
+  const hours = Math.floor(safeSeconds / 3600)
+  const minutes = Math.floor((safeSeconds % 3600) / 60)
+  const seconds = safeSeconds % 60
+
+  return [
+    hours ? `${hours}h` : '',
+    minutes ? `${minutes}m` : '',
+    !hours && !minutes ? `${seconds}s` : seconds ? `${seconds}s` : '',
+  ].filter(Boolean).join(' ')
+}
+
+const getStructureRowCount = (building, currentLevels = []) => {
+  const unlockedCount = Number(building?.buildings_unlocked) || 0
+  const savedCount = Array.isArray(currentLevels) ? currentLevels.length : 0
+  return Math.max(1, unlockedCount, savedCount)
+}
+
+const getUpgradeRowIndex = (buildingId = '') => {
+  const match = String(buildingId).match(/-(\d+)$/)
+  if (!match) return null
+
+  const rowIndex = Number(match[1]) - 1
+  return Number.isFinite(rowIndex) && rowIndex >= 0 ? rowIndex : null
+}
+
+const getOpenActionRowStorageKey = (userId, villageId) => `clash_tracker_open_action_row:${userId || 'guest'}:${villageId || 'none'}`
+
+const readOpenActionRowKey = (userId, villageId) => {
+  if (typeof window === 'undefined' || !villageId) return ''
+
+  try {
+    return window.localStorage.getItem(getOpenActionRowStorageKey(userId, villageId)) || ''
+  } catch {
+    return ''
+  }
 }
 
 const canonImages = import.meta.glob('../assets/Defences/canon/*.png', { eager: true, import: 'default' })
@@ -61,9 +103,14 @@ export default function UserPage({ username, onLogout, userId }) {
   const [structuresLoading, setStructuresLoading] = useState(false)
   const [refreshingVillage, setRefreshingVillage] = useState(false)
   const [activeLoadedTab, setActiveLoadedTab] = useState('defences')
+  const [pendingUpgrades, setPendingUpgrades] = useState([])
+  const [upgradeClock, setUpgradeClock] = useState(Date.now())
+  const [openActionRowKey, setOpenActionRowKey] = useState('')
+  const [actionPopup, setActionPopup] = useState({ open: false, title: '', action: '', rowKey: '' })
   const activeVillageRef = useRef(null)
   const viewModeRef = useRef('search')
   const builderCountRef = useRef(2)
+  const upgradingRowsRef = useRef(false)
 
   const setActiveVillagePersisted = async (villageId) => {
     if (!userId || !villageId) return
@@ -99,8 +146,61 @@ export default function UserPage({ username, onLogout, userId }) {
   }, [activeVillage])
 
   useEffect(() => {
+    if (!activeVillage?.id) {
+      setOpenActionRowKey('')
+      return
+    }
+
+    setOpenActionRowKey(readOpenActionRowKey(userId, activeVillage.id))
+  }, [userId, activeVillage?.id])
+
+  useEffect(() => {
+    if (structuresLoading) return
+    if (!activeVillage?.id || !openActionRowKey) return
+
+    const rowIndex = getUpgradeRowIndex(openActionRowKey)
+    if (rowIndex == null) return
+
+    const pendingUpgrade = getPendingUpgradeForRow(activeVillage.id, openActionRowKey, rowIndex)
+    if (!pendingUpgrade) {
+      setOpenActionRowKey('')
+    }
+  }, [activeVillage?.id, openActionRowKey, pendingUpgrades, structuresLoading])
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !activeVillage?.id) return
+
+    try {
+      if (openActionRowKey) {
+        window.localStorage.setItem(getOpenActionRowStorageKey(userId, activeVillage.id), openActionRowKey)
+      } else {
+        window.localStorage.removeItem(getOpenActionRowStorageKey(userId, activeVillage.id))
+      }
+    } catch {
+      // Ignore storage failures.
+    }
+  }, [openActionRowKey, userId, activeVillage?.id])
+
+  useEffect(() => {
     loadVillages()
   }, [userId])
+
+  useEffect(() => {
+    if (!userId) {
+      setPendingUpgrades([])
+      return
+    }
+
+    setPendingUpgrades([])
+  }, [userId])
+
+  useEffect(() => {
+    const timerId = window.setInterval(() => {
+      setUpgradeClock(Date.now())
+    }, 1000)
+
+    return () => window.clearInterval(timerId)
+  }, [])
 
   const loadVillages = async () => {
     if (!userId) return
@@ -118,6 +218,7 @@ export default function UserPage({ username, onLogout, userId }) {
         const selectedBuilderCount = Math.min(5, Math.max(2, Number(selectedVillage.builder_count) || 2))
         builderCountRef.current = selectedBuilderCount
         setBuilderCount(selectedBuilderCount)
+        loadTownhallStructures(selectedVillage.townhall_level, selectedVillage.id)
       }
       setViewMode('loaded')
     } else {
@@ -197,7 +298,7 @@ export default function UserPage({ username, onLogout, userId }) {
       await setActiveVillagePersisted(data.id)
       await loadVillages()
       setActiveVillage(data)
-      loadTownhallStructures(data.townhall_level)
+      loadTownhallStructures(data.townhall_level, data.id)
       setViewMode('structures')
       setPlayerData(null)
       setTag('')
@@ -258,6 +359,7 @@ export default function UserPage({ username, onLogout, userId }) {
   const handleSelectVillage = (village) => {
     setActiveVillagePersisted(village.id).catch(() => {})
     setActiveVillage(village)
+    loadTownhallStructures(village.townhall_level, village.id)
     setViewMode('loaded')
     setPlayerData(null)
     setTag('')
@@ -429,7 +531,7 @@ export default function UserPage({ username, onLogout, userId }) {
   const loadTownhallSnapshot = async (townhallLevel, options = {}) => {
     if (!townhallLevel) return null
 
-    const { loadStructures = false, loadWalls = false } = options
+    const { loadStructures = false, loadWalls = false, villageId = activeVillageRef.current?.id } = options
 
     const { data } = await supabase
       .from('townhall_buildings')
@@ -443,30 +545,58 @@ export default function UserPage({ username, onLogout, userId }) {
       setStructureCatalog(normalizedData)
 
       let savedStructureRows = []
-      if (activeVillageRef.current?.id) {
+      if (villageId) {
         const { data: structureRows } = await supabase
           .from('user_village_buildings')
-          .select('building_id, current_level, quantity')
-          .eq('village_id', activeVillageRef.current.id)
+          .select('building_id, building_name, current_level, quantity, upgrade_started_at, upgrade_finish_at, upgrade_from_level, upgrade_to_level')
+          .eq('village_id', villageId)
           .not('building_id', 'like', 'walls-%')
 
         savedStructureRows = structureRows || []
       }
 
       const createInitialLevels = (building) => {
-        const count = Math.max(1, building.buildings_unlocked || 1)
-        return Array.from({ length: count }, (_, index) => {
-          const savedRow = savedStructureRows.find((row) => row.building_id === `${building.id}-${index + 1}`)
-          if (savedRow) return Number(savedRow.current_level || 0)
-          return getDefaultRowLevel(building, index, isCopyUnlocked(building, index))
-        })
+        const count = getStructureRowCount(building)
+        return Array.from({ length: count }, (_, index) => getDefaultRowLevel(building, index, isCopyUnlocked(building, index)))
       }
 
       const initialLevels = {}
       ;[...normalizedData.defences, ...normalizedData.army, ...normalizedData.resources, ...normalizedData.troops].forEach((building) => {
-        initialLevels[building.id] = createInitialLevels(building)
+        const savedRowsForBuilding = savedStructureRows.filter((row) => row.building_id?.startsWith(`${building.id}-`))
+        const rowCount = getStructureRowCount(building, savedRowsForBuilding)
+        initialLevels[building.id] = Array.from({ length: rowCount }, (_, index) => {
+          const savedRow = savedStructureRows.find((row) => row.building_id === `${building.id}-${index + 1}`)
+          if (savedRow) return Number(savedRow.current_level || 0)
+          return createInitialLevels(building)[index] ?? getDefaultRowLevel(building, index, isCopyUnlocked(building, index))
+        })
       })
       setStructureLevels(initialLevels)
+
+      const now = Date.now()
+      const restoredPendingUpgrades = savedStructureRows
+        .map((row) => {
+          const rowIndex = getUpgradeRowIndex(row.building_id)
+          const finishAt = row.upgrade_finish_at ? new Date(row.upgrade_finish_at).getTime() : NaN
+          const startedAt = row.upgrade_started_at ? new Date(row.upgrade_started_at).getTime() : NaN
+
+          if (rowIndex == null || !Number.isFinite(finishAt)) return null
+
+          return {
+            id: getPendingUpgradeId(villageId, row.building_id, rowIndex),
+            villageId,
+            buildingId: row.building_id,
+            buildingName: row.building_name || formatStructureName(row.building_id),
+            rowIndex,
+            fromLevel: Number(row.upgrade_from_level ?? row.current_level ?? 0),
+            toLevel: Number(row.upgrade_to_level ?? row.current_level ?? 0),
+            startedAt: Number.isFinite(startedAt) ? startedAt : now,
+            finishAt,
+            durationSeconds: Math.max(0, Math.round((finishAt - (Number.isFinite(startedAt) ? startedAt : now)) / 1000)),
+          }
+        })
+        .filter((upgrade) => upgrade && Number(upgrade.finishAt) > 0)
+
+      setPendingUpgrades(restoredPendingUpgrades)
     }
 
     if (loadWalls) {
@@ -474,11 +604,11 @@ export default function UserPage({ username, onLogout, userId }) {
       const wallLevels = data?.walls?.levels || []
 
       let savedWallRows = []
-      if (activeVillageRef.current?.id) {
+      if (villageId) {
         const { data: wallRows } = await supabase
           .from('user_village_buildings')
           .select('building_id, current_level, quantity')
-          .eq('village_id', activeVillageRef.current.id)
+          .eq('village_id', villageId)
           .like('building_id', 'walls-%')
 
         savedWallRows = wallRows || []
@@ -496,13 +626,13 @@ export default function UserPage({ username, onLogout, userId }) {
     return data || null
   }
 
-  const loadTownhallStructures = async (townhallLevel) => {
+  const loadTownhallStructures = async (townhallLevel, villageId = activeVillageRef.current?.id) => {
     if (!townhallLevel) return
 
     setStructuresLoading(true)
 
     try {
-      const data = await loadTownhallSnapshot(townhallLevel, { loadStructures: true })
+      const data = await loadTownhallSnapshot(townhallLevel, { loadStructures: true, villageId })
       if (!data) {
         setStructureCatalog({ defences: [], army: [], resources: [], troops: [] })
         setStructureLevels({})
@@ -528,7 +658,7 @@ export default function UserPage({ username, onLogout, userId }) {
     setViewMode('walls')
 
     try {
-      const data = await loadTownhallSnapshot(activeVillage.townhall_level, { loadWalls: true })
+      const data = await loadTownhallSnapshot(activeVillage.townhall_level, { loadWalls: true, villageId: activeVillage.id })
       if (!data) {
         setWallConfig(null)
         setWallCounts({})
@@ -561,7 +691,7 @@ export default function UserPage({ username, onLogout, userId }) {
       const structureRowsToSave = [...visibleDefenseBuildings, ...visibleArmyBuildings, ...visibleResourceBuildings]
         .flatMap((building) => {
           const currentLevels = structureLevels[building.id] || []
-          const rowCount = Math.max(1, building.buildings_unlocked || currentLevels.length || 1)
+          const rowCount = getStructureRowCount(building, currentLevels)
 
           return Array.from({ length: rowCount }, (_, index) => ({
             village_id: activeVillage.id,
@@ -594,7 +724,7 @@ export default function UserPage({ username, onLogout, userId }) {
   const handleSetAllToZero = () => {
     const resetLevels = {}
     ;[...visibleDefenseBuildings, ...visibleArmyBuildings, ...visibleResourceBuildings].forEach((building) => {
-      const rowCount = Math.max(1, building.buildings_unlocked || building.levels?.length || 1)
+      const rowCount = getStructureRowCount(building, building.levels || [])
       resetLevels[building.id] = Array.from({ length: rowCount }, (_, index) => getDefaultRowLevel(building, index, isCopyUnlocked(building, index)))
     })
     setStructureLevels(resetLevels)
@@ -603,7 +733,7 @@ export default function UserPage({ username, onLogout, userId }) {
   const handleSetAllToMax = () => {
     const maxedLevels = {}
     ;[...visibleDefenseBuildings, ...visibleArmyBuildings, ...visibleResourceBuildings].forEach((building) => {
-      const rowCount = Math.max(1, building.buildings_unlocked || building.levels?.length || 1)
+      const rowCount = getStructureRowCount(building, building.levels || [])
       const maxLevel = Math.max(...(building.levels || []).map((level) => level.level), 0)
       maxedLevels[building.id] = Array.from({ length: rowCount }, () => maxLevel)
     })
@@ -611,6 +741,8 @@ export default function UserPage({ username, onLogout, userId }) {
   }
 
   const handleBackToLoaded = () => {
+    setStructureCatalog({ defences: [], army: [], resources: [], troops: [] })
+    setStructureLevels({})
     setViewMode('loaded')
   }
 
@@ -683,9 +815,240 @@ export default function UserPage({ username, onLogout, userId }) {
 
     return Math.max(wallPieces - otherWalls, 0)
   }
-  const visibleDefenseBuildings = structureCatalog.defences.filter((building) => ['canon', 'archer_tower'].includes(building.id))
+  const defenseSortPriority = {
+    canon: 0,
+    archer_tower: 1,
+  }
+
+  const visibleDefenseBuildings = [...(structureCatalog.defences || [])]
+    .filter((building) => building?.id)
+    .sort((left, right) => {
+      const leftPriority = defenseSortPriority[left.id] ?? 2
+      const rightPriority = defenseSortPriority[right.id] ?? 2
+      if (leftPriority !== rightPriority) return leftPriority - rightPriority
+      return (left.name || formatStructureName(left.id)).localeCompare(right.name || formatStructureName(right.id))
+    })
   const visibleResourceBuildings = structureCatalog.resources.filter((building) => ['gold_mine', 'elixir_collector', 'gold_storage', 'elixir_storage'].includes(building.id))
   const visibleArmyBuildings = structureCatalog.army.filter((building) => building.id === 'army_camp')
+
+  const formatNumberShort = (value) => {
+    const numberValue = Number(value || 0)
+    if (numberValue >= 1000) {
+      const thousands = numberValue / 1000
+      return `${Number.isInteger(thousands) ? thousands : Number(thousands.toFixed(2))}K`
+    }
+    return `${numberValue}`
+  }
+
+  const formatUpgradeTime = (value) => {
+    const raw = String(value || '').trim().toLowerCase()
+    if (!raw) return '0s'
+
+    const compact = raw.replace(/\s+/g, '')
+    const parts = compact.match(/\d+(?:\.\d+)?(?:h|hr|hrs|m|min|mins|s|sec|secs)/g)
+    const tokens = parts || [compact]
+    let totalSeconds = 0
+
+    tokens.forEach((token) => {
+      const match = token.match(/(\d+(?:\.\d+)?)(h|hr|hrs|m|min|mins|s|sec|secs)/)
+      if (!match) return
+
+      const amount = Number(match[1])
+      const unit = match[2]
+      if (unit.startsWith('h')) totalSeconds += amount * 3600
+      else if (unit.startsWith('m')) totalSeconds += amount * 60
+      else totalSeconds += amount
+    })
+
+    const hours = Math.floor(totalSeconds / 3600)
+    const minutes = Math.floor((totalSeconds % 3600) / 60)
+    const seconds = Math.round(totalSeconds % 60)
+
+    return [
+      hours ? `${hours}h` : '',
+      minutes ? `${minutes}m` : '',
+      !hours && !minutes ? `${seconds}s` : seconds ? `${seconds}s` : '',
+    ].filter(Boolean).join(' ')
+  }
+
+  const getTimeSeconds = (value) => {
+    const raw = String(value || '').trim().toLowerCase()
+    if (!raw) return 0
+
+    const compact = raw.replace(/\s+/g, '')
+    const match = compact.match(/^(\d+(?:\.\d+)?)(h|hr|hrs|m|min|mins|s|sec|secs)$/)
+    if (!match) return 0
+
+    const amount = Number(match[1])
+    const unit = match[2]
+    if (unit.startsWith('h')) return amount * 3600
+    if (unit.startsWith('m')) return amount * 60
+    return amount
+  }
+
+  const formatSeconds = (totalSeconds) => {
+    const safeSeconds = Math.max(0, Math.round(Number(totalSeconds || 0)))
+    const hours = Math.floor(safeSeconds / 3600)
+    const minutes = Math.floor((safeSeconds % 3600) / 60)
+    const seconds = safeSeconds % 60
+
+    return [
+      hours ? `${hours}h` : '',
+      minutes ? `${minutes}m` : '',
+      !hours && !minutes ? `${seconds}s` : seconds ? `${seconds}s` : '',
+    ].filter(Boolean).join(' ')
+  }
+
+  const getNextUpgradeLevels = (building, currentLevel) => {
+    const levels = [...(building.levels || [])].sort((left, right) => Number(left.level || 0) - Number(right.level || 0))
+    return levels.filter((level) => Number(level.level || 0) > Number(currentLevel || 0))
+  }
+
+  const getUpgradeSummary = (building, currentLevel) => {
+    const nextLevels = getNextUpgradeLevels(building, currentLevel)
+    const totalCost = nextLevels.reduce((total, level) => total + Number(level.cost || 0), 0)
+    const totalSeconds = nextLevels.reduce((total, level) => total + getTimeSeconds(level.time), 0)
+
+    return {
+      nextLevels,
+      totalCost,
+      totalTime: formatSeconds(totalSeconds),
+    }
+  }
+
+  const getPendingUpgradeId = (villageId, buildingId, rowIndex) => `${villageId}:${buildingId}:${rowIndex}`
+
+  const getPendingUpgradeForRow = (villageId, buildingId, rowIndex) => {
+    if (!villageId || !buildingId) return null
+
+    return pendingUpgrades.find(
+      (upgrade) =>
+        upgrade.villageId === villageId &&
+        upgrade.buildingId === buildingId &&
+        Number(upgrade.rowIndex) === Number(rowIndex)
+    ) || null
+  }
+
+  const openComingSoonPopup = (title, action, rowKey) => {
+    setActionPopup({
+      open: true,
+      title,
+      action,
+      rowKey,
+    })
+  }
+
+  const closeComingSoonPopup = () => {
+    setActionPopup({ open: false, title: '', action: '', rowKey: '' })
+  }
+
+  const completePendingUpgrade = async (upgrade) => {
+    if (!upgrade?.id || !upgrade?.villageId || !upgrade?.buildingId) return false
+
+    const { error: updateError } = await supabase
+      .from('user_village_buildings')
+      .update({
+        current_level: Number(upgrade.toLevel),
+        upgrade_started_at: null,
+        upgrade_finish_at: null,
+        upgrade_from_level: null,
+        upgrade_to_level: null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('village_id', upgrade.villageId)
+      .eq('building_id', upgrade.buildingId)
+
+    if (updateError) throw updateError
+
+    setPendingUpgrades((current) => current.filter((item) => item.id !== upgrade.id))
+
+    if (activeVillageRef.current?.id === upgrade.villageId) {
+      setStructureLevels((current) => {
+        const nextLevels = [...(current[upgrade.buildingId] || [])]
+        nextLevels[Number(upgrade.rowIndex)] = Number(upgrade.toLevel)
+        return {
+          ...current,
+          [upgrade.buildingId]: nextLevels,
+        }
+      })
+    }
+
+    return true
+  }
+
+  const startStructureUpgrade = async (building, rowState) => {
+    if (!activeVillage?.id || !building?.id || rowState == null) return
+
+    const rowIndex = Number(rowState.rowIndex)
+    const buildingRowId = `${building.id}-${rowIndex + 1}`
+    const existingUpgrade = getPendingUpgradeForRow(activeVillage.id, buildingRowId, rowIndex)
+    if (existingUpgrade) return
+
+    const nextLevel = getNextUpgradeLevels(building, rowState.rowLevel)[0]
+    if (!nextLevel) return
+
+    const durationSeconds = Math.max(0, getTimeSeconds(nextLevel.time))
+    const startedAt = Date.now()
+    const finishAt = startedAt + durationSeconds * 1000
+
+    const upgradeRow = {
+      village_id: activeVillage.id,
+      building_id: buildingRowId,
+      building_name: building.name || formatStructureName(building.id),
+      current_level: Number(rowState.rowLevel),
+      quantity: 1,
+      upgrade_started_at: new Date(startedAt).toISOString(),
+      upgrade_finish_at: new Date(finishAt).toISOString(),
+      upgrade_from_level: Number(rowState.rowLevel),
+      upgrade_to_level: Number(nextLevel.level),
+      updated_at: new Date().toISOString(),
+    }
+
+    const { error: saveError } = await supabase
+      .from('user_village_buildings')
+      .upsert([upgradeRow], { onConflict: 'village_id,building_id' })
+
+    if (saveError) throw saveError
+
+    setPendingUpgrades((current) => [
+      ...current.filter((item) => item.id !== getPendingUpgradeId(activeVillage.id, buildingRowId, rowIndex)),
+      {
+        id: getPendingUpgradeId(activeVillage.id, buildingRowId, rowIndex),
+        villageId: activeVillage.id,
+        buildingId: buildingRowId,
+        buildingName: building.name || formatStructureName(building.id),
+        rowIndex,
+        fromLevel: Number(rowState.rowLevel),
+        toLevel: Number(nextLevel.level),
+        startedAt,
+        finishAt,
+        durationSeconds,
+      },
+    ])
+  }
+
+  useEffect(() => {
+    if (upgradingRowsRef.current) return
+
+    const dueUpgrades = pendingUpgrades.filter((upgrade) => Number(upgrade.finishAt) <= upgradeClock)
+    if (dueUpgrades.length === 0) return
+
+    upgradingRowsRef.current = true
+
+    const flushCompletedUpgrades = async () => {
+      try {
+        for (const upgrade of dueUpgrades) {
+          await completePendingUpgrade(upgrade)
+        }
+      } catch (upgradeError) {
+        setError(upgradeError.message || 'Failed to complete upgrade')
+      } finally {
+        upgradingRowsRef.current = false
+      }
+    }
+
+    void flushCompletedUpgrades()
+  }, [pendingUpgrades, upgradeClock])
 
   const computeStructuresCompletion = () => {
     const buildings = [...structureCatalog.defences, ...structureCatalog.army, ...structureCatalog.resources, ...structureCatalog.troops]
@@ -695,7 +1058,7 @@ export default function UserPage({ username, onLogout, userId }) {
 
     buildings.forEach((building) => {
       const maxLevel = Math.max(...(building.levels || []).map((l) => l.level), 0)
-      const rows = Math.max(1, building.buildings_unlocked || (building.levels?.length || 1))
+      const rows = getStructureRowCount(building, structureLevels[building.id] || [])
       const levelsArray = structureLevels[building.id] || Array.from({ length: rows }, () => getDefaultRowLevel(building, 0, true))
 
       for (let i = 0; i < rows; i++) {
@@ -728,11 +1091,6 @@ export default function UserPage({ username, onLogout, userId }) {
           const currentVillage = activeVillageRef.current
           const currentView = viewModeRef.current
           if (!currentVillage || currentVillage.townhall_level !== townhallLevel) return
-
-          if (currentView === 'structures') {
-            await loadTownhallSnapshot(townhallLevel, { loadStructures: true })
-            return
-          }
 
           if (currentView === 'walls') {
             await loadTownhallSnapshot(townhallLevel, { loadWalls: true })
@@ -794,20 +1152,188 @@ export default function UserPage({ username, onLogout, userId }) {
     })
   }
 
-  const renderStructureCard = (building, cardKey = building.id) => {
+  const renderStructureCard = (building, cardKey = building.id, options = {}) => {
+    const { readOnly = false } = options
     const displayName = building.name || formatStructureName(building.id)
     const currentLevels = structureLevels[building.id] || []
-    const rowCount = Math.max(1, building.buildings_unlocked || currentLevels.length || 1)
+    const rowCount = getStructureRowCount(building, currentLevels)
     const maxLevel = Math.max(...(building.levels || []).map((level) => level.level), 0)
     const getMinimumLevel = (rowIndex) => getDefaultRowLevel(building, rowIndex, isCopyUnlocked(building, rowIndex))
     const clampLevel = (value, rowIndex) => Math.min(Math.max(Number(value || 0), getMinimumLevel(rowIndex)), maxLevel)
     const buttonLevels = Array.from({ length: maxLevel }, (_, index) => index + 1)
 
+    const rowStates = Array.from({ length: rowCount }, (_, rowIndex) => {
+      const defaultLevel = getDefaultRowLevel(building, rowIndex, isCopyUnlocked(building, rowIndex))
+      const rowLevel = clampLevel(currentLevels[rowIndex] ?? defaultLevel, rowIndex)
+      const minimumLevel = getMinimumLevel(rowIndex)
+      const upgradeSummary = getUpgradeSummary(building, rowLevel)
+      const pendingUpgrade = getPendingUpgradeForRow(activeVillage?.id, `${building.id}-${rowIndex + 1}`, rowIndex)
+      const pendingRemainingSeconds = pendingUpgrade ? Math.max(0, Math.ceil((Number(pendingUpgrade.finishAt) - upgradeClock) / 1000)) : 0
+      const actionRowKey = `${building.id}-${rowIndex + 1}`
+
+      return {
+        rowIndex,
+        rowLevel,
+        minimumLevel,
+        actionRowKey,
+        upgradeSummary,
+        pendingUpgrade,
+        pendingRemainingSeconds,
+        statusIcon: rowLevel <= 0 ? (
+          <HandymanOutlinedIcon className={styles.readOnlyActionIcon} />
+        ) : (
+          <ArrowUpwardIcon className={styles.readOnlyActionIcon} />
+        ),
+      }
+    })
+
+    if (readOnly) {
+      const totalRemainingUpgrades = rowStates.reduce((total, rowState) => total + rowState.upgradeSummary.nextLevels.length, 0)
+      const totalCost = rowStates.reduce((total, rowState) => total + rowState.upgradeSummary.totalCost, 0)
+      const totalSeconds = rowStates.reduce((total, rowState) => {
+        return total + rowState.upgradeSummary.nextLevels.reduce((rowTotal, levelInfo) => rowTotal + getTimeSeconds(levelInfo.time), 0)
+      }, 0)
+      const summaryImageLevel = rowStates[0]?.rowLevel ?? 0
+      const tableRowStyle = {
+        gridTemplateRows: `repeat(${rowCount}, minmax(0, auto))`,
+      }
+      const rowsColumnStyle = {
+        gridRow: `1 / span ${rowCount}`,
+      }
+
+      return (
+        <section key={cardKey} className={`${styles.defenceCard} ${styles.readOnlyBuildingBlock}`}>
+          <div className={styles.readOnlyCardGrid} style={tableRowStyle}>
+            <div className={styles.readOnlySummaryPanel} style={{ gridRow: `1 / span ${rowCount}` }}>
+              {getBuildingImagePath(building, summaryImageLevel) ? (
+                <img
+                  src={getBuildingImagePath(building, summaryImageLevel)}
+                  alt={displayName}
+                  className={styles.readOnlySummaryImage}
+                />
+              ) : (
+                <div className={styles.readOnlySummaryImagePlaceholder} />
+              )}
+
+              <div className={styles.readOnlySummaryName}>{displayName}</div>
+              <div className={styles.readOnlySummaryBox}>
+                <div className={styles.readOnlySummaryCount}>{totalRemainingUpgrades} Upgrades</div>
+                <div className={styles.readOnlySummaryCost}>{formatNumberShort(totalCost)}</div>
+                <div className={styles.readOnlySummaryTime}>{formatSeconds(totalSeconds)}</div>
+              </div>
+            </div>
+
+            <div className={styles.readOnlyRowsColumn} style={rowsColumnStyle}>
+              {rowStates.map((rowState) => (
+                <div key={`${building.id}-${rowState.rowIndex}`} className={styles.readOnlyRow}>
+                  <div className={styles.readOnlyLevelCell}>
+                    {getBuildingImagePath(building, rowState.rowLevel) ? (
+                      <img
+                        src={getBuildingImagePath(building, rowState.rowLevel)}
+                        alt={displayName}
+                        className={styles.readOnlyRowImage}
+                      />
+                    ) : (
+                      <div className={styles.defenceIconPlaceholder} />
+                    )}
+                    <div className={styles.readOnlyLevelMeta}>
+                      <div className={styles.readOnlyLevelValue}>{rowState.rowLevel}/{maxLevel}</div>
+                      {openActionRowKey === rowState.actionRowKey ? (
+                        <div className={styles.readOnlyActionChooserWrap}>
+                          <div className={styles.readOnlyActionChooser}>
+                            <button
+                              type="button"
+                              className={`${styles.readOnlyActionBtn} ${styles.readOnlyActionChoiceBtn} ${styles.readOnlyActionBtnConstruct}`}
+                              onClick={() => openComingSoonPopup(rowState.rowLevel <= 0 ? 'Construct' : 'Upgrade', 'wrench', rowState.actionRowKey)}
+                              aria-label="Started"
+                              title="Started"
+                            >
+                              <HandymanOutlinedIcon className={styles.readOnlyActionIcon} />
+                            </button>
+                            <button
+                              type="button"
+                              className={`${styles.readOnlyActionBtn} ${styles.readOnlyActionChoiceBtn} ${styles.readOnlyActionBtnConfirm}`}
+                              onClick={() => openComingSoonPopup(rowState.rowLevel <= 0 ? 'Construct' : 'Upgrade', 'check', rowState.actionRowKey)}
+                              aria-label={rowState.rowLevel <= 0 ? 'Construct started' : 'Upgrade started'}
+                              title={rowState.rowLevel <= 0 ? 'Construct started' : 'Upgrade started'}
+                            >
+                              <CheckIcon className={styles.readOnlyActionIcon} />
+                            </button>
+                          </div>
+                          {actionPopup.open && actionPopup.rowKey === rowState.actionRowKey && (
+                            <div className={styles.comingSoonInlinePopup} role="status" aria-live="polite">
+                              <div className={styles.comingSoonInlineTitleRow}>
+                                <span className={styles.comingSoonInlineIcon}>{actionPopup.action === 'check' ? <CheckIcon /> : <HandymanOutlinedIcon />}</span>
+                                <span className={styles.comingSoonInlineTitle}>{actionPopup.title} feature</span>
+                              </div>
+                              <div className={styles.comingSoonInlineText}>Features adding soon.</div>
+                              <button type="button" className={styles.comingSoonInlineButton} onClick={closeComingSoonPopup}>
+                                OK
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          className={`${styles.readOnlyActionBtn} ${rowState.rowLevel <= 0 ? styles.readOnlyActionBtnConstruct : styles.readOnlyActionBtnUpgrade} ${rowState.pendingUpgrade ? styles.readOnlyActionBtnPending : ''}`}
+                          disabled={rowState.rowLevel >= maxLevel || Boolean(rowState.pendingUpgrade)}
+                          aria-label={rowState.rowLevel <= 0 ? 'Construct' : 'Upgrade'}
+                          title={rowState.rowLevel <= 0 ? 'Construct' : 'Upgrade'}
+                          onClick={() => {
+                            setOpenActionRowKey(rowState.actionRowKey)
+                            closeComingSoonPopup()
+                            void startStructureUpgrade(building, rowState)
+                          }}
+                        >
+                          {rowState.rowLevel <= 0 ? (
+                            <HandymanOutlinedIcon className={styles.readOnlyActionIcon} />
+                          ) : (
+                            <ArrowUpwardIcon className={styles.readOnlyActionIcon} />
+                          )}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className={styles.readOnlyDetailsRow}>
+                    {rowState.pendingUpgrade && (
+                      <div className={styles.readOnlyUpgradeSummary}>
+                        Upgrading - completes in {formatUpgradeClock(rowState.pendingRemainingSeconds)}
+                      </div>
+                    )}
+
+                    {rowState.upgradeSummary.nextLevels.length > 0 ? (
+                      <>
+                        <div className={styles.readOnlyUpgradeList}>
+                          {rowState.upgradeSummary.nextLevels.map((levelInfo) => (
+                            <div key={`${building.id}-${rowState.rowIndex}-lvl-${levelInfo.level}`} className={styles.readOnlyUpgradeItem}>
+                              <span className={styles.readOnlyUpgradeLevel}>Lvl {levelInfo.level}:</span>
+                              <span className={styles.readOnlyUpgradeCost}>{formatNumberShort(levelInfo.cost)}</span>
+                              <span className={styles.readOnlyUpgradeTime}>{formatUpgradeTime(levelInfo.time)}</span>
+                            </div>
+                          ))}
+                        </div>
+                        <div className={styles.readOnlyUpgradeSummary}>
+                          {rowState.upgradeSummary.nextLevels.length} Levels - {formatNumberShort(rowState.upgradeSummary.totalCost)} - {rowState.upgradeSummary.totalTime}
+                        </div>
+                      </>
+                    ) : (
+                      <div className={styles.readOnlyUpgradeSummary}>Max level reached</div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )
+    }
+
     return (
       <section key={cardKey} className={styles.defenceCard}>
         <div className={styles.defenceCardHeader}>
           <h3 className={styles.defenceCardTitle}>{displayName}</h3>
-          <span className={styles.defenceCountBadge}>x{rowCount}</span>
         </div>
         <div className={styles.defenceSetRow}>
           <span className={styles.defenceSetLabel}>Set all to:</span>
@@ -827,43 +1353,37 @@ export default function UserPage({ username, onLogout, userId }) {
         </div>
 
         <div className={styles.defenceRows}>
-          {Array.from({ length: rowCount }, (_, rowIndex) => {
-            const defaultLevel = getDefaultRowLevel(building, rowIndex, isCopyUnlocked(building, rowIndex))
-            const rowLevel = clampLevel(currentLevels[rowIndex] ?? defaultLevel, rowIndex)
-            const minimumLevel = getMinimumLevel(rowIndex)
-            return (
-              <div key={`${building.id}-${rowIndex}`} className={styles.defenceRow}>
-                <span className={styles.defenceRowCount}>{rowIndex + 1}</span>
-                {getBuildingImagePath(building, rowLevel) ? (
-                  <img
-                    src={getBuildingImagePath(building, rowLevel)}
-                    alt={displayName}
-                    className={styles.defenceIcon}
-                  />
-                ) : (
-                  <div className={styles.defenceIconPlaceholder} />
-                )}
-                <input
-                  type="range"
-                  min={minimumLevel}
-                  max={maxLevel}
-                  step="1"
-                  value={rowLevel}
-                  onChange={(e) => updateStructureLevel(building.id, rowIndex, e.target.value)}
-                  className={styles.defenceSlider}
+          {rowStates.map((rowState) => (
+            <div key={`${building.id}-${rowState.rowIndex}`} className={styles.defenceRow}>
+              {getBuildingImagePath(building, rowState.rowLevel) ? (
+                <img
+                  src={getBuildingImagePath(building, rowState.rowLevel)}
+                  alt={displayName}
+                  className={styles.defenceIcon}
                 />
-                <input
-                  type="number"
-                  min={minimumLevel}
-                  max={maxLevel}
-                  step="1"
-                  value={rowLevel}
-                  onChange={(e) => updateStructureLevel(building.id, rowIndex, e.target.value)}
-                  className={styles.defenceValueInput}
-                />
-              </div>
-            )
-          })}
+              ) : (
+                <div className={styles.defenceIconPlaceholder} />
+              )}
+              <input
+                type="range"
+                min={rowState.minimumLevel}
+                max={maxLevel}
+                step="1"
+                value={rowState.rowLevel}
+                onChange={(e) => updateStructureLevel(building.id, rowState.rowIndex, e.target.value)}
+                className={styles.defenceSlider}
+              />
+              <input
+                type="number"
+                min={rowState.minimumLevel}
+                max={maxLevel}
+                step="1"
+                value={rowState.rowLevel}
+                onChange={(e) => updateStructureLevel(building.id, rowState.rowIndex, e.target.value)}
+                className={styles.defenceValueInput}
+              />
+            </div>
+          ))}
         </div>
       </section>
     )
@@ -1230,10 +1750,8 @@ export default function UserPage({ username, onLogout, userId }) {
                               <span>Level</span>
                               <span>Upgrades</span>
                             </div>
-                            <div className={styles.loadedStructureBody}>
-                              <div className={styles.structuresDatabaseGrid}>
-                                {visibleDefenseBuildings.map((building, index) => renderStructureCard(building, `tab-defences-${building.id}-${index}`))}
-                              </div>
+                            <div className={styles.readOnlyLoadedList}>
+                              {visibleDefenseBuildings.map((building, index) => renderStructureCard(building, `tab-defences-${building.id}-${index}`, { readOnly: true }))}
                             </div>
                           </div>
                         </div>
@@ -1262,10 +1780,8 @@ export default function UserPage({ username, onLogout, userId }) {
                               <span>Level</span>
                               <span>Upgrades</span>
                             </div>
-                            <div className={styles.loadedStructureBody}>
-                              <div className={styles.structuresDatabaseGrid}>
-                                {visibleArmyBuildings.map((building, index) => renderStructureCard(building, `tab-army-${building.id}-${index}`))}
-                              </div>
+                            <div className={styles.readOnlyLoadedList}>
+                              {visibleArmyBuildings.map((building, index) => renderStructureCard(building, `tab-army-${building.id}-${index}`, { readOnly: true }))}
                             </div>
                           </div>
                         </div>
@@ -1294,10 +1810,8 @@ export default function UserPage({ username, onLogout, userId }) {
                               <span>Level</span>
                               <span>Upgrades</span>
                             </div>
-                            <div className={styles.loadedStructureBody}>
-                              <div className={styles.structuresDatabaseGrid}>
-                                {visibleResourceBuildings.map((building, index) => renderStructureCard(building, `tab-resources-${building.id}-${index}`))}
-                              </div>
+                            <div className={styles.readOnlyLoadedList}>
+                              {visibleResourceBuildings.map((building, index) => renderStructureCard(building, `tab-resources-${building.id}-${index}`, { readOnly: true }))}
                             </div>
                           </div>
                         </div>
@@ -1315,10 +1829,8 @@ export default function UserPage({ username, onLogout, userId }) {
                               <span>Level</span>
                               <span>Upgrades</span>
                             </div>
-                            <div className={styles.loadedStructureBody}>
-                              <div className={styles.structuresDatabaseGrid}>
-                                {(structureCatalog.troops || []).map((building, index) => renderStructureCard(building, `tab-troops-${building.id}-${index}`))}
-                              </div>
+                            <div className={styles.readOnlyLoadedList}>
+                              {(structureCatalog.troops || []).map((building, index) => renderStructureCard(building, `tab-troops-${building.id}-${index}`, { readOnly: true }))}
                             </div>
                           </div>
                         </div>

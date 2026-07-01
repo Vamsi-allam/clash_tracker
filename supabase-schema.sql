@@ -22,6 +22,18 @@ alter table if exists public.user_villages
 alter table if exists public.user_village_buildings
   drop column if exists builder_count;
 
+alter table if exists public.user_village_buildings
+  add column if not exists upgrade_started_at timestamptz;
+
+alter table if exists public.user_village_buildings
+  add column if not exists upgrade_finish_at timestamptz;
+
+alter table if exists public.user_village_buildings
+  add column if not exists upgrade_from_level integer;
+
+alter table if exists public.user_village_buildings
+  add column if not exists upgrade_to_level integer;
+
 drop function if exists public.set_user_village_buildings_updated_at();
 create or replace function public.set_user_village_buildings_updated_at()
 returns trigger
@@ -38,6 +50,9 @@ create trigger trigger_set_user_village_buildings_updated_at
 before update on public.user_village_buildings
 for each row
 execute function public.set_user_village_buildings_updated_at();
+
+create index if not exists idx_village_buildings_upgrade_finish_at
+  on public.user_village_buildings (upgrade_finish_at);
 
 -- ============================================
 -- 2. ENABLE ROW LEVEL SECURITY FOR PROFILES

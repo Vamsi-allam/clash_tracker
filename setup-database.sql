@@ -65,6 +65,10 @@ CREATE TABLE IF NOT EXISTS public.user_village_buildings (
   building_name TEXT NOT NULL,
   current_level INTEGER DEFAULT 1,
   quantity INTEGER DEFAULT 1,
+  upgrade_started_at TIMESTAMP WITH TIME ZONE,
+  upgrade_finish_at TIMESTAMP WITH TIME ZONE,
+  upgrade_from_level INTEGER,
+  upgrade_to_level INTEGER,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()),
   UNIQUE(village_id, building_id)
@@ -103,6 +107,7 @@ FOR ALL USING (
 
 -- Create index
 CREATE INDEX IF NOT EXISTS idx_village_buildings_village_id ON public.user_village_buildings(village_id);
+CREATE INDEX IF NOT EXISTS idx_village_buildings_upgrade_finish_at ON public.user_village_buildings(upgrade_finish_at);
 
 -- ============================================
 -- 3. CREATE TOWNHALL BUILDINGS TABLE

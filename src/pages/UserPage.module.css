@@ -60,7 +60,6 @@
 .searchSection {
   margin-bottom: 28px;
 }
-
 .searchRow {
   display: flex;
   align-items: center;
@@ -677,24 +676,38 @@
   border-right: 1px solid rgba(255, 255, 255, 0.82);
   border-bottom: 1px solid rgba(255, 255, 255, 0.82);
   border-left: 1px solid rgba(255, 255, 255, 0.82);
-  background: rgba(10, 20, 38, 0.42);
+  background: rgba(10, 20, 38, 0.92);
   overflow: hidden;
 }
 
 .loadedStructureHeader {
   display: grid;
-  grid-template-columns: 1.35fr 0.95fr 1.1fr;
+  grid-template-columns: 150px minmax(220px, 0.9fr) minmax(300px, 1.2fr);
   align-items: center;
   background: #4d88db;
   color: #ffffff;
   font-size: 1rem;
-  font-weight: 800;
+  font-weight: 500;
+  font-family: 'Trebuchet MS', 'Segoe UI', Arial, sans-serif;
   border-bottom: 1px solid rgba(255, 255, 255, 0.82);
 }
 
 .loadedStructureHeader span {
-  padding: 10px 16px;
-  border-right: 1px solid rgba(255, 255, 255, 0.65);
+  padding: 10px 18px;
+  text-align: center;
+}
+
+.loadedStructureHeader span:first-child {
+  padding-left: 26px;
+  text-align: left;
+}
+
+.loadedStructureHeader span:nth-child(2) {
+  text-align: center;
+  padding-left: 0;
+}
+
+.loadedStructureHeader span:nth-child(3) {
   text-align: center;
 }
 
@@ -704,6 +717,7 @@
 
 .loadedStructureBody {
   padding: 0;
+  background: rgba(20, 39, 68, 0.22);
 }
 
 .loadedWallsSummary,
@@ -1498,17 +1512,6 @@
   font-weight: 800;
 }
 
-.defenceCountBadge {
-  min-width: 32px;
-  padding: 4px 8px;
-  border-radius: 999px;
-  background: rgba(63, 121, 200, 0.15);
-  color: #3f79c8;
-  font-size: 0.8rem;
-  font-weight: 800;
-  text-align: center;
-}
-
 .defenceSetRow {
   display: flex;
   flex-direction: column;
@@ -1554,26 +1557,17 @@
   border-top: 1px solid rgba(255, 255, 255, 0.16);
 }
 
-.defenceRowCount {
-  width: 18px;
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 0.8rem;
-  font-weight: 700;
-  text-align: center;
-  flex-shrink: 0;
-}
-
 .defenceIcon {
-  width: 44px;
-  height: 44px;
+  width: 52px;
+  height: 52px;
   object-fit: contain;
   flex-shrink: 0;
   justify-self: center;
 }
 
 .defenceIconPlaceholder {
-  width: 44px;
-  height: 44px;
+  width: 52px;
+  height: 52px;
   flex-shrink: 0;
 }
 
@@ -1619,6 +1613,362 @@
 .defenceValueInput[type='number'] {
 	appearance: textfield;
   -moz-appearance: textfield;
+}
+
+.readOnlyLevelCell {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  padding: 12px 16px;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.readOnlyCardGrid {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  align-items: stretch;
+  min-width: 0;
+}
+
+.readOnlyBuildingBlock {
+  border-top: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.readOnlyBuildingBlock:first-child {
+  border-top: none;
+}
+
+.readOnlySummaryPanel {
+  position: relative;
+}
+
+.readOnlyLoadedList {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  width: 100%;
+}
+
+.readOnlySummaryPanel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px 12px;
+  border-right: 1px solid rgba(255, 255, 255, 0.16);
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+  background: rgba(16, 30, 52, 0.18);
+}
+
+.readOnlySummaryImage {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+}
+
+.readOnlySummaryImagePlaceholder {
+  width: 72px;
+  height: 72px;
+}
+
+.readOnlySummaryName {
+  color: rgba(255, 255, 255, 0.94);
+  font-size: 1rem;
+  font-weight: 800;
+  text-align: center;
+}
+
+.readOnlySummaryBox {
+  width: 100%;
+  max-width: 120px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 8px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.92);
+  text-align: center;
+}
+
+.readOnlySummaryCount {
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.readOnlySummaryCost {
+  color: #ffd84f;
+  font-size: 0.98rem;
+  font-weight: 800;
+}
+
+.readOnlySummaryTime {
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.readOnlyRowsColumn {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  width: 100%;
+}
+
+.readOnlyRow,
+.readOnlyDetailsRow {
+  min-height: 86px;
+  display: grid;
+  grid-template-columns: minmax(220px, 0.9fr) minmax(300px, 1.2fr);
+  align-items: stretch;
+  gap: 0;
+  padding: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+  width: 100%;
+  box-sizing: border-box;
+  height: 100%;
+}
+
+.readOnlyRow {
+  position: relative;
+}
+
+.readOnlyRow::before {
+  content: '';
+  position: absolute;
+  top: 0px;
+  bottom: 0px;
+  left: clamp(220px, 42.8%, calc(100% - 300px));
+  width: 1px;
+  background: rgba(255, 255, 255, 0.16);
+  pointer-events: none;
+}
+
+.readOnlyCardGrid > .readOnlySummaryPanel {
+  height: 100%;
+}
+
+.readOnlyDetailsRow {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: stretch;
+  gap: 8px;
+  height: 100%;
+  padding: 10px 16px 12px;
+}
+
+.readOnlyRow:last-child,
+.readOnlyDetailsRow:last-child {
+  border-bottom: none;
+}
+
+.readOnlyRowImage {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.readOnlyActionBtnConstruct {
+  background: #f3b01a;
+}
+
+.readOnlyActionBtnUpgrade {
+  background: #4d88db;
+}
+
+.readOnlyActionBtnConfirm {
+  background: linear-gradient(180deg, #6bbf4a 0%, #4ea231 100%);
+}
+
+.readOnlyActionBtnPending {
+  background: linear-gradient(180deg, #54657a 0%, #314152 100%);
+}
+
+.readOnlyLevelMeta {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+  justify-content: center;
+}
+
+.readOnlyActionChooser {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.readOnlyActionChoiceBtn {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  cursor: pointer;
+}
+
+.readOnlyLevelValue {
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 1.02rem;
+  font-weight: 600;
+  flex: 0 0 auto;
+  width: fit-content;
+  margin: 0 auto;
+}
+
+.readOnlyActionBtn {
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 3px;
+  color: #ffffff;
+  padding: 0;
+}
+
+.readOnlyActionBtn:disabled {
+  opacity: 0.88;
+}
+
+.readOnlyActionIcon {
+  font-size: 1.05rem !important;
+}
+
+.readOnlyActionChooserWrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.comingSoonInlinePopup {
+  position: absolute;
+  left: calc(100% + 10px);
+  top: 50%;
+  transform: translateY(-50%);
+  min-width: 180px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: linear-gradient(180deg, rgba(21, 31, 50, 0.98), rgba(11, 18, 30, 0.98));
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.42);
+  z-index: 4;
+}
+
+.comingSoonInlineTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.97);
+  font-weight: 700;
+  font-size: 0.92rem;
+}
+
+.comingSoonInlineIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  color: #ffd35a;
+  flex: 0 0 auto;
+}
+
+.comingSoonInlineIcon svg {
+  font-size: 1rem;
+}
+
+.comingSoonInlineTitle {
+  line-height: 1.2;
+}
+
+.comingSoonInlineText {
+  margin: 6px 0 10px;
+  color: rgba(235, 242, 252, 0.86);
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
+.comingSoonInlineButton {
+  border: none;
+  border-radius: 999px;
+  padding: 6px 12px;
+  background: linear-gradient(180deg, #6bbf4a, #4ea231);
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.readOnlyUpgradeCell {
+  flex: 1.35;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+}
+
+.readOnlyUpgradeList {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 18px;
+  width: 100%;
+  justify-items: start;
+}
+
+.readOnlyUpgradeItem {
+  display: grid;
+  grid-template-columns: auto auto auto;
+  align-items: center;
+  gap: 12px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.88rem;
+  min-width: 0;
+  font-weight: 400;
+  justify-content: start;
+}
+
+.readOnlyUpgradeLevel {
+  color: rgba(255, 255, 255, 0.92);
+  font-weight: 400;
+}
+
+.readOnlyUpgradeCost {
+  color: #ffd84f;
+  font-weight: 500;
+}
+
+.readOnlyUpgradeTime {
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 400;
+}
+
+.readOnlyUpgradeSummary {
+  margin-top: 6px;
+  padding: 8px 10px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.84rem;
+  font-weight: 400;
+  align-self: stretch;
+  text-align: center;
 }
 
 .errorMsg {
