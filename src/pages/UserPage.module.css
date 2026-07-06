@@ -568,6 +568,22 @@
   transition: all 0.2s ease;
 }
 
+.loadedTabBtnLabel {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: inherit;
+}
+
+.loadedTabBtnIcon {
+  display: inline-block;
+  width: 0.72rem;
+  height: 0.72rem;
+  margin-top: 0;
+  flex-shrink: 0;
+  color: currentColor;
+}
+
 .loadedTabBtn:hover {
   background: #c9c9c9;
   color: rgba(58, 58, 58, 0.96);
@@ -578,9 +594,37 @@
   color: #ffffff;
 }
 
+.loadedTabBtn.loadedTabBtnActive.loadedTabBtnComplete:hover {
+  background: linear-gradient(180deg, #86c84b 0%, #72b33a 100%);
+  color: #ffffff;
+}
+
 .loadedTabBtnActive {
   background: #4d88db;
   border-color: rgba(255, 255, 255, 0.82);
+  color: #ffffff;
+}
+
+.loadedTabBtnActive.loadedTabBtnComplete {
+  background: linear-gradient(180deg, #86c84b 0%, #72b33a 100%);
+  color: #ffffff;
+}
+
+.loadedTabBtnComplete {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 84px;
+  padding: 12px 16px;
+  background: linear-gradient(180deg, #86c84b 0%, #72b33a 100%);
+  color: #ffffff;
+  font-weight: 400;
+}
+
+.loadedTabBtnComplete:hover {
+  background: linear-gradient(180deg, #86c84b 0%, #72b33a 100%);
   color: #ffffff;
 }
 
@@ -1798,6 +1842,20 @@
   background: linear-gradient(180deg, #54657a 0%, #314152 100%);
 }
 
+.readOnlyActionBtnComplete {
+  background: transparent;
+  color: #72b33a;
+}
+
+.readOnlyActionBtnComplete .readOnlyActionIcon {
+  color: #72b33a !important;
+}
+
+.readOnlyActionCompleteIcon {
+  font-size: 1.18rem !important;
+  color: #72b33a !important;
+}
+
 .readOnlyLevelMeta {
   display: flex;
   flex-direction: row;
@@ -1985,12 +2043,59 @@
   font-weight: 700;
 }
 
+.readOnlyUpgradeSummaryComplete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: transparent;
+  color: #72b33a;
+  font-weight: 400;
+}
+
+.readOnlyUpgradeSummaryComplete > span:last-child {
+  margin-left: 0;
+  color: #72b33a;
+  font-weight: 400;
+}
+
+.readOnlyUpgradeSummaryIcon {
+  display: inline-block;
+  width: 0.95rem;
+  height: 0.95rem;
+  flex-shrink: 0;
+  color: currentColor;
+}
+
 .readOnlyUpgradeProgressBlock {
   display: flex;
   flex-direction: column;
   gap: 6px;
   width: 100%;
   min-width: 0;
+}
+
+.readOnlyUpgradeSummaryPending {
+  position: relative;
+  overflow: hidden;
+}
+
+.readOnlyUpgradeProgressFill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  height: 100%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #4f85cf 0%, #3f79c8 100%);
+  transition: width 0.6s linear;
+  opacity: 0.95;
+  pointer-events: none;
+}
+
+.readOnlyUpgradeSummaryPending > span {
+  position: relative;
+  z-index: 1;
 }
 
 .readOnlyUpgradeProgressMeta {

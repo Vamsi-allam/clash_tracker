@@ -1231,11 +1231,13 @@ export default function UserPage({ username, onLogout, userId }) {
               )}
 
               <div className={styles.readOnlySummaryName}>{displayName}</div>
-              <div className={styles.readOnlySummaryBox}>
-                <div className={styles.readOnlySummaryCount}>{totalRemainingUpgrades} Upgrades</div>
-                <div className={styles.readOnlySummaryCost}>{formatNumberShort(totalCost)}</div>
-                <div className={styles.readOnlySummaryTime}>{formatSeconds(totalSeconds)}</div>
-              </div>
+              {totalRemainingUpgrades > 0 && (
+                <div className={styles.readOnlySummaryBox}>
+                  <div className={styles.readOnlySummaryCount}>{totalRemainingUpgrades} Upgrades</div>
+                  <div className={styles.readOnlySummaryCost}>{formatNumberShort(totalCost)}</div>
+                  <div className={styles.readOnlySummaryTime}>{formatSeconds(totalSeconds)}</div>
+                </div>
+              )}
             </div>
 
             <div className={styles.readOnlyRowsColumn} style={rowsColumnStyle}>
@@ -1288,11 +1290,15 @@ export default function UserPage({ username, onLogout, userId }) {
                             </div>
                           )}
                         </div>
+                      ) : rowState.rowLevel >= maxLevel ? (
+                        <div className={`${styles.readOnlyActionBtn} ${styles.readOnlyActionBtnComplete}`} aria-label="Fully upgraded" title="Fully upgraded">
+                          <CheckIcon className={styles.readOnlyActionCompleteIcon} />
+                        </div>
                       ) : (
                         <button
                           type="button"
                           className={`${styles.readOnlyActionBtn} ${rowState.rowLevel <= 0 ? styles.readOnlyActionBtnConstruct : styles.readOnlyActionBtnUpgrade} ${rowState.pendingUpgrade ? styles.readOnlyActionBtnPending : ''}`}
-                          disabled={rowState.rowLevel >= maxLevel || Boolean(rowState.pendingUpgrade)}
+                          disabled={Boolean(rowState.pendingUpgrade)}
                           aria-label={rowState.rowLevel <= 0 ? 'Construct' : 'Upgrade'}
                           title={rowState.rowLevel <= 0 ? 'Construct' : 'Upgrade'}
                           onClick={() => {
@@ -1314,7 +1320,12 @@ export default function UserPage({ username, onLogout, userId }) {
                   <div className={styles.readOnlyDetailsRow}>
                     {rowState.pendingUpgrade ? (
                       <div className={styles.readOnlyUpgradeProgressBlock}>
-                        <div className={styles.readOnlyUpgradeSummary}>
+                        <div className={`${styles.readOnlyUpgradeSummary} ${styles.readOnlyUpgradeSummaryPending}`}>
+                          <div
+                            className={styles.readOnlyUpgradeProgressFill}
+                            style={{ width: `${rowState.pendingProgressPercent}%` }}
+                            aria-hidden="true"
+                          />
                           <span>Upgrading - completes in {formatUpgradeClock(rowState.pendingRemainingSeconds)}</span>
                           <span>{rowState.pendingProgressPercent}%</span>
                         </div>
@@ -1352,7 +1363,10 @@ export default function UserPage({ username, onLogout, userId }) {
                         </div>
                       </>
                     ) : (
-                      <div className={styles.readOnlyUpgradeSummary}>Max level reached</div>
+                      <div className={`${styles.readOnlyUpgradeSummary} ${styles.readOnlyUpgradeSummaryComplete}`}>
+                        <span>Fully upgraded</span>
+                        <CheckIcon className={styles.readOnlyUpgradeSummaryIcon} aria-label="Fully upgraded" titleAccess="Fully upgraded" />
+                      </div>
                     )}
                   </div>
                 </div>
@@ -1458,6 +1472,36 @@ export default function UserPage({ username, onLogout, userId }) {
             : activeLoadedTab === 'troops'
               ? 'Troops'
               : 'Walls'
+
+  const tabLabels = {
+    defences: 'Defenses',
+    army: 'Army',
+    resources: 'Resources',
+    troops: 'Troops',
+    walls: 'Walls',
+  }
+
+  const isBuildingCategoryComplete = (buildings = []) => {
+    if (!Array.isArray(buildings) || buildings.length === 0) return false
+
+    return buildings.every((building) => {
+      const maxLevel = Math.max(...(building.levels || []).map((level) => Number(level.level || 0)), 0)
+      if (maxLevel <= 0) return false
+
+      const rowCount = getStructureRowCount(building, structureLevels[building.id] || [])
+      const rowLevels = structureLevels[building.id] || Array.from({ length: rowCount }, (_, index) => getDefaultRowLevel(building, index, isCopyUnlocked(building, index)))
+
+      return Array.from({ length: rowCount }, (_, index) => Number(rowLevels[index] || 0) >= maxLevel).every(Boolean)
+    })
+  }
+
+  const loadedTabCompletion = {
+    defences: isBuildingCategoryComplete(visibleDefenseBuildings),
+    army: isBuildingCategoryComplete(visibleArmyBuildings),
+    resources: isBuildingCategoryComplete(visibleResourceBuildings),
+    troops: isBuildingCategoryComplete(structureCatalog.troops || []),
+    walls: wallPieces > 0 && wallBuilt >= wallPieces,
+  }
 
   return (
     <>
@@ -1741,19 +1785,14 @@ export default function UserPage({ username, onLogout, userId }) {
                       <button
                         type="button"
                         key={tab}
-                        className={`${styles.loadedTabBtn} ${activeLoadedTab === tab ? styles.loadedTabBtnActive : ''}`}
+                        className={`${styles.loadedTabBtn} ${activeLoadedTab === tab ? styles.loadedTabBtnActive : ''} ${loadedTabCompletion[tab] ? styles.loadedTabBtnComplete : ''}`}
                         onMouseDown={() => setActiveLoadedTab(tab)}
                         onTouchStart={() => setActiveLoadedTab(tab)}
                       >
-                        {tab === 'defences'
-                          ? 'Defenses'
-                          : tab === 'army'
-                            ? 'Army'
-                            : tab === 'resources'
-                              ? 'Resources'
-                              : tab === 'troops'
-                                ? 'Troops'
-                                : 'Walls'}
+                        <span className={styles.loadedTabBtnLabel}>{tabLabels[tab]}</span>
+                        {loadedTabCompletion[tab] && (
+                          <CheckIcon className={styles.loadedTabBtnIcon} />
+                        )}
                       </button>
                     ))}
                   </div>
