@@ -139,7 +139,6 @@ export default function App() {
 			<div className="loading-screen">
 				<div className="loading-card glass-panel">
 					<div className="loading-ring" />
-					<p>Preparing your Supabase session...</p>
 				</div>
 			</div>
 		)

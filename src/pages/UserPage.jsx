@@ -74,6 +74,35 @@ const readOpenActionRowKey = (userId, villageId) => {
   }
 }
 
+const getTownhallSnapshotCacheKey = (villageId, townhallLevel) => `clash_tracker_townhall_snapshot:${villageId || 'none'}:${townhallLevel || 'none'}`
+
+const readTownhallSnapshotCache = (villageId, townhallLevel) => {
+  if (typeof window === 'undefined' || !villageId || !townhallLevel) return null
+
+  try {
+    const rawValue = window.localStorage.getItem(getTownhallSnapshotCacheKey(villageId, townhallLevel))
+    return rawValue ? JSON.parse(rawValue) : null
+  } catch {
+    return null
+  }
+}
+
+const writeTownhallSnapshotCache = (villageId, townhallLevel, nextSnapshot) => {
+  if (typeof window === 'undefined' || !villageId || !townhallLevel) return
+
+  try {
+    window.localStorage.setItem(
+      getTownhallSnapshotCacheKey(villageId, townhallLevel),
+      JSON.stringify({
+        ...nextSnapshot,
+        savedAt: new Date().toISOString(),
+      }),
+    )
+  } catch {
+    // Ignore cache write failures.
+  }
+}
+
 const canonImages = import.meta.glob('../assets/Defences/canon/*.png', { eager: true, import: 'default' })
 const archerTowerImages = import.meta.glob('../assets/Defences/Archer_Tower/*.png', { eager: true, import: 'default' })
 const armyCampImages = import.meta.glob('../assets/Army/Army_Camp/*.png', { eager: true, import: 'default' })
@@ -117,6 +146,8 @@ export default function UserPage({ username, onLogout, userId }) {
   const viewModeRef = useRef('search')
   const builderCountRef = useRef(2)
   const upgradingRowsRef = useRef(false)
+  const previousLoadedTabRef = useRef('defences')
+  const suppressSnapshotRefreshRef = useRef(false)
 
   const setActiveVillagePersisted = async (villageId) => {
     if (!userId || !villageId) return
@@ -540,6 +571,21 @@ export default function UserPage({ username, onLogout, userId }) {
     if (!townhallLevel) return null
 
     const { loadStructures = false, loadWalls = false, villageId = activeVillageRef.current?.id } = options
+    const cachedSnapshot = readTownhallSnapshotCache(villageId, townhallLevel)
+    const nextSnapshotCache = { ...(cachedSnapshot || {}) }
+
+    if (cachedSnapshot) {
+      if (loadStructures && cachedSnapshot.structureCatalog) {
+        setStructureCatalog(cachedSnapshot.structureCatalog)
+        setStructureLevels(cachedSnapshot.structureLevels || {})
+        setPendingUpgrades(cachedSnapshot.pendingUpgrades || [])
+      }
+
+      if (loadWalls && cachedSnapshot.wallConfig) {
+        setWallConfig(cachedSnapshot.wallConfig)
+        setWallCounts(cachedSnapshot.wallCounts || {})
+      }
+    }
 
     const { data } = await supabase
       .from('townhall_buildings')
@@ -605,6 +651,10 @@ export default function UserPage({ username, onLogout, userId }) {
         .filter((upgrade) => upgrade && Number(upgrade.finishAt) > 0)
 
       setPendingUpgrades(restoredPendingUpgrades)
+
+      nextSnapshotCache.structureCatalog = normalizedData
+      nextSnapshotCache.structureLevels = initialLevels
+      nextSnapshotCache.pendingUpgrades = restoredPendingUpgrades
     }
 
     if (loadWalls) {
@@ -651,6 +701,17 @@ export default function UserPage({ username, onLogout, userId }) {
         buildings_unlocked: buildingsUnlocked,
       })
       setWallCounts(initialCounts)
+
+      nextSnapshotCache.wallConfig = {
+        ...(data?.walls || {}),
+        levels: wallLevels,
+        buildings_unlocked: buildingsUnlocked,
+      }
+      nextSnapshotCache.wallCounts = initialCounts
+    }
+
+    if (loadStructures || loadWalls) {
+      writeTownhallSnapshotCache(villageId, townhallLevel, nextSnapshotCache)
     }
 
     return data || null
@@ -706,6 +767,7 @@ export default function UserPage({ username, onLogout, userId }) {
   }
 
   const handleOpenWallsEditor = async () => {
+    previousLoadedTabRef.current = activeLoadedTab
     void loadWallsSnapshot({ switchToWallsView: true })
   }
 
@@ -723,6 +785,7 @@ export default function UserPage({ username, onLogout, userId }) {
 
     setStructuresLoading(true)
     setError('')
+    suppressSnapshotRefreshRef.current = true
 
     try {
       const structureRowsToSave = [...editDefenseBuildings, ...editArmyBuildings, ...editResourceBuildings]
@@ -749,12 +812,21 @@ export default function UserPage({ username, onLogout, userId }) {
         if (upsertError) throw upsertError
       }
 
+      writeTownhallSnapshotCache(activeVillage.id, activeVillage.townhall_level, {
+        structureCatalog,
+        structureLevels,
+        pendingUpgrades,
+        wallConfig,
+        wallCounts,
+      })
+
       setViewMode('loaded')
       alert('Structures saved successfully!')
     } catch (saveError) {
       setError(saveError.message || 'Failed to save structures')
     } finally {
       setStructuresLoading(false)
+      suppressSnapshotRefreshRef.current = false
     }
   }
 
@@ -777,10 +849,29 @@ export default function UserPage({ username, onLogout, userId }) {
     setStructureLevels(maxedLevels)
   }
 
-  const handleBackToLoaded = () => {
-    setStructureCatalog({ defences: [], army: [], resources: [], troops: [] })
-    setStructureLevels({})
-    setViewMode('loaded')
+  const handleBackToLoaded = async () => {
+    if (!activeVillage?.id || !activeVillage?.townhall_level) {
+      setViewMode('loaded')
+      return
+    }
+
+    setStructuresLoading(true)
+    setWallLoading(true)
+
+    try {
+      await loadTownhallSnapshot(activeVillage.townhall_level, {
+        loadStructures: true,
+        loadWalls: true,
+        villageId: activeVillage.id,
+      })
+    } catch (restoreError) {
+      console.error('Failed to restore loaded view after wall editor:', restoreError)
+    } finally {
+      setActiveLoadedTab(previousLoadedTabRef.current || 'defences')
+      setViewMode('loaded')
+      setStructuresLoading(false)
+      setWallLoading(false)
+    }
   }
 
   const handleWallCountChange = (levelNumber, value) => {
@@ -809,6 +900,7 @@ export default function UserPage({ username, onLogout, userId }) {
 
     setWallLoading(true)
     setError('')
+    suppressSnapshotRefreshRef.current = true
 
     try {
       const wallRowsToSave = (wallConfig.levels || [])
@@ -829,12 +921,21 @@ export default function UserPage({ username, onLogout, userId }) {
         if (upsertError) throw upsertError
       }
 
-      setViewMode('loaded')
+      writeTownhallSnapshotCache(activeVillage.id, activeVillage.townhall_level, {
+        structureCatalog,
+        structureLevels,
+        pendingUpgrades,
+        wallConfig,
+        wallCounts,
+      })
+
+      await handleBackToLoaded()
       alert('Walls saved successfully!')
     } catch (saveError) {
       setError(saveError.message || 'Failed to save walls')
     } finally {
       setWallLoading(false)
+      suppressSnapshotRefreshRef.current = false
     }
   }
 
@@ -1156,10 +1257,11 @@ export default function UserPage({ username, onLogout, userId }) {
 
   useEffect(() => {
     const townhallLevel = activeVillage?.townhall_level
-    if (!townhallLevel) return
+    const currentVillageId = activeVillage?.id
+    if (!townhallLevel || !currentVillageId) return
 
     const channel = supabase
-      .channel(`townhall_buildings_${townhallLevel}`)
+      .channel(`townhall_buildings_${townhallLevel}_${currentVillageId}`)
       .on(
         'postgres_changes',
         {
@@ -1168,14 +1270,36 @@ export default function UserPage({ username, onLogout, userId }) {
           table: 'townhall_buildings',
           filter: `townhall_level=eq.${townhallLevel}`,
         },
-        async (payload) => {
+        async () => {
           const currentVillage = activeVillageRef.current
-          const currentView = viewModeRef.current
           if (!currentVillage || currentVillage.townhall_level !== townhallLevel) return
+          if (suppressSnapshotRefreshRef.current) return
 
-          if (currentView === 'walls') {
-            await loadTownhallSnapshot(townhallLevel, { loadWalls: true })
-          }
+          await loadTownhallSnapshot(townhallLevel, {
+            loadStructures: true,
+            loadWalls: true,
+            villageId: currentVillage.id,
+          })
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_village_buildings',
+          filter: `village_id=eq.${currentVillageId}`,
+        },
+        async () => {
+          const currentVillage = activeVillageRef.current
+          if (!currentVillage || currentVillage.id !== currentVillageId) return
+          if (suppressSnapshotRefreshRef.current) return
+
+          await loadTownhallSnapshot(townhallLevel, {
+            loadStructures: true,
+            loadWalls: true,
+            villageId: currentVillage.id,
+          })
         }
       )
       .subscribe()
@@ -1183,7 +1307,7 @@ export default function UserPage({ username, onLogout, userId }) {
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [activeVillage?.townhall_level])
+  }, [activeVillage?.id, activeVillage?.townhall_level])
 
   const isCopyUnlocked = (building, rowIndex) => {
     if (Array.isArray(building?.copy_unlocks) && building.copy_unlocks[rowIndex] != null) {
