@@ -148,7 +148,6 @@ export default function UserPage({ username, onLogout, userId }) {
       const normalizedCount = Math.min(5, Math.max(2, savedBuilderCount))
       builderCountRef.current = normalizedCount
       setBuilderCount(normalizedCount)
-      setRemainingBetaBuilderCount(normalizedCount)
     }
   }, [activeVillage])
 
@@ -697,7 +696,7 @@ export default function UserPage({ username, onLogout, userId }) {
     setError('')
 
     try {
-      const structureRowsToSave = [...visibleDefenseBuildings, ...visibleArmyBuildings, ...visibleResourceBuildings]
+      const structureRowsToSave = [...editDefenseBuildings, ...editArmyBuildings, ...editResourceBuildings]
         .flatMap((building) => {
           const currentLevels = structureLevels[building.id] || []
           const rowCount = getStructureRowCount(building, currentLevels)
@@ -732,7 +731,7 @@ export default function UserPage({ username, onLogout, userId }) {
 
   const handleSetAllToZero = () => {
     const resetLevels = {}
-    ;[...visibleDefenseBuildings, ...visibleArmyBuildings, ...visibleResourceBuildings].forEach((building) => {
+    ;[...editDefenseBuildings, ...editArmyBuildings, ...editResourceBuildings].forEach((building) => {
       const rowCount = getStructureRowCount(building, building.levels || [])
       resetLevels[building.id] = Array.from({ length: rowCount }, (_, index) => getDefaultRowLevel(building, index, isCopyUnlocked(building, index)))
     })
@@ -741,7 +740,7 @@ export default function UserPage({ username, onLogout, userId }) {
 
   const handleSetAllToMax = () => {
     const maxedLevels = {}
-    ;[...visibleDefenseBuildings, ...visibleArmyBuildings, ...visibleResourceBuildings].forEach((building) => {
+    ;[...editDefenseBuildings, ...editArmyBuildings, ...editResourceBuildings].forEach((building) => {
       const rowCount = getStructureRowCount(building, building.levels || [])
       const maxLevel = Math.max(...(building.levels || []).map((level) => level.level), 0)
       maxedLevels[building.id] = Array.from({ length: rowCount }, () => maxLevel)
@@ -838,6 +837,19 @@ export default function UserPage({ username, onLogout, userId }) {
     })
   const visibleResourceBuildings = [...(structureCatalog.resources || [])].filter((building) => building?.id)
   const visibleArmyBuildings = [...(structureCatalog.army || [])].filter((building) => building?.id)
+
+  const editDefenseBuildings = [...(structureCatalog.defences || [])]
+    .filter((building) => building?.id)
+    .sort((left, right) => {
+      const leftPriority = defenseSortPriority[left.id] ?? 2
+      const rightPriority = defenseSortPriority[right.id] ?? 2
+      if (leftPriority !== rightPriority) return leftPriority - rightPriority
+      return (left.name || formatStructureName(left.id)).localeCompare(right.name || formatStructureName(right.id))
+    })
+  const editResourceBuildings = [...(structureCatalog.resources || [])]
+    .filter((building) => ['gold_mine', 'elixir_collector', 'gold_storage', 'elixir_storage'].includes(building.id))
+  const editArmyBuildings = [...(structureCatalog.army || [])]
+    .filter((building) => building.id === 'army_camp')
 
   const activeLoadedTabBuildings = activeLoadedTab === 'defences'
     ? visibleDefenseBuildings
@@ -1202,8 +1214,9 @@ export default function UserPage({ username, onLogout, userId }) {
     .filter((resource) => resource.total > 0)
 
   const remainingBetaMaxBuilderCount = Math.max(1, Math.min(5, remainingBetaTotalUpgrades || 1))
-  const remainingBetaSelectorCount = activeLoadedTab === 'troops' ? 1 : 5
-  const displayedBuilderCount = Math.max(1, Math.min(remainingBetaSelectorCount, Number(remainingBetaBuilderCount) || 2))
+  const savedVillageBuilderCount = Math.max(1, Math.min(5, Number(activeVillage?.builder_count) || 2))
+  const remainingBetaSelectorCount = activeLoadedTab === 'troops' ? 1 : savedVillageBuilderCount
+  const displayedBuilderCount = Math.max(1, Math.min(remainingBetaSelectorCount, Number(remainingBetaBuilderCount) || savedVillageBuilderCount))
   const remainingBetaUnitLabel = activeLoadedTab === 'troops' ? 'Lab Worker' : 'Builders'
   const remainingBetaUnitLabelLower = activeLoadedTab === 'troops' ? 'lab worker' : 'builders'
 
@@ -1214,20 +1227,23 @@ export default function UserPage({ username, onLogout, userId }) {
   useEffect(() => {
     if (activeLoadedTab === 'walls') return
 
+    const savedBuilderCount = Number(activeVillage?.builder_count)
+    if (savedBuilderCount) {
+      setRemainingBetaBuilderCount(Math.min(5, Math.max(1, savedBuilderCount)))
+      return
+    }
+
     if (activeLoadedTab === 'troops') {
       setRemainingBetaBuilderCount(1)
       return
     }
 
-    setRemainingBetaBuilderCount(remainingBetaMaxBuilderCount)
-  }, [activeLoadedTab, remainingBetaTotalUpgrades])
+    setRemainingBetaBuilderCount(Math.max(1, Math.min(5, remainingBetaTotalUpgrades || 1)))
+  }, [activeLoadedTab, activeVillage?.builder_count, remainingBetaTotalUpgrades])
 
   const getBuildingImagePath = (building, level) => {
-    const safeLevel = Math.max(1, Number(level) || 0)
-
-    if (building?.image_path) {
-      return `${building.image_path}${safeLevel}.png`
-    }
+    const requestedLevel = Math.max(0, Number(level) || 0)
+    const fallbackLevel = requestedLevel === 0 ? 1 : requestedLevel
 
     const buildingId = building?.id
     const imageMap = {
@@ -1243,7 +1259,21 @@ export default function UserPage({ username, onLogout, userId }) {
     }
 
     const prefix = imageMap[buildingId]
-    return prefix ? prefix(safeLevel) : ''
+
+    if (prefix) {
+      const requestedImage = prefix(requestedLevel)
+      if (requestedImage) return requestedImage
+      return requestedLevel === 0 ? prefix(fallbackLevel) : ''
+    }
+
+    if (building?.image_path) {
+      if (requestedLevel > 0) {
+        return `${building.image_path}${requestedLevel}.png`
+      }
+      return `${building.image_path}${fallbackLevel}.png`
+    }
+
+    return ''
   }
 
   const updateStructureLevel = (buildingId, rowIndex, value) => {
@@ -2227,17 +2257,17 @@ export default function UserPage({ username, onLogout, userId }) {
                   <div className={styles.structuresDatabaseSection}>
                     <h2 className={styles.structuresDatabaseTitle}>Defences</h2>
                     <div className={styles.structuresDatabaseGrid}>
-                      {visibleDefenseBuildings.map((building, index) => renderStructureCard(building, `defences-${building.id}-${index}`))}
+                      {editDefenseBuildings.map((building, index) => renderStructureCard(building, `defences-${building.id}-${index}`))}
                     </div>
 
                     <h2 className={styles.structuresDatabaseTitle}>Resources</h2>
                     <div className={styles.structuresDatabaseGrid}>
-                      {visibleResourceBuildings.map((building, index) => renderStructureCard(building, `resources-${building.id}-${index}`))}
+                      {editResourceBuildings.map((building, index) => renderStructureCard(building, `resources-${building.id}-${index}`))}
                     </div>
 
                     <h2 className={styles.structuresDatabaseTitle}>Army</h2>
                     <div className={styles.structuresDatabaseGrid}>
-                      {visibleArmyBuildings.map((building, index) => renderStructureCard(building, `army-${building.id}-${index}`))}
+                      {editArmyBuildings.map((building, index) => renderStructureCard(building, `army-${building.id}-${index}`))}
                     </div>
                   </div>
                 </section>
