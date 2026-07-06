@@ -609,7 +609,6 @@ export default function UserPage({ username, onLogout, userId }) {
 
     if (loadWalls) {
       const initialCounts = {}
-      const wallLevels = data?.walls?.levels || []
 
       let savedWallRows = []
       if (villageId) {
@@ -622,12 +621,35 @@ export default function UserPage({ username, onLogout, userId }) {
         savedWallRows = wallRows || []
       }
 
+      const savedWallLevels = Array.from(
+        new Map(
+          savedWallRows
+            .map((row) => Number(row.current_level || 0))
+            .filter((level) => level > 0)
+            .map((level) => [level, { level }]),
+        ).values(),
+      ).sort((left, right) => left.level - right.level)
+
+      const wallLevels = data?.walls?.levels?.length > 0 ? data.walls.levels : savedWallLevels
+      const savedWallTotal = savedWallRows.reduce((total, row) => total + Number(row.quantity || 0), 0)
+      const buildingsUnlocked = Number(data?.walls?.buildings_unlocked) || savedWallTotal
+
       wallLevels.forEach((wallLevel) => {
         const savedRow = savedWallRows.find((row) => row.building_id === `walls-${wallLevel.level}`)
-        initialCounts[wallLevel.level] = Number(savedRow?.quantity || 0)
+        if (savedRow) {
+          initialCounts[wallLevel.level] = Number(savedRow.quantity || 0)
+          return
+        }
+
+        const savedLevelRow = savedWallRows.find((row) => Number(row.current_level || 0) === Number(wallLevel.level))
+        initialCounts[wallLevel.level] = Number(savedLevelRow?.quantity || 0)
       })
 
-      setWallConfig(data?.walls || null)
+      setWallConfig({
+        ...(data?.walls || {}),
+        levels: wallLevels,
+        buildings_unlocked: buildingsUnlocked,
+      })
       setWallCounts(initialCounts)
     }
 
@@ -659,11 +681,14 @@ export default function UserPage({ username, onLogout, userId }) {
     setViewMode('structures')
   }
 
-  const handleOpenWallsEditor = async () => {
+  const loadWallsSnapshot = async ({ switchToWallsView = false } = {}) => {
     if (!activeVillage) return
 
     setWallLoading(true)
-    setViewMode('walls')
+
+    if (switchToWallsView) {
+      setViewMode('walls')
+    }
 
     try {
       const data = await loadTownhallSnapshot(activeVillage.townhall_level, { loadWalls: true, villageId: activeVillage.id })
@@ -678,6 +703,10 @@ export default function UserPage({ username, onLogout, userId }) {
     } finally {
       setWallLoading(false)
     }
+  }
+
+  const handleOpenWallsEditor = async () => {
+    void loadWallsSnapshot({ switchToWallsView: true })
   }
 
   const handleEditLevels = () => {
@@ -1241,6 +1270,13 @@ export default function UserPage({ username, onLogout, userId }) {
     setRemainingBetaBuilderCount(Math.max(1, Math.min(5, remainingBetaTotalUpgrades || 1)))
   }, [activeLoadedTab, activeVillage?.builder_count, remainingBetaTotalUpgrades])
 
+  useEffect(() => {
+    if (activeLoadedTab !== 'walls') return
+    if (!activeVillage?.townhall_level) return
+
+    void loadWallsSnapshot()
+  }, [activeLoadedTab, activeVillage?.id, activeVillage?.townhall_level])
+
   const getBuildingImagePath = (building, level) => {
     const requestedLevel = Math.max(0, Number(level) || 0)
     const fallbackLevel = requestedLevel === 0 ? 1 : requestedLevel
@@ -1634,6 +1670,8 @@ export default function UserPage({ username, onLogout, userId }) {
             ? 'Troops'
             : 'Walls'
 
+        const loadedTabSecondaryLabel = activeLoadedTab === 'walls' ? 'Wall Quantity' : 'Level'
+
     const loadedTabSectionTitle =
       activeLoadedTab === 'defences'
         ? 'Defenses'
@@ -1992,7 +2030,7 @@ export default function UserPage({ username, onLogout, userId }) {
                           <div className={styles.loadedStructureFrame}>
                             <div className={styles.loadedStructureHeader}>
                               <span>{loadedTabPrimaryLabel}</span>
-                              <span>Level</span>
+                              <span>{loadedTabSecondaryLabel}</span>
                               <span>Upgrades</span>
                             </div>
                             <div className={styles.readOnlyLoadedList}>
@@ -2022,7 +2060,7 @@ export default function UserPage({ username, onLogout, userId }) {
                           <div className={styles.loadedStructureFrame}>
                             <div className={styles.loadedStructureHeader}>
                               <span>{loadedTabPrimaryLabel}</span>
-                              <span>Level</span>
+                              <span>{loadedTabSecondaryLabel}</span>
                               <span>Upgrades</span>
                             </div>
                             <div className={styles.readOnlyLoadedList}>
@@ -2052,7 +2090,7 @@ export default function UserPage({ username, onLogout, userId }) {
                           <div className={styles.loadedStructureFrame}>
                             <div className={styles.loadedStructureHeader}>
                               <span>{loadedTabPrimaryLabel}</span>
-                              <span>Level</span>
+                              <span>{loadedTabSecondaryLabel}</span>
                               <span>Upgrades</span>
                             </div>
                             <div className={styles.readOnlyLoadedList}>
@@ -2071,7 +2109,7 @@ export default function UserPage({ username, onLogout, userId }) {
                           <div className={styles.loadedStructureFrame}>
                             <div className={styles.loadedStructureHeader}>
                               <span>{loadedTabPrimaryLabel}</span>
-                              <span>Level</span>
+                              <span>{loadedTabSecondaryLabel}</span>
                               <span>Upgrades</span>
                             </div>
                             <div className={styles.readOnlyLoadedList}>
@@ -2098,23 +2136,37 @@ export default function UserPage({ username, onLogout, userId }) {
                               {wallLoading ? 'Loading...' : 'Edit Levels'}
                             </button>
                           </div>
+                          <div className={styles.wallsSummaryLine}>
+                            <strong>{wallBuilt} of {wallPieces} wall pieces built</strong>
+                            <span className={styles.wallsSummaryWarning}>⚠ You can build {remainingWalls} more walls.</span>
+                            <span>Build more walls</span>
+                            <button type="button" className={styles.wallsSummaryLink} onClick={handleOpenWallsEditor}>
+                              here
+                            </button>
+                          </div>
                           <div className={styles.loadedStructureFrame}>
                             <div className={styles.loadedStructureHeader}>
-                              <span>{loadedTabPrimaryLabel}</span>
+                              <span>Walls</span>
                               <span>Level</span>
-                              <span>Upgrades</span>
+                              <span>Quantity</span>
                             </div>
-                            <div className={styles.loadedStructureBody}>
-                              <div className={styles.loadedWallsSummary}>
-                                <div className={styles.loadedWallsRow}>
-                                  <span>Built</span>
-                                  <strong>{wallBuilt} / {wallPieces}</strong>
+                            <div className={styles.loadedWallsTable}>
+                              {wallLevels.map((wallLevel) => (
+                                <div key={wallLevel.level} className={styles.loadedWallsTableRow}>
+                                  <div className={`${styles.loadedWallsTableCell} ${styles.loadedWallsNameCell}`}>
+                                    <img
+                                      src={`${wallConfig?.image_path || '/src/assets/Walls/60_'}${wallLevel.level}.png`}
+                                      alt={`Wall Level ${wallLevel.level}`}
+                                      className={styles.loadedWallsTableIcon}
+                                    />
+                                    <span>Wall</span>
+                                  </div>
+                                  <div className={styles.loadedWallsTableCell}>{wallLevel.level}</div>
+                                  <div className={`${styles.loadedWallsTableCell} ${styles.loadedWallsQuantityCell}`}>
+                                    {wallCounts[wallLevel.level] || 0}
+                                  </div>
                                 </div>
-                                <div className={styles.loadedWallsRow}>
-                                  <span>Remaining</span>
-                                  <strong>{remainingWalls}</strong>
-                                </div>
-                              </div>
+                              ))}
                             </div>
                           </div>
                         </div>

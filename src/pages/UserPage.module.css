@@ -764,6 +764,58 @@
   background: rgba(20, 39, 68, 0.22);
 }
 
+.loadedWallsTable {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  background: rgba(10, 20, 38, 0.55);
+}
+
+.loadedWallsTableRow {
+  display: grid;
+  grid-template-columns: 150px minmax(220px, 0.9fr) minmax(300px, 1.2fr);
+  align-items: stretch;
+  min-height: 82px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.loadedWallsTableRow:last-of-type {
+  border-bottom: none;
+}
+
+.loadedWallsTableCell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 18px;
+  color: rgba(255, 255, 255, 0.94);
+  font-size: 0.98rem;
+  font-weight: 700;
+  box-sizing: border-box;
+}
+
+.loadedWallsTableCell + .loadedWallsTableCell {
+  border-left: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.loadedWallsNameCell {
+  justify-content: flex-start;
+  gap: 12px;
+  text-align: left;
+  background: rgba(16, 30, 52, 0.18);
+}
+
+.loadedWallsTableIcon {
+  width: 42px;
+  height: 42px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.loadedWallsQuantityCell {
+  font-size: 1.05rem;
+}
+
 .loadedWallsSummary,
 .loadedBuildersCard,
 .loadedStatsCard,
@@ -1371,6 +1423,41 @@
   color: #3f79c8;
   font-size: 1.5rem;
   font-weight: 800;
+}
+
+.wallsSummaryLine {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.92rem;
+  line-height: 1.4;
+}
+
+.wallsSummaryLine strong {
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 700;
+}
+
+.wallsSummaryWarning {
+  color: #f0b33c;
+  font-weight: 700;
+}
+
+.wallsSummaryLink {
+  padding: 0;
+  border: none;
+  background: none;
+  color: #6fb0ff;
+  font-weight: 500;
+  font-size: 0.92rem;
+  line-height: 1.4;
+  cursor: pointer;
+}
+
+.wallsSummaryLink:hover {
+  opacity: 0.88;
 }
 
 .wallsLoading {
