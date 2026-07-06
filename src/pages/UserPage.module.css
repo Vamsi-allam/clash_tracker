@@ -1721,6 +1721,169 @@
   color: #f4f4f4;
 }
 
+.wallUpgradeOverlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(3, 10, 22, 0.42);
+  backdrop-filter: blur(1px);
+  z-index: 1200;
+}
+
+.wallUpgradePopup {
+  position: relative;
+  width: min(600px, 100%);
+  border: 1px solid rgba(78, 124, 192, 0.55);
+  border-radius: 4px;
+  background: linear-gradient(180deg, #132947 0%, #0d1b31 100%);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.45);
+  padding: 16px 18px 18px;
+  color: #f5f7fb;
+  font-weight: 400;
+}
+
+.wallUpgradeCloseBtn {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 1.6rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.wallUpgradeTitle {
+  margin: 0 0 10px;
+  text-align: center;
+  color: #4d88db;
+  font-size: clamp(1.65rem, 2.5vw, 2.2rem);
+  font-weight: 400;
+}
+
+.wallUpgradeImagesRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  margin: 2px 0 12px;
+}
+
+.wallUpgradeImageBlock {
+  width: 88px;
+  height: 88px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wallUpgradeImage {
+  width: 68px;
+  height: 68px;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 8px rgba(0, 0, 0, 0.35));
+}
+
+.wallUpgradeArrow {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 1.9rem;
+  font-weight: 700;
+}
+
+.wallUpgradePrompt {
+  margin: 0 auto 12px;
+  max-width: 520px;
+  color: #f2f4f8;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  text-align: center;
+  font-weight: 400;
+}
+
+.wallUpgradeFieldBlock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.wallUpgradeLabel {
+  color: #4d88db;
+  font-size: 1.05rem;
+  font-weight: 400;
+}
+
+.wallUpgradeInput {
+  width: 170px;
+  padding: 9px 11px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 2px;
+  background: #e8e8e8;
+  color: #111;
+  font-size: 1rem;
+  text-align: center;
+  outline: none;
+}
+
+.wallUpgradeOr {
+  margin: 4px 0 6px;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.95rem;
+  font-weight: 400;
+  text-align: center;
+}
+
+.wallUpgradeRemainingBox {
+  width: 170px;
+  padding: 9px 11px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 2px;
+  background: #e8e8e8;
+  color: #111;
+  font-size: 1rem;
+  text-align: center;
+}
+
+.wallUpgradeActions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 14px;
+}
+
+.wallUpgradeBackBtn,
+.wallUpgradeConfirmBtn {
+  min-width: 118px;
+  padding: 12px 18px;
+  border: none;
+  border-radius: 3px;
+  color: #f4f4f4;
+  font-size: 0.95rem;
+  font-weight: 400;
+  cursor: pointer;
+}
+
+.wallUpgradeBackBtn {
+  background: linear-gradient(180deg, #5f8fd1 0%, #4e7ec4 100%);
+}
+
+.wallUpgradeConfirmBtn {
+  background: linear-gradient(180deg, #86c84b 0%, #72b33a 100%);
+}
+
+.wallUpgradeConfirmBtn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 .structuresDatabaseSection {
   display: flex;
   flex-direction: column;

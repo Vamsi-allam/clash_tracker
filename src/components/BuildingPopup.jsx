@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import styles from './BuildingPopup.module.css'
+import ToastNotification from './ToastNotification'
 import { supabase } from '../supabaseClient'
 
 const AVAILABLE_DEFENCES = [
@@ -139,6 +140,16 @@ export default function BuildingPopup({
         [defenceId]: {
           buildings_unlocked: 1,
           levels: [
+      const [toast, setToast] = useState({ open: false, message: '', severity: 'success' })
+
+      const showToast = (message, severity = 'success') => {
+        setToast({ open: true, message, severity })
+      }
+
+      const closeToast = (_, reason) => {
+        if (reason === 'clickaway') return
+        setToast((current) => ({ ...current, open: false }))
+      }
             { level: 1, cost: 100, resource: 'gold', time: '1h' },
           ],
         },
@@ -538,7 +549,7 @@ export default function BuildingPopup({
       onClose()
     } catch (err) {
       console.error(err)
-      alert('Error saving building data')
+      showToast('Error saving building data', 'error')
     } finally {
       setSavingLoading(false)
     }
@@ -560,11 +571,11 @@ export default function BuildingPopup({
 
       if (error) throw error
       
-      alert('Defence data saved successfully!')
+      showToast('Defence data saved successfully!', 'success')
       setEditingDefence(null)
     } catch (err) {
       console.error(err)
-      alert('Error saving defence data')
+      showToast('Error saving defence data', 'error')
     } finally {
       setSavingLoading(false)
     }
@@ -1629,6 +1640,12 @@ export default function BuildingPopup({
           </button>
         </div>
       </div>
+      <ToastNotification
+        open={toast.open}
+        message={toast.message}
+        severity={toast.severity}
+        onClose={closeToast}
+      />
     </div>
   )
 }

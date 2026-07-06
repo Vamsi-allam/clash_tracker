@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import styles from './UserPage.module.css'
 import RefreshIcon from '@mui/icons-material/Refresh'
 import CloudUploadIcon from '@mui/icons-material/CloudUpload'
@@ -13,6 +14,7 @@ import CheckIcon from '@mui/icons-material/Check'
 import builderBoostImg from '../assets/magic-items/builder-boost.png'
 import researchBoostImg from '../assets/magic-items/research-boost.png'
 import Header from '../components/Header'
+import ToastNotification from '../components/ToastNotification'
 import { supabase } from '../supabaseClient'
 
 // Convert API asset URL to proxied URL
@@ -142,6 +144,8 @@ export default function UserPage({ username, onLogout, userId }) {
   const [upgradeClock, setUpgradeClock] = useState(Date.now())
   const [openActionRowKey, setOpenActionRowKey] = useState('')
   const [actionPopup, setActionPopup] = useState({ open: false, title: '', action: '', rowKey: '' })
+  const [wallUpgradePopup, setWallUpgradePopup] = useState({ open: false, sourceLevel: 0, targetLevel: 0, amount: 1 })
+  const [toast, setToast] = useState({ open: false, message: '', severity: 'success' })
   const activeVillageRef = useRef(null)
   const viewModeRef = useRef('search')
   const builderCountRef = useRef(2)
@@ -163,6 +167,15 @@ export default function UserPage({ username, onLogout, userId }) {
       .eq('id', villageId)
 
     if (error) throw error
+  }
+
+  const showToast = (message, severity = 'success') => {
+    setToast({ open: true, message, severity })
+  }
+
+  const closeToast = (_, reason) => {
+    if (reason === 'clickaway') return
+    setToast((current) => ({ ...current, open: false }))
   }
 
   useEffect(() => {
@@ -821,7 +834,7 @@ export default function UserPage({ username, onLogout, userId }) {
       })
 
       setViewMode('loaded')
-      alert('Structures saved successfully!')
+      showToast('Structures saved successfully!', 'success')
     } catch (saveError) {
       setError(saveError.message || 'Failed to save structures')
     } finally {
@@ -887,27 +900,84 @@ export default function UserPage({ username, onLogout, userId }) {
     }))
   }
 
-  const handleWallUpgradeOne = (levelNumber) => {
+  const handleWallUpgradeOne = async (levelNumber) => {
     const currentLevelNumber = Number(levelNumber)
     const nextLevelNumber = currentLevelNumber + 1
 
-    setWallCounts((current) => {
-      const currentCount = Number(current[currentLevelNumber] || 0)
-      if (currentCount <= 0) return current
+    const currentCount = Number(wallCounts[currentLevelNumber] || 0)
+    if (currentCount <= 0) return
 
-      const hasNextLevel = wallLevels.some((wallLevel) => Number(wallLevel.level) === nextLevelNumber)
-      if (!hasNextLevel) return current
+    const hasNextLevel = wallLevels.some((wallLevel) => Number(wallLevel.level) === nextLevelNumber)
+    if (!hasNextLevel) return
+
+    const nextCounts = {
+      ...wallCounts,
+      [currentLevelNumber]: currentCount - 1,
+      [nextLevelNumber]: Number(wallCounts[nextLevelNumber] || 0) + 1,
+    }
+
+    setWallCounts(nextCounts)
+
+    try {
+      await handleUpdateWalls(nextCounts, { returnToLoaded: false })
+    } catch (saveError) {
+      setError(saveError.message || 'Failed to save walls')
+    }
+  }
+
+  const openWallUpgradePopup = (levelNumber) => {
+    const sourceLevel = Number(levelNumber)
+    const targetLevel = sourceLevel + 1
+    const availableCount = Number(wallCounts[sourceLevel] || 0)
+    const hasTargetLevel = wallLevels.some((wallLevel) => Number(wallLevel.level) === targetLevel)
+
+    if (availableCount <= 0 || !hasTargetLevel) return
+
+    setWallUpgradePopup({
+      open: true,
+      sourceLevel,
+      targetLevel,
+      amount: 1,
+    })
+  }
+
+  const closeWallUpgradePopup = () => {
+    setWallUpgradePopup({ open: false, sourceLevel: 0, targetLevel: 0, amount: 1 })
+  }
+
+  const handleWallUpgradePopupAmountChange = (value) => {
+    setWallUpgradePopup((current) => {
+      const sourceCount = Number(wallCounts[current.sourceLevel] || 0)
+      const nextAmount = Math.min(Math.max(Number(value) || 0, 1), sourceCount)
 
       return {
         ...current,
-        [currentLevelNumber]: currentCount - 1,
-        [nextLevelNumber]: Number(current[nextLevelNumber] || 0) + 1,
+        amount: nextAmount,
       }
     })
   }
 
-  const handleWallAddOne = (levelNumber) => {
-    handleWallCountChange(levelNumber, Number(wallCounts[levelNumber] || 0) + 1)
+  const handleWallBulkUpgrade = (levelNumber, upgradeAmount) => {
+    const currentLevelNumber = Number(levelNumber)
+    const nextLevelNumber = currentLevelNumber + 1
+    const amount = Math.max(0, Math.floor(Number(upgradeAmount) || 0))
+
+    if (amount <= 0) return
+
+    const hasNextLevel = wallLevels.some((wallLevel) => Number(wallLevel.level) === nextLevelNumber)
+    if (!hasNextLevel) return
+
+    setWallCounts((current) => {
+      const currentCount = Number(current[currentLevelNumber] || 0)
+      const transferCount = Math.min(currentCount, amount)
+      if (transferCount <= 0) return current
+
+      return {
+        ...current,
+        [currentLevelNumber]: currentCount - transferCount,
+        [nextLevelNumber]: Number(current[nextLevelNumber] || 0) + transferCount,
+      }
+    })
   }
 
   const handleResetWalls = () => {
@@ -918,8 +988,105 @@ export default function UserPage({ username, onLogout, userId }) {
     setWallCounts(resetCounts)
   }
 
-  const handleUpdateWalls = async () => {
+  const confirmWallUpgradePopup = async () => {
+    const amount = Math.min(
+      Math.max(Number(wallUpgradePopup.amount) || 0, 1),
+      Number(wallCounts[wallUpgradePopup.sourceLevel] || 0),
+    )
+
+    if (!wallUpgradePopup.open || amount <= 0) return
+
+    const sourceLevel = Number(wallUpgradePopup.sourceLevel)
+    const targetLevel = Number(wallUpgradePopup.targetLevel)
+    const sourceCount = Number(wallCounts[sourceLevel] || 0)
+    const transferCount = Math.min(sourceCount, amount)
+
+    if (transferCount <= 0) return
+
+    const nextCounts = {
+      ...wallCounts,
+      [sourceLevel]: sourceCount - transferCount,
+      [targetLevel]: Number(wallCounts[targetLevel] || 0) + transferCount,
+    }
+
+    setWallCounts(nextCounts)
+
+    await handleUpdateWalls(nextCounts, { returnToLoaded: false })
+    closeWallUpgradePopup()
+  }
+
+  const wallUpgradePopupMarkup = wallUpgradePopup.open ? (
+    <div className={styles.wallUpgradeOverlay} onClick={closeWallUpgradePopup}>
+      <div className={styles.wallUpgradePopup} onClick={(event) => event.stopPropagation()}>
+        <button type="button" className={styles.wallUpgradeCloseBtn} onClick={closeWallUpgradePopup} aria-label="Close walls popup">
+          ×
+        </button>
+
+        <h3 className={styles.wallUpgradeTitle}>Upgrade multiple walls</h3>
+
+        <div className={styles.wallUpgradeImagesRow}>
+          <div className={styles.wallUpgradeImageBlock}>
+            <img
+              src={`${wallConfig?.image_path || '/src/assets/Walls/60_'}${wallUpgradePopup.sourceLevel || 1}.png`}
+              alt={`Wall Level ${wallUpgradePopup.sourceLevel || 1}`}
+              className={styles.wallUpgradeImage}
+            />
+          </div>
+          <div className={styles.wallUpgradeArrow}>→</div>
+          <div className={styles.wallUpgradeImageBlock}>
+            <img
+              src={`${wallConfig?.image_path || '/src/assets/Walls/60_'}${wallUpgradePopup.targetLevel || 1}.png`}
+              alt={`Wall Level ${wallUpgradePopup.targetLevel || 1}`}
+              className={styles.wallUpgradeImage}
+            />
+          </div>
+        </div>
+
+        <p className={styles.wallUpgradePrompt}>
+          Enter the number of wall pieces to upgrade from level {wallUpgradePopup.sourceLevel} to level {wallUpgradePopup.targetLevel} (up to: {Number(wallCounts[wallUpgradePopup.sourceLevel] || 0)}):
+        </p>
+
+        <div className={styles.wallUpgradeFieldBlock}>
+          <label className={styles.wallUpgradeLabel} htmlFor="wall-upgrade-amount">Number to upgrade:</label>
+          <input
+            id="wall-upgrade-amount"
+            type="number"
+            min="1"
+            max={Number(wallCounts[wallUpgradePopup.sourceLevel] || 0)}
+            value={wallUpgradePopup.amount}
+            onChange={(event) => handleWallUpgradePopupAmountChange(event.target.value)}
+            className={styles.wallUpgradeInput}
+          />
+        </div>
+
+        <div className={styles.wallUpgradeOr}>OR</div>
+
+        <div className={styles.wallUpgradeFieldBlock}>
+          <div className={styles.wallUpgradeLabel}>Total Remaining:</div>
+          <div className={styles.wallUpgradeRemainingBox}>
+            {Math.max(Number(wallCounts[wallUpgradePopup.sourceLevel] || 0) - Number(wallUpgradePopup.amount || 0), 0)}
+          </div>
+        </div>
+
+        <div className={styles.wallUpgradeActions}>
+          <button type="button" className={styles.wallUpgradeBackBtn} onClick={closeWallUpgradePopup}>← Back</button>
+          <button
+            type="button"
+            className={styles.wallUpgradeConfirmBtn}
+            onClick={confirmWallUpgradePopup}
+            disabled={Number(wallCounts[wallUpgradePopup.sourceLevel] || 0) <= 0}
+          >
+            ↑ Upgrade
+          </button>
+        </div>
+      </div>
+    </div>
+  ) : null
+
+  const handleUpdateWalls = async (nextWallCounts = wallCounts, options = {}) => {
     if (!activeVillage?.id || !wallConfig) return
+
+    const { returnToLoaded = false } = options
 
     setWallLoading(true)
     setError('')
@@ -932,7 +1099,7 @@ export default function UserPage({ username, onLogout, userId }) {
           building_id: `walls-${wallLevel.level}`,
           building_name: 'Walls',
           current_level: wallLevel.level,
-          quantity: Number(wallCounts[wallLevel.level] || 0),
+          quantity: Number(nextWallCounts[wallLevel.level] || 0),
           updated_at: new Date().toISOString(),
         }))
 
@@ -949,13 +1116,17 @@ export default function UserPage({ username, onLogout, userId }) {
         structureLevels,
         pendingUpgrades,
         wallConfig,
-        wallCounts,
+        wallCounts: nextWallCounts,
       })
 
-      await handleBackToLoaded()
-      alert('Walls saved successfully!')
+      showToast('Walls saved successfully!', 'success')
+
+      if (returnToLoaded) {
+        await handleBackToLoaded()
+      }
     } catch (saveError) {
       setError(saveError.message || 'Failed to save walls')
+      showToast(saveError.message || 'Failed to save walls', 'error')
     } finally {
       setWallLoading(false)
       suppressSnapshotRefreshRef.current = false
@@ -2386,7 +2557,8 @@ export default function UserPage({ username, onLogout, userId }) {
                                               type="button"
                                               className={`${styles.loadedWallActionBtn} ${styles.loadedWallActionAdd}`}
                                               aria-label="Wall add action"
-                                              onClick={() => handleWallAddOne(wallLevel.level)}
+                                              onClick={() => openWallUpgradePopup(wallLevel.level)}
+                                              disabled={Number(wallCounts[wallLevel.level] || 0) <= 0 || wallLevel.level >= wallMaxLevel}
                                             >
                                               +
                                             </button>
@@ -2429,6 +2601,8 @@ export default function UserPage({ username, onLogout, userId }) {
                               )})}
                             </div>
                           </div>
+
+                          {typeof document !== 'undefined' ? createPortal(wallUpgradePopupMarkup, document.body) : wallUpgradePopupMarkup}
                         </div>
                       )}
 
@@ -2685,7 +2859,7 @@ export default function UserPage({ username, onLogout, userId }) {
 
                   <div className={styles.wallsOverviewActions}>
                     <button className={styles.wallsCancelBtn} onClick={handleBackToLoaded}>✕ Cancel</button>
-                    <button className={styles.wallsUpdateBtn} onClick={handleUpdateWalls} disabled={wallLoading}>
+                    <button className={styles.wallsUpdateBtn} onClick={() => handleUpdateWalls(wallCounts, { returnToLoaded: false })} disabled={wallLoading}>
                       {wallLoading ? 'Saving...' : '✓ Update'}
                     </button>
                   </div>
@@ -2696,6 +2870,12 @@ export default function UserPage({ username, onLogout, userId }) {
           ) : null}
         </div>
       </div>
+      <ToastNotification
+        open={toast.open}
+        message={toast.message}
+        severity={toast.severity}
+        onClose={closeToast}
+      />
     </>
   )
 }

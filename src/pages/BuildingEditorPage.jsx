@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import styles from './BuildingEditorPage.module.css'
 import { supabase } from '../supabaseClient'
 import Header from '../components/Header'
+import ToastNotification from '../components/ToastNotification'
 
 const AVAILABLE_DEFENCES = [
   { id: 'canon', name: 'Canon', image: '/src/assets/Defences/canon' },
@@ -291,6 +292,16 @@ export default function BuildingEditorPage({ username, onLogout }) {
   const [editingBuildingCount, setEditingBuildingCount] = useState(0)
   const [editingCopyUnlocks, setEditingCopyUnlocks] = useState([])
   const [savingLoading, setSavingLoading] = useState(false)
+  const [toast, setToast] = useState({ open: false, message: '', severity: 'success' })
+
+  const showToast = (message, severity = 'success') => {
+    setToast({ open: true, message, severity })
+  }
+
+  const closeToast = (_, reason) => {
+    if (reason === 'clickaway') return
+    setToast((current) => ({ ...current, open: false }))
+  }
   const [loading, setLoading] = useState(true)
   const [timeModalOpen, setTimeModalOpen] = useState(false)
   const [timeModalLevel, setTimeModalLevel] = useState(null)
@@ -537,7 +548,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
 
       if (upsertError) throw upsertError
 
-      alert('Building data saved successfully!')
+      showToast('Building data saved successfully!', 'success')
       
       // Update dynamic data with what we just saved
       setDynamicData({
@@ -549,7 +560,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
       setIsEditing(false)
     } catch (err) {
       console.error('Error saving:', err)
-      alert('Error saving building data: ' + err.message)
+      showToast('Error saving building data: ' + err.message, 'error')
     } finally {
       setSavingLoading(false)
     }
@@ -557,12 +568,20 @@ export default function BuildingEditorPage({ username, onLogout }) {
 
   if (loading) {
     return (
-      <div className={styles.page}>
-        <Header username={username} onLogout={onLogout} />
-        <div className={styles.container}>
-          <div>Loading...</div>
+      <>
+        <div className={styles.page}>
+          <Header username={username} onLogout={onLogout} />
+          <div className={styles.container}>
+            <div>Loading...</div>
+          </div>
         </div>
-      </div>
+        <ToastNotification
+          open={toast.open}
+          message={toast.message}
+          severity={toast.severity}
+          onClose={closeToast}
+        />
+      </>
     )
   }
 
