@@ -83,6 +83,11 @@ const goldMineImages = import.meta.glob('../assets/Resources/goldmine/*.png', { 
 const elixirCollectorImages = import.meta.glob('../assets/Resources/elixir_collector/*.png', { eager: true, import: 'default' })
 const goldStorageImages = import.meta.glob('../assets/Resources/gold_storage/*.png', { eager: true, import: 'default' })
 const elixirStorageImages = import.meta.glob('../assets/Resources/elixi_storage/*.png', { eager: true, import: 'default' })
+const upgradeResourceIcons = {
+  gold: '/src/assets/magic-items/gold.png',
+  elixir: '/src/assets/magic-items/elixir.png',
+  dark_elixir: '/src/assets/magic-items/de.png',
+}
 
 export default function UserPage({ username, onLogout, userId }) {
   const [tag, setTag] = useState('')
@@ -94,6 +99,7 @@ export default function UserPage({ username, onLogout, userId }) {
   const [activeVillage, setActiveVillage] = useState(null)
   const [viewMode, setViewMode] = useState('search')
   const [builderCount, setBuilderCount] = useState(2)
+  const [remainingBetaBuilderCount, setRemainingBetaBuilderCount] = useState(2)
   const [savingBuilders, setSavingBuilders] = useState(false)
   const [wallConfig, setWallConfig] = useState(null)
   const [wallCounts, setWallCounts] = useState({})
@@ -142,6 +148,7 @@ export default function UserPage({ username, onLogout, userId }) {
       const normalizedCount = Math.min(5, Math.max(2, savedBuilderCount))
       builderCountRef.current = normalizedCount
       setBuilderCount(normalizedCount)
+      setRemainingBetaBuilderCount(normalizedCount)
     }
   }, [activeVillage])
 
@@ -218,6 +225,7 @@ export default function UserPage({ username, onLogout, userId }) {
         const selectedBuilderCount = Math.min(5, Math.max(2, Number(selectedVillage.builder_count) || 2))
         builderCountRef.current = selectedBuilderCount
         setBuilderCount(selectedBuilderCount)
+        setRemainingBetaBuilderCount(selectedBuilderCount)
         loadTownhallStructures(selectedVillage.townhall_level, selectedVillage.id)
       }
       setViewMode('loaded')
@@ -461,6 +469,7 @@ export default function UserPage({ username, onLogout, userId }) {
       if (data) {
         builderCountRef.current = Math.min(5, Math.max(2, Number(data.builder_count) || normalizedCount))
         setBuilderCount(Math.min(5, Math.max(2, Number(data.builder_count) || normalizedCount)))
+        setRemainingBetaBuilderCount(Math.min(5, Math.max(2, Number(data.builder_count) || normalizedCount)))
         setActiveVillage(data)
         setVillages((current) => current.map((village) => (village.id === data.id ? data : village)))
       }
@@ -806,7 +815,7 @@ export default function UserPage({ username, onLogout, userId }) {
   const wallBuilt = Object.values(wallCounts).reduce((total, value) => total + Number(value || 0), 0)
   const remainingWalls = Math.max(wallPieces - wallBuilt, 0)
   const wallMaxLevel = wallLevels.length > 0 ? Math.max(...wallLevels.map((wallLevel) => wallLevel.level || 0)) : 0
-  const displayedBuilderCount = Math.max(1, Math.min(5, Number(builderCount) || 2))
+  const displayedBuilderCount = Math.max(1, Math.min(5, Number(remainingBetaBuilderCount) || 2))
   const getWallRowMax = (levelNumber) => {
     const otherWalls = Object.entries(wallCounts).reduce((total, [levelKey, count]) => {
       if (Number(levelKey) === Number(levelNumber)) return total
@@ -830,6 +839,22 @@ export default function UserPage({ username, onLogout, userId }) {
     })
   const visibleResourceBuildings = structureCatalog.resources.filter((building) => ['gold_mine', 'elixir_collector', 'gold_storage', 'elixir_storage'].includes(building.id))
   const visibleArmyBuildings = structureCatalog.army.filter((building) => building.id === 'army_camp')
+
+  const activeLoadedTabBuildings = activeLoadedTab === 'defences'
+    ? visibleDefenseBuildings
+    : activeLoadedTab === 'army'
+      ? visibleArmyBuildings
+      : activeLoadedTab === 'resources'
+        ? visibleResourceBuildings
+        : activeLoadedTab === 'troops'
+          ? (structureCatalog.troops || [])
+          : []
+
+  const remainingBetaResourceDefinitions = [
+    { id: 'gold', label: 'Gold', icon: '/src/assets/magic-items/gold.png' },
+    { id: 'elixir', label: 'Elixir', icon: '/src/assets/magic-items/elixir.png' },
+    { id: 'dark_elixir', label: 'Dark Elixir', icon: '/src/assets/magic-items/de.png' },
+  ]
 
   const formatNumberShort = (value) => {
     const numberValue = Number(value || 0)
@@ -904,6 +929,20 @@ export default function UserPage({ username, onLogout, userId }) {
     return levels.filter((level) => Number(level.level || 0) > Number(currentLevel || 0))
   }
 
+  const getUpgradeResourceLabel = (resource) => {
+    const normalizedResource = String(resource || '').trim().toLowerCase()
+    if (normalizedResource === 'dark_elixir') return 'Dark Elixir'
+    if (normalizedResource === 'elixir') return 'Elixir'
+    return 'Gold'
+  }
+
+  const getUpgradeResourceClass = (resource) => {
+    const normalizedResource = String(resource || '').trim().toLowerCase()
+    if (normalizedResource === 'dark_elixir') return styles.readOnlyResourceCostDarkElixir
+    if (normalizedResource === 'elixir') return styles.readOnlyResourceCostElixir
+    return styles.readOnlyResourceCostGold
+  }
+
   const getUpgradeSummary = (building, currentLevel) => {
     const nextLevels = getNextUpgradeLevels(building, currentLevel)
     const totalCost = nextLevels.reduce((total, level) => total + Number(level.cost || 0), 0)
@@ -912,6 +951,7 @@ export default function UserPage({ username, onLogout, userId }) {
     return {
       nextLevels,
       totalCost,
+      totalResource: nextLevels[0]?.resource || '',
       totalTime: formatSeconds(totalSeconds),
     }
   }
@@ -1120,6 +1160,50 @@ export default function UserPage({ username, onLogout, userId }) {
     return 1
   }
 
+  const remainingBetaTotalsByResource = remainingBetaResourceDefinitions.reduce((accumulator, resource) => {
+    accumulator[resource.id] = 0
+    return accumulator
+  }, {})
+  let remainingBetaTotalSeconds = 0
+
+  activeLoadedTabBuildings
+    .filter((building) => building?.id)
+    .forEach((building) => {
+      const currentLevels = structureLevels[building.id] || []
+      const rowCount = getStructureRowCount(building, currentLevels)
+      const levelsArray = currentLevels.length > 0
+        ? currentLevels
+        : Array.from({ length: rowCount }, (_, index) => getDefaultRowLevel(building, index, isCopyUnlocked(building, index)))
+
+      for (let rowIndex = 0; rowIndex < rowCount; rowIndex += 1) {
+        const rowBuildingId = `${building.id}-${rowIndex + 1}`
+        const pendingUpgrade = getPendingUpgradeForRow(activeVillage?.id, rowBuildingId, rowIndex)
+        const rowLevel = pendingUpgrade
+          ? Number(pendingUpgrade.toLevel)
+          : Number(levelsArray[rowIndex] ?? getDefaultRowLevel(building, rowIndex, isCopyUnlocked(building, rowIndex)))
+        const nextLevels = getNextUpgradeLevels(building, rowLevel)
+
+        nextLevels.forEach((levelInfo) => {
+          const resourceKey = String(levelInfo.resource || '').trim().toLowerCase()
+          if (Object.prototype.hasOwnProperty.call(remainingBetaTotalsByResource, resourceKey)) {
+            remainingBetaTotalsByResource[resourceKey] += Number(levelInfo.cost || 0)
+          }
+          remainingBetaTotalSeconds += getTimeSeconds(levelInfo.time)
+        })
+      }
+    })
+
+  const remainingBetaResourceRows = remainingBetaResourceDefinitions
+    .map((resource) => ({
+      ...resource,
+      total: remainingBetaTotalsByResource[resource.id] || 0,
+    }))
+    .filter((resource) => resource.total > 0)
+
+  const remainingBetaTimeSeconds = Math.ceil(
+    remainingBetaTotalSeconds / Math.max(1, Math.min(5, Number(remainingBetaBuilderCount) || 2))
+  )
+
   const getBuildingImagePath = (building, level) => {
     if (building?.image_path) {
       return `${building.image_path}${level}.png`
@@ -1204,10 +1288,14 @@ export default function UserPage({ username, onLogout, userId }) {
     })
 
     if (readOnly) {
-      const totalRemainingUpgrades = rowStates.reduce((total, rowState) => total + rowState.upgradeSummary.nextLevels.length, 0)
-      const totalCost = rowStates.reduce((total, rowState) => total + rowState.upgradeSummary.totalCost, 0)
+      const totalRemainingUpgrades = rowStates.reduce((total, rowState) => total + (rowState.pendingUpgrade ? rowState.visibleNextLevels.length : rowState.upgradeSummary.nextLevels.length), 0)
+      const totalCost = rowStates.reduce((total, rowState) => {
+        const nextLevels = rowState.pendingUpgrade ? rowState.visibleNextLevels : rowState.upgradeSummary.nextLevels
+        return total + nextLevels.reduce((rowTotal, levelInfo) => rowTotal + Number(levelInfo.cost || 0), 0)
+      }, 0)
       const totalSeconds = rowStates.reduce((total, rowState) => {
-        return total + rowState.upgradeSummary.nextLevels.reduce((rowTotal, levelInfo) => rowTotal + getTimeSeconds(levelInfo.time), 0)
+        const nextLevels = rowState.pendingUpgrade ? rowState.visibleNextLevels : rowState.upgradeSummary.nextLevels
+        return total + nextLevels.reduce((rowTotal, levelInfo) => rowTotal + getTimeSeconds(levelInfo.time), 0)
       }, 0)
       const summaryImageLevel = rowStates[0]?.rowLevel ?? 0
       const tableRowStyle = {
@@ -1235,7 +1323,16 @@ export default function UserPage({ username, onLogout, userId }) {
               {totalRemainingUpgrades > 0 && (
                 <div className={styles.readOnlySummaryBox}>
                   <div className={styles.readOnlySummaryCount}>{totalRemainingUpgrades} Upgrades</div>
-                  <div className={styles.readOnlySummaryCost}>{formatNumberShort(totalCost)}</div>
+                  <div className={`${styles.readOnlySummaryCost} ${getUpgradeResourceClass(rowStates[0]?.upgradeSummary?.totalResource)}`}>
+                    {upgradeResourceIcons[String(rowStates[0]?.upgradeSummary?.totalResource || '').trim().toLowerCase()] ? (
+                      <img
+                        src={upgradeResourceIcons[String(rowStates[0]?.upgradeSummary?.totalResource || '').trim().toLowerCase()]}
+                        alt={getUpgradeResourceLabel(rowStates[0]?.upgradeSummary?.totalResource)}
+                        className={styles.readOnlySummaryResourceIcon}
+                      />
+                    ) : null}
+                    <span>{formatNumberShort(totalCost)}</span>
+                  </div>
                   <div className={styles.readOnlySummaryTime}>{formatSeconds(totalSeconds)}</div>
                 </div>
               )}
@@ -1336,8 +1433,20 @@ export default function UserPage({ username, onLogout, userId }) {
                             <div className={styles.readOnlyUpgradeList}>
                               {rowState.visibleNextLevels.map((levelInfo) => (
                                 <div key={`${building.id}-${rowState.rowIndex}-pending-lvl-${levelInfo.level}`} className={styles.readOnlyUpgradeItem}>
+                                  <span className={styles.readOnlyUpgradeResourceLabel}>
+                                    {upgradeResourceIcons[String(levelInfo.resource || '').trim().toLowerCase()] ? (
+                                      <img
+                                        src={upgradeResourceIcons[String(levelInfo.resource || '').trim().toLowerCase()]}
+                                        alt={getUpgradeResourceLabel(levelInfo.resource)}
+                                        className={styles.readOnlyUpgradeResourceIcon}
+                                      />
+                                    ) : null}
+                                    {getUpgradeResourceLabel(levelInfo.resource)}
+                                  </span>
                                   <span className={styles.readOnlyUpgradeLevel}>Lvl {levelInfo.level}:</span>
-                                  <span className={styles.readOnlyUpgradeCost}>{formatNumberShort(levelInfo.cost)}</span>
+                                  <span className={`${styles.readOnlyUpgradeCost} ${getUpgradeResourceClass(levelInfo.resource)}`}>
+                                    {formatNumberShort(levelInfo.cost)}
+                                  </span>
                                   <span className={styles.readOnlyUpgradeTime}>{formatUpgradeTime(levelInfo.time)}</span>
                                 </div>
                               ))}
@@ -1353,8 +1462,20 @@ export default function UserPage({ username, onLogout, userId }) {
                         <div className={styles.readOnlyUpgradeList}>
                           {rowState.visibleNextLevels.map((levelInfo) => (
                             <div key={`${building.id}-${rowState.rowIndex}-lvl-${levelInfo.level}`} className={styles.readOnlyUpgradeItem}>
+                              <span className={styles.readOnlyUpgradeResourceLabel}>
+                                {upgradeResourceIcons[String(levelInfo.resource || '').trim().toLowerCase()] ? (
+                                  <img
+                                    src={upgradeResourceIcons[String(levelInfo.resource || '').trim().toLowerCase()]}
+                                    alt={getUpgradeResourceLabel(levelInfo.resource)}
+                                    className={styles.readOnlyUpgradeResourceIcon}
+                                  />
+                                ) : null}
+                                {getUpgradeResourceLabel(levelInfo.resource)}
+                              </span>
                               <span className={styles.readOnlyUpgradeLevel}>Lvl {levelInfo.level}:</span>
-                              <span className={styles.readOnlyUpgradeCost}>{formatNumberShort(levelInfo.cost)}</span>
+                              <span className={`${styles.readOnlyUpgradeCost} ${getUpgradeResourceClass(levelInfo.resource)}`}>
+                                {formatNumberShort(levelInfo.cost)}
+                              </span>
                               <span className={styles.readOnlyUpgradeTime}>{formatUpgradeTime(levelInfo.time)}</span>
                             </div>
                           ))}
@@ -1503,6 +1624,7 @@ export default function UserPage({ username, onLogout, userId }) {
     troops: isBuildingCategoryComplete(structureCatalog.troops || []),
     walls: wallPieces > 0 && wallBuilt >= wallPieces,
   }
+  const activeRemainingBetaComplete = activeLoadedTab !== 'walls' && Boolean(loadedTabCompletion[activeLoadedTab])
 
   return (
     <>
@@ -1959,28 +2081,55 @@ export default function UserPage({ username, onLogout, userId }) {
                               <span>Resource</span>
                               <span>Total</span>
                             </div>
+                            {!activeRemainingBetaComplete && remainingBetaResourceRows.map((resource) => (
+                              <div key={resource.id} className={styles.loadedRemainingRow}>
+                                <span className={styles.loadedRemainingLabelWithIcon}>
+                                  <img src={resource.icon} alt={resource.label} className={styles.loadedRemainingResourceIcon} />
+                                  {resource.label}
+                                </span>
+                                <strong className={styles.loadedRemainingResourceValue}>{formatNumberShort(resource.total)}</strong>
+                              </div>
+                            ))}
                             <div className={styles.loadedRemainingRow}>
                               <span className={styles.loadedRemainingLabelWithIcon}>
                                 <AccessTimeIcon className={styles.loadedRemainingClockIcon} />
                                 Time
                               </span>
-                              <div className={styles.loadedRemainingTimeBlock}>
-                                <span className={styles.loadedRemainingTimeBuilders}>With {displayedBuilderCount} builders:</span>
-                                <strong className={styles.loadedRemainingTimeValue}>2m</strong>
-                              </div>
+                              {activeRemainingBetaComplete ? (
+                                <strong className={styles.loadedRemainingCompleteValue}>Complete</strong>
+                              ) : (
+                                <div className={styles.loadedRemainingTimeBlock}>
+                                  <span className={styles.loadedRemainingTimeBuilders}>With {displayedBuilderCount} builders:</span>
+                                  <strong className={styles.loadedRemainingTimeValue}>{formatSeconds(remainingBetaTimeSeconds)}</strong>
+                                </div>
+                              )}
                             </div>
-                            <div className={styles.loadedRemainingBuildersRow}>
-                              <div className={styles.loadedRemainingBuildersStack}>
-                                <div className={styles.loadedRemainingBuildersLabel}>Set Builders:</div>
-                                <div className={styles.loadedRemainingBuildersNumbers}>
-                                  {Array.from({ length: displayedBuilderCount }, (_, index) => (
-                                    <div key={index} className={`${styles.loadedRemainingBuilderBox} ${index + 1 === displayedBuilderCount ? styles.loadedRemainingBuilderBoxActive : ''}`}>
-                                      {index + 1}
-                                    </div>
-                                  ))}
+                            {!activeRemainingBetaComplete && (
+                              <div className={styles.loadedRemainingBuildersRow}>
+                                <div className={styles.loadedRemainingBuildersStack}>
+                                  <div className={styles.loadedRemainingBuildersLabel}>Set Builders:</div>
+                                  <div className={styles.loadedRemainingBuildersNumbers}>
+                                    {Array.from({ length: 5 }, (_, index) => {
+                                      const builderNumber = index + 1
+                                      const isActive = builderNumber === displayedBuilderCount
+
+                                      return (
+                                        <button
+                                          key={builderNumber}
+                                          type="button"
+                                          className={`${styles.loadedRemainingBuilderBox} ${isActive ? styles.loadedRemainingBuilderBoxActive : ''}`}
+                                          onClick={() => setRemainingBetaBuilderCount(builderNumber)}
+                                          aria-pressed={isActive}
+                                          aria-label={`Show time with ${builderNumber} builders`}
+                                        >
+                                          {builderNumber}
+                                        </button>
+                                      )
+                                    })}
+                                  </div>
                                 </div>
                               </div>
-                            </div>
+                            )}
                           </div>
                         </div>
                       </div>
