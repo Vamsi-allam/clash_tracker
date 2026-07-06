@@ -921,6 +921,11 @@
   margin-left: 20px;
 }
 
+.loadedWallMaxedLabel {
+  color: #76c043;
+  font-weight: 700;
+}
+
 .loadedWallCostIcon {
   width: 18px;
   height: 18px;
@@ -1460,6 +1465,7 @@
 .structuresProceedBar {
   display: flex;
   justify-content: flex-end;
+  gap: 8px;
   margin-top: 8px;
 }
 

@@ -736,15 +736,23 @@ export default function UserPage({ username, onLogout, userId }) {
     setStructuresLoading(true)
 
     try {
-      const data = await loadTownhallSnapshot(townhallLevel, { loadStructures: true, villageId })
+      const data = await loadTownhallSnapshot(townhallLevel, {
+        loadStructures: true,
+        loadWalls: true,
+        villageId,
+      })
       if (!data) {
         setStructureCatalog({ defences: [], army: [], resources: [], troops: [] })
         setStructureLevels({})
+        setWallConfig(null)
+        setWallCounts({})
       }
     } catch (fetchError) {
       console.error('Failed to load townhall structures:', fetchError)
       setStructureCatalog({ defences: [], army: [], resources: [], troops: [] })
       setStructureLevels({})
+      setWallConfig(null)
+      setWallCounts({})
     } finally {
       setStructuresLoading(false)
     }
@@ -846,7 +854,7 @@ export default function UserPage({ username, onLogout, userId }) {
   const handleSetAllToZero = () => {
     const resetLevels = {}
     ;[...editDefenseBuildings, ...editArmyBuildings, ...editResourceBuildings].forEach((building) => {
-      const rowCount = getStructureRowCount(building, building.levels || [])
+      const rowCount = getStructureRowCount(building, structureLevels[building.id] || [])
       resetLevels[building.id] = Array.from({ length: rowCount }, (_, index) => getDefaultRowLevel(building, index, isCopyUnlocked(building, index)))
     })
     setStructureLevels(resetLevels)
@@ -855,11 +863,32 @@ export default function UserPage({ username, onLogout, userId }) {
   const handleSetAllToMax = () => {
     const maxedLevels = {}
     ;[...editDefenseBuildings, ...editArmyBuildings, ...editResourceBuildings].forEach((building) => {
-      const rowCount = getStructureRowCount(building, building.levels || [])
+      const rowCount = getStructureRowCount(building, structureLevels[building.id] || [])
       const maxLevel = Math.max(...(building.levels || []).map((level) => level.level), 0)
       maxedLevels[building.id] = Array.from({ length: rowCount }, () => maxLevel)
     })
     setStructureLevels(maxedLevels)
+  }
+
+  const handleCancelStructuresEdit = async () => {
+    if (!activeVillage?.id || !activeVillage?.townhall_level) {
+      setViewMode('loaded')
+      return
+    }
+
+    setStructuresLoading(true)
+
+    try {
+      await loadTownhallSnapshot(activeVillage.townhall_level, {
+        loadStructures: true,
+        villageId: activeVillage.id,
+      })
+    } catch (restoreError) {
+      console.error('Failed to restore loaded view after structures editor:', restoreError)
+    } finally {
+      setViewMode('loaded')
+      setStructuresLoading(false)
+    }
   }
 
   const handleBackToLoaded = async () => {
@@ -2525,6 +2554,7 @@ export default function UserPage({ username, onLogout, userId }) {
                                   .filter((levelInfo) => Number(levelInfo.level) > Number(wallLevel.level))
                                   .sort((left, right) => Number(left.level) - Number(right.level))
                                   .slice(0, 2)
+                                const canShowWallActions = !isWallMaxComplete && upcomingWallLevels.length > 0
 
                                 return (
                                 <div key={wallLevel.level} className={styles.loadedWallsTableRow}>
@@ -2537,7 +2567,7 @@ export default function UserPage({ username, onLogout, userId }) {
                                     <span>Level {wallLevel.level}</span>
                                   </div>
                                   <div className={`${styles.loadedWallsTableCell} ${styles.loadedWallsQuantityCell}`}>
-                                    {upcomingWallLevels.length > 0 ? (
+                                    {canShowWallActions ? (
                                       <div className={styles.loadedWallQuantityGroup}>
                                         <div className={styles.loadedWallQuantityNumberGrid}>
                                           <span className={styles.loadedWallQuantityValue}>{wallCounts[wallLevel.level] || 0}</span>
@@ -2575,7 +2605,11 @@ export default function UserPage({ username, onLogout, userId }) {
                                     )}
                                   </div>
                                   <div className={`${styles.loadedWallsTableCell} ${styles.loadedWallsUpgradeCell}`}>
-                                    {upcomingWallLevels.length > 0 ? (
+                                    {isWallMaxComplete ? (
+                                      <div className={styles.loadedWallCost}>
+                                        <span className={styles.loadedWallMaxedLabel}>✓ All walls are maxed</span>
+                                      </div>
+                                    ) : upcomingWallLevels.length > 0 ? (
                                       <div className={styles.loadedWallUpgradeList}>
                                         {upcomingWallLevels.map((upgradeLevel) => (
                                           <div key={`wall-upgrade-${wallLevel.level}-${upgradeLevel.level}`} className={styles.loadedWallUpgradeItem}>
@@ -2593,7 +2627,7 @@ export default function UserPage({ username, onLogout, userId }) {
                                       </div>
                                     ) : (
                                       <div className={styles.loadedWallCost}>
-                                        <span className={styles.loadedWallUpgradeLabel}>Max</span>
+                                        <span className={styles.loadedWallMaxedLabel}>✓ All walls are maxed</span>
                                       </div>
                                     )}
                                   </div>
@@ -2769,6 +2803,9 @@ export default function UserPage({ username, onLogout, userId }) {
                 </section>
 
                 <div className={styles.structuresProceedBar}>
+                  <button className={styles.structuresDangerBtn} onClick={handleCancelStructuresEdit} disabled={structuresLoading}>
+                    Cancel
+                  </button>
                   <button className={styles.structuresSecondaryBtn} onClick={handleUpdateStructures} disabled={structuresLoading}>
                     {structuresLoading ? 'Saving...' : 'Update'}
                   </button>
@@ -2859,7 +2896,7 @@ export default function UserPage({ username, onLogout, userId }) {
 
                   <div className={styles.wallsOverviewActions}>
                     <button className={styles.wallsCancelBtn} onClick={handleBackToLoaded}>✕ Cancel</button>
-                    <button className={styles.wallsUpdateBtn} onClick={() => handleUpdateWalls(wallCounts, { returnToLoaded: false })} disabled={wallLoading}>
+                    <button className={styles.wallsUpdateBtn} onClick={() => handleUpdateWalls(wallCounts, { returnToLoaded: true })} disabled={wallLoading}>
                       {wallLoading ? 'Saving...' : '✓ Update'}
                     </button>
                   </div>
