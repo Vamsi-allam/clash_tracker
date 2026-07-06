@@ -944,6 +944,9 @@ export default function UserPage({ username, onLogout, userId }) {
   const wallBuilt = Object.values(wallCounts).reduce((total, value) => total + Number(value || 0), 0)
   const remainingWalls = Math.max(wallPieces - wallBuilt, 0)
   const wallMaxLevel = wallLevels.length > 0 ? Math.max(...wallLevels.map((wallLevel) => wallLevel.level || 0)) : 0
+  const wallsAtMaxLevel = Number(wallCounts[wallMaxLevel] || 0)
+  const isWallBuildComplete = wallPieces > 0 && remainingWalls === 0
+  const isWallMaxComplete = wallPieces > 0 && wallMaxLevel > 0 && wallsAtMaxLevel >= wallPieces
   const getWallRowMax = (levelNumber) => {
     const otherWalls = Object.entries(wallCounts).reduce((total, [levelKey, count]) => {
       if (Number(levelKey) === Number(levelNumber)) return total
@@ -990,6 +993,8 @@ export default function UserPage({ username, onLogout, userId }) {
         : activeLoadedTab === 'troops'
           ? (structureCatalog.troops || [])
           : []
+
+  const isWallsTabActive = activeLoadedTab === 'walls'
 
   const remainingBetaResourceDefinitions = [
     { id: 'gold', label: 'Gold', icon: '/src/assets/magic-items/gold.png' },
@@ -1331,33 +1336,60 @@ export default function UserPage({ username, onLogout, userId }) {
   let remainingBetaTotalSeconds = 0
   let remainingBetaTotalUpgrades = 0
 
-  activeLoadedTabBuildings
-    .filter((building) => building?.id)
-    .forEach((building) => {
-      const currentLevels = structureLevels[building.id] || []
-      const rowCount = getStructureRowCount(building, currentLevels)
-      const levelsArray = currentLevels.length > 0
-        ? currentLevels
-        : Array.from({ length: rowCount }, (_, index) => getDefaultRowLevel(building, index, isCopyUnlocked(building, index)))
+  if (isWallsTabActive) {
+    const sortedWallLevels = [...wallLevels]
+      .map((levelInfo) => ({ ...(levelInfo || {}), level: Number(levelInfo?.level || 0) }))
+      .filter((levelInfo) => levelInfo.level > 0)
+      .sort((left, right) => left.level - right.level)
+    const wallLevelsByNumber = new Map(sortedWallLevels.map((levelInfo) => [Number(levelInfo.level), levelInfo]))
+    const wallTopLevel = sortedWallLevels.length > 0 ? Number(sortedWallLevels[sortedWallLevels.length - 1].level) : 0
 
-      for (let rowIndex = 0; rowIndex < rowCount; rowIndex += 1) {
-        const rowBuildingId = `${building.id}-${rowIndex + 1}`
-        const pendingUpgrade = getPendingUpgradeForRow(activeVillage?.id, rowBuildingId, rowIndex)
-        const rowLevel = pendingUpgrade
-          ? Number(pendingUpgrade.toLevel)
-          : Number(levelsArray[rowIndex] ?? getDefaultRowLevel(building, rowIndex, isCopyUnlocked(building, rowIndex)))
-        const nextLevels = getNextUpgradeLevels(building, rowLevel)
-        remainingBetaTotalUpgrades += nextLevels.length
+    Object.entries(wallCounts).forEach(([levelKey, count]) => {
+      const currentLevel = Number(levelKey)
+      const quantityAtLevel = Number(count || 0)
+      if (quantityAtLevel <= 0 || currentLevel <= 0 || wallTopLevel <= currentLevel) return
 
-        nextLevels.forEach((levelInfo) => {
-          const resourceKey = String(levelInfo.resource || '').trim().toLowerCase()
-          if (Object.prototype.hasOwnProperty.call(remainingBetaTotalsByResource, resourceKey)) {
-            remainingBetaTotalsByResource[resourceKey] += Number(levelInfo.cost || 0)
-          }
-          remainingBetaTotalSeconds += getTimeSeconds(levelInfo.time)
-        })
+      for (let nextLevel = currentLevel + 1; nextLevel <= wallTopLevel; nextLevel += 1) {
+        const levelInfo = wallLevelsByNumber.get(nextLevel)
+        if (!levelInfo) continue
+
+        const resourceKey = String(levelInfo.resource || '').trim().toLowerCase()
+        if (Object.prototype.hasOwnProperty.call(remainingBetaTotalsByResource, resourceKey)) {
+          remainingBetaTotalsByResource[resourceKey] += Number(levelInfo.cost || 0) * quantityAtLevel
+        }
+        remainingBetaTotalSeconds += getTimeSeconds(levelInfo.time) * quantityAtLevel
+        remainingBetaTotalUpgrades += quantityAtLevel
       }
     })
+  } else {
+    activeLoadedTabBuildings
+      .filter((building) => building?.id)
+      .forEach((building) => {
+        const currentLevels = structureLevels[building.id] || []
+        const rowCount = getStructureRowCount(building, currentLevels)
+        const levelsArray = currentLevels.length > 0
+          ? currentLevels
+          : Array.from({ length: rowCount }, (_, index) => getDefaultRowLevel(building, index, isCopyUnlocked(building, index)))
+
+        for (let rowIndex = 0; rowIndex < rowCount; rowIndex += 1) {
+          const rowBuildingId = `${building.id}-${rowIndex + 1}`
+          const pendingUpgrade = getPendingUpgradeForRow(activeVillage?.id, rowBuildingId, rowIndex)
+          const rowLevel = pendingUpgrade
+            ? Number(pendingUpgrade.toLevel)
+            : Number(levelsArray[rowIndex] ?? getDefaultRowLevel(building, rowIndex, isCopyUnlocked(building, rowIndex)))
+          const nextLevels = getNextUpgradeLevels(building, rowLevel)
+          remainingBetaTotalUpgrades += nextLevels.length
+
+          nextLevels.forEach((levelInfo) => {
+            const resourceKey = String(levelInfo.resource || '').trim().toLowerCase()
+            if (Object.prototype.hasOwnProperty.call(remainingBetaTotalsByResource, resourceKey)) {
+              remainingBetaTotalsByResource[resourceKey] += Number(levelInfo.cost || 0)
+            }
+            remainingBetaTotalSeconds += getTimeSeconds(levelInfo.time)
+          })
+        }
+      })
+  }
 
   const remainingBetaResourceRows = remainingBetaResourceDefinitions
     .map((resource) => ({
@@ -1834,9 +1866,9 @@ export default function UserPage({ username, onLogout, userId }) {
     army: isBuildingCategoryComplete(visibleArmyBuildings),
     resources: isBuildingCategoryComplete(visibleResourceBuildings),
     troops: isBuildingCategoryComplete(structureCatalog.troops || []),
-    walls: wallPieces > 0 && wallBuilt >= wallPieces,
+    walls: isWallMaxComplete,
   }
-  const activeRemainingBetaComplete = activeLoadedTab !== 'walls' && Boolean(loadedTabCompletion[activeLoadedTab])
+  const activeRemainingBetaComplete = isWallsTabActive ? isWallMaxComplete : Boolean(loadedTabCompletion[activeLoadedTab])
 
   return (
     <>
@@ -2262,20 +2294,34 @@ export default function UserPage({ username, onLogout, userId }) {
                           </div>
                           <div className={styles.wallsSummaryLine}>
                             <strong>{wallBuilt} of {wallPieces} wall pieces built</strong>
-                            <span className={styles.wallsSummaryWarning}>⚠ You can build {remainingWalls} more walls.</span>
-                            <span>Build more walls</span>
-                            <button type="button" className={styles.wallsSummaryLink} onClick={handleOpenWallsEditor}>
-                              here
-                            </button>
+                            {isWallMaxComplete ? (
+                              <span className={styles.wallsSummarySuccess}>✓ All wall pieces are upgraded to the maximum level</span>
+                            ) : isWallBuildComplete ? (
+                              <span className={styles.wallsSummaryWarning}>⚠ All wall pieces are built. Upgrade them to max level.</span>
+                            ) : (
+                              <>
+                                <span className={styles.wallsSummaryWarning}>⚠ You can build {remainingWalls} more walls.</span>
+                                <span>Build more walls</span>
+                                <button type="button" className={styles.wallsSummaryLink} onClick={handleOpenWallsEditor}>
+                                  here
+                                </button>
+                              </>
+                            )}
                           </div>
                           <div className={styles.loadedStructureFrame}>
                             <div className={styles.loadedStructureHeader}>
-                              <span>Walls</span>
-                              <span>Level</span>
+                              <span>Wall</span>
                               <span>Quantity</span>
+                              <span>Upgrades</span>
                             </div>
                             <div className={styles.loadedWallsTable}>
-                              {wallLevels.map((wallLevel) => (
+                              {wallLevels.map((wallLevel) => {
+                                const upcomingWallLevels = wallLevels
+                                  .filter((levelInfo) => Number(levelInfo.level) > Number(wallLevel.level))
+                                  .sort((left, right) => Number(left.level) - Number(right.level))
+                                  .slice(0, 2)
+
+                                return (
                                 <div key={wallLevel.level} className={styles.loadedWallsTableRow}>
                                   <div className={`${styles.loadedWallsTableCell} ${styles.loadedWallsNameCell}`}>
                                     <img
@@ -2283,14 +2329,67 @@ export default function UserPage({ username, onLogout, userId }) {
                                       alt={`Wall Level ${wallLevel.level}`}
                                       className={styles.loadedWallsTableIcon}
                                     />
-                                    <span>Wall</span>
+                                    <span>Level {wallLevel.level}</span>
                                   </div>
-                                  <div className={styles.loadedWallsTableCell}>{wallLevel.level}</div>
                                   <div className={`${styles.loadedWallsTableCell} ${styles.loadedWallsQuantityCell}`}>
-                                    {wallCounts[wallLevel.level] || 0}
+                                    {upcomingWallLevels.length > 0 ? (
+                                      <div className={styles.loadedWallQuantityGroup}>
+                                        <div className={styles.loadedWallQuantityNumberGrid}>
+                                          <span className={styles.loadedWallQuantityValue}>{wallCounts[wallLevel.level] || 0}</span>
+                                        </div>
+                                        <div className={styles.loadedWallQuantityActionsGrid}>
+                                          <div className={styles.loadedWallActionGroup}>
+                                            <button
+                                              type="button"
+                                              className={`${styles.loadedWallActionBtn} ${styles.loadedWallActionUpgrade}`}
+                                              aria-label="Wall upgrade action"
+                                            >
+                                              ↑1
+                                            </button>
+                                            <button
+                                              type="button"
+                                              className={`${styles.loadedWallActionBtn} ${styles.loadedWallActionAdd}`}
+                                              aria-label="Wall add action"
+                                            >
+                                              +
+                                            </button>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <div className={styles.loadedWallQuantityGroup}>
+                                        <div className={styles.loadedWallQuantityNumberGrid}>
+                                          <span className={styles.loadedWallQuantityValue}>{wallCounts[wallLevel.level] || 0}</span>
+                                        </div>
+                                        <div className={styles.loadedWallQuantityActionsGrid} />
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className={`${styles.loadedWallsTableCell} ${styles.loadedWallsUpgradeCell}`}>
+                                    {upcomingWallLevels.length > 0 ? (
+                                      <div className={styles.loadedWallUpgradeList}>
+                                        {upcomingWallLevels.map((upgradeLevel) => (
+                                          <div key={`wall-upgrade-${wallLevel.level}-${upgradeLevel.level}`} className={styles.loadedWallUpgradeItem}>
+                                            {upgradeResourceIcons[String(upgradeLevel.resource || '').trim().toLowerCase()] ? (
+                                              <img
+                                                src={upgradeResourceIcons[String(upgradeLevel.resource || '').trim().toLowerCase()]}
+                                                alt={getUpgradeResourceLabel(upgradeLevel.resource)}
+                                                className={styles.loadedWallCostIcon}
+                                              />
+                                            ) : null}
+                                            <span className={styles.loadedWallUpgradeLabel}>Lvl {upgradeLevel.level}:</span>
+                                            <span className={styles.loadedWallUpgradeValue}>{formatNumberShort(upgradeLevel.cost || 0)}</span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    ) : (
+                                      <div className={styles.loadedWallCost}>
+                                        <span className={styles.loadedWallUpgradeLabel}>Max</span>
+                                      </div>
+                                    )}
                                   </div>
                                 </div>
-                              ))}
+                              )})}
                             </div>
                           </div>
                         </div>
@@ -2298,74 +2397,84 @@ export default function UserPage({ username, onLogout, userId }) {
 
                     </div>
 
-                    {activeLoadedTab !== 'walls' && (
-                      <div className={styles.loadedRemainingBlock}>
-                        <h3 className={styles.loadedRemainingTitle}>Remaining (Beta)</h3>
-                        <div className={styles.loadedRemainingCard}>
-                          <div className={styles.loadedRemainingTable}>
-                            <div className={styles.loadedRemainingHeadRow}>
-                              <span>Resource</span>
-                              <span>Total</span>
-                            </div>
-                            {!activeRemainingBetaComplete && remainingBetaResourceRows.map((resource) => (
-                              <div key={resource.id} className={styles.loadedRemainingRow}>
-                                <span className={styles.loadedRemainingLabelWithIcon}>
-                                  <img src={resource.icon} alt={resource.label} className={styles.loadedRemainingResourceIcon} />
-                                  {resource.label}
-                                </span>
-                                <strong className={styles.loadedRemainingResourceValue}>{formatNumberShort(resource.total)}</strong>
-                              </div>
-                            ))}
-                            <div className={styles.loadedRemainingRow}>
+                    <div className={styles.loadedRemainingBlock}>
+                      <h3 className={styles.loadedRemainingTitle}>Remaining (Beta)</h3>
+                      <div className={styles.loadedRemainingCard}>
+                        <div className={styles.loadedRemainingTable}>
+                          <div className={styles.loadedRemainingHeadRow}>
+                            <span>Resource</span>
+                            <span>Total</span>
+                          </div>
+                          {!activeRemainingBetaComplete && remainingBetaResourceRows.map((resource) => (
+                            <div key={resource.id} className={styles.loadedRemainingRow}>
                               <span className={styles.loadedRemainingLabelWithIcon}>
-                                <AccessTimeIcon className={styles.loadedRemainingClockIcon} />
-                                Time
+                                <img src={resource.icon} alt={resource.label} className={styles.loadedRemainingResourceIcon} />
+                                {resource.label}
                               </span>
-                              {activeRemainingBetaComplete ? (
-                                <strong className={styles.loadedRemainingCompleteValue}>Complete</strong>
-                              ) : (
-                                <div className={styles.loadedRemainingTimeBlock}>
-                                  <span className={styles.loadedRemainingTimeBuilders}>With {displayedBuilderCount} {remainingBetaUnitLabelLower}:</span>
-                                  <strong className={styles.loadedRemainingTimeValue}>{formatSeconds(remainingBetaTimeSeconds)}</strong>
-                                </div>
-                              )}
+                              <strong className={styles.loadedRemainingResourceValue}>{formatNumberShort(resource.total)}</strong>
                             </div>
-                            {!activeRemainingBetaComplete && (
-                              <div className={styles.loadedRemainingBuildersRow}>
-                                <div className={styles.loadedRemainingBuildersStack}>
-                                  <div className={styles.loadedRemainingBuildersLabel}>{remainingBetaUnitLabel}:</div>
-                                  <div className={styles.loadedRemainingBuildersNumbers}>
-                                    {Array.from({ length: remainingBetaSelectorCount }, (_, index) => {
-                                      const builderNumber = index + 1
-                                      const isActive = builderNumber === displayedBuilderCount
-                                      const isDisabled = builderNumber > remainingBetaMaxBuilderCount
+                          ))}
 
-                                      return (
-                                        <button
-                                          key={builderNumber}
-                                          type="button"
-                                          className={`${styles.loadedRemainingBuilderBox} ${isActive ? styles.loadedRemainingBuilderBoxActive : ''} ${isDisabled ? styles.loadedRemainingBuilderBoxDisabled : ''}`}
-                                          onClick={() => {
-                                            if (isDisabled) return
-                                            setRemainingBetaBuilderCount(builderNumber)
-                                          }}
-                                          disabled={isDisabled}
-                                          aria-pressed={isActive}
-                                          aria-disabled={isDisabled}
-                                          aria-label={`Show time with ${builderNumber} builders`}
-                                        >
-                                          {builderNumber}
-                                        </button>
-                                      )
-                                    })}
+                          {isWallsTabActive ? (
+                            activeRemainingBetaComplete && (
+                              <div className={styles.loadedRemainingRow}>
+                                <span className={styles.loadedRemainingLabelWithIcon}>Status</span>
+                                <strong className={styles.loadedRemainingCompleteValue}>Complete</strong>
+                              </div>
+                            )
+                          ) : (
+                            <>
+                              <div className={styles.loadedRemainingRow}>
+                                <span className={styles.loadedRemainingLabelWithIcon}>
+                                  <AccessTimeIcon className={styles.loadedRemainingClockIcon} />
+                                  Time
+                                </span>
+                                {activeRemainingBetaComplete ? (
+                                  <strong className={styles.loadedRemainingCompleteValue}>Complete</strong>
+                                ) : (
+                                  <div className={styles.loadedRemainingTimeBlock}>
+                                    <span className={styles.loadedRemainingTimeBuilders}>With {displayedBuilderCount} {remainingBetaUnitLabelLower}:</span>
+                                    <strong className={styles.loadedRemainingTimeValue}>{formatSeconds(remainingBetaTimeSeconds)}</strong>
+                                  </div>
+                                )}
+                              </div>
+                              {!activeRemainingBetaComplete && (
+                                <div className={styles.loadedRemainingBuildersRow}>
+                                  <div className={styles.loadedRemainingBuildersStack}>
+                                    <div className={styles.loadedRemainingBuildersLabel}>{remainingBetaUnitLabel}:</div>
+                                    <div className={styles.loadedRemainingBuildersNumbers}>
+                                      {Array.from({ length: remainingBetaSelectorCount }, (_, index) => {
+                                        const builderNumber = index + 1
+                                        const isActive = builderNumber === displayedBuilderCount
+                                        const isDisabled = builderNumber > remainingBetaMaxBuilderCount
+
+                                        return (
+                                          <button
+                                            key={builderNumber}
+                                            type="button"
+                                            className={`${styles.loadedRemainingBuilderBox} ${isActive ? styles.loadedRemainingBuilderBoxActive : ''} ${isDisabled ? styles.loadedRemainingBuilderBoxDisabled : ''}`}
+                                            onClick={() => {
+                                              if (isDisabled) return
+                                              setRemainingBetaBuilderCount(builderNumber)
+                                            }}
+                                            disabled={isDisabled}
+                                            aria-pressed={isActive}
+                                            aria-disabled={isDisabled}
+                                            aria-label={`Show time with ${builderNumber} builders`}
+                                          >
+                                            {builderNumber}
+                                          </button>
+                                        )
+                                      })}
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
-                            )}
-                          </div>
+                              )}
+                            </>
+                          )}
                         </div>
                       </div>
-                    )}
+                    </div>
                   </div>
                 </div>
             </div>
@@ -2470,31 +2579,36 @@ export default function UserPage({ username, onLogout, userId }) {
                 <div className={styles.wallsLeftPane}>
                   <h3 className={styles.wallsSectionTitle}>Walls</h3>
 
-                  {wallLoading ? (
+                  {wallLoading && wallLevels.length === 0 ? (
                     <p className={styles.wallsLoading}>Loading wall data...</p>
                   ) : (
-                    wallLevels.map((wallLevel) => (
-                      <div key={wallLevel.level} className={styles.wallRow}>
-                        <img
-                          src={`${wallConfig?.image_path || '/src/assets/Walls/60_'}${wallLevel.level}.png`}
-                          alt={`Wall Level ${wallLevel.level}`}
-                          className={styles.wallRowIcon}
-                        />
-                        <div className={styles.wallRowContent}>
-                          <div className={styles.wallRowLabel}>Level {wallLevel.level}</div>
-                          <input
-                            type="range"
-                            min="0"
-                            max={getWallRowMax(wallLevel.level)}
-                            step="1"
-                            value={wallCounts[wallLevel.level] || 0}
-                            onChange={(e) => handleWallCountChange(wallLevel.level, e.target.value)}
-                            className={styles.wallSlider}
+                    <>
+                      {wallLoading && wallLevels.length > 0 && (
+                        <p className={styles.wallsLoading}>Syncing latest wall data...</p>
+                      )}
+                      {wallLevels.map((wallLevel) => (
+                        <div key={wallLevel.level} className={styles.wallRow}>
+                          <img
+                            src={`${wallConfig?.image_path || '/src/assets/Walls/60_'}${wallLevel.level}.png`}
+                            alt={`Wall Level ${wallLevel.level}`}
+                            className={styles.wallRowIcon}
                           />
+                          <div className={styles.wallRowContent}>
+                            <div className={styles.wallRowLabel}>Level {wallLevel.level}</div>
+                            <input
+                              type="range"
+                              min="0"
+                              max={getWallRowMax(wallLevel.level)}
+                              step="1"
+                              value={wallCounts[wallLevel.level] || 0}
+                              onChange={(e) => handleWallCountChange(wallLevel.level, e.target.value)}
+                              className={styles.wallSlider}
+                            />
+                          </div>
+                          <div className={styles.wallValueBox}>{wallCounts[wallLevel.level] || 0}</div>
                         </div>
-                        <div className={styles.wallValueBox}>{wallCounts[wallLevel.level] || 0}</div>
-                      </div>
-                    ))
+                      ))}
+                    </>
                   )}
                 </div>
 
@@ -2522,7 +2636,13 @@ export default function UserPage({ username, onLogout, userId }) {
                     <div className={styles.wallsOverviewBuiltBlock}>
                       <div className={styles.wallsOverviewLabel}>Built:</div>
                       <div className={styles.wallsOverviewBuiltValue}>{wallBuilt} out of {wallPieces}</div>
-                      <div className={styles.wallsOverviewWarning}>⚠ You can build {remainingWalls} more walls</div>
+                      {isWallMaxComplete ? (
+                        <div className={styles.wallsOverviewSuccess}>✓ All wall pieces are upgraded to the maximum level</div>
+                      ) : isWallBuildComplete ? (
+                        <div className={styles.wallsOverviewWarning}>⚠ All wall pieces are built. Upgrade them to max level</div>
+                      ) : (
+                        <div className={styles.wallsOverviewWarning}>⚠ You can build {remainingWalls} more walls</div>
+                      )}
                     </div>
                   </div>
 
