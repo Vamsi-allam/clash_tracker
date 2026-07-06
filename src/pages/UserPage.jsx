@@ -836,8 +836,8 @@ export default function UserPage({ username, onLogout, userId }) {
       if (leftPriority !== rightPriority) return leftPriority - rightPriority
       return (left.name || formatStructureName(left.id)).localeCompare(right.name || formatStructureName(right.id))
     })
-  const visibleResourceBuildings = structureCatalog.resources.filter((building) => ['gold_mine', 'elixir_collector', 'gold_storage', 'elixir_storage'].includes(building.id))
-  const visibleArmyBuildings = structureCatalog.army.filter((building) => building.id === 'army_camp')
+  const visibleResourceBuildings = [...(structureCatalog.resources || [])].filter((building) => building?.id)
+  const visibleArmyBuildings = [...(structureCatalog.army || [])].filter((building) => building?.id)
 
   const activeLoadedTabBuildings = activeLoadedTab === 'defences'
     ? visibleDefenseBuildings
@@ -1223,8 +1223,10 @@ export default function UserPage({ username, onLogout, userId }) {
   }, [activeLoadedTab, remainingBetaTotalUpgrades])
 
   const getBuildingImagePath = (building, level) => {
+    const safeLevel = Math.max(1, Number(level) || 0)
+
     if (building?.image_path) {
-      return `${building.image_path}${level}.png`
+      return `${building.image_path}${safeLevel}.png`
     }
 
     const buildingId = building?.id
@@ -1241,7 +1243,7 @@ export default function UserPage({ username, onLogout, userId }) {
     }
 
     const prefix = imageMap[buildingId]
-    return prefix ? prefix(level) : ''
+    return prefix ? prefix(safeLevel) : ''
   }
 
   const updateStructureLevel = (buildingId, rowIndex, value) => {

@@ -557,7 +557,7 @@
 .loadedTabBtn {
   flex: 0 0 auto;
   margin: 0;
-  padding: 9px 12px;
+  padding: 7px 10px;
   border: 1px solid rgba(255, 255, 255, 0.82);
   border-top: none;
   background: #c9c9c9;
@@ -577,8 +577,8 @@
 
 .loadedTabBtnIcon {
   display: inline-block;
-  width: 0.62rem;
-  height: 0.62rem;
+  width: 0.5rem;
+  height: 0.5rem;
   margin-top: 0;
   flex-shrink: 0;
   color: currentColor;
@@ -615,9 +615,9 @@
   flex-direction: row;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  min-width: 72px;
-  padding: 9px 12px;
+  gap: 0;
+  min-width: 64px;
+  padding: 7px 10px;
   background: linear-gradient(180deg, #86c84b 0%, #72b33a 100%);
   color: #ffffff;
   font-weight: 400;
