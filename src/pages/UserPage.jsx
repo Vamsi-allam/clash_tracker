@@ -944,6 +944,7 @@ export default function UserPage({ username, onLogout, userId }) {
 
   const completePendingUpgrade = async (upgrade) => {
     if (!upgrade?.id || !upgrade?.villageId || !upgrade?.buildingId) return false
+    const buildingKey = String(upgrade.buildingId).replace(/-\d+$/, '')
 
     const { error: updateError } = await supabase
       .from('user_village_buildings')
@@ -964,11 +965,11 @@ export default function UserPage({ username, onLogout, userId }) {
 
     if (activeVillageRef.current?.id === upgrade.villageId) {
       setStructureLevels((current) => {
-        const nextLevels = [...(current[upgrade.buildingId] || [])]
+        const nextLevels = [...(current[buildingKey] || [])]
         nextLevels[Number(upgrade.rowIndex)] = Number(upgrade.toLevel)
         return {
           ...current,
-          [upgrade.buildingId]: nextLevels,
+          [buildingKey]: nextLevels,
         }
       })
     }
