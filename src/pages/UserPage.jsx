@@ -815,7 +815,6 @@ export default function UserPage({ username, onLogout, userId }) {
   const wallBuilt = Object.values(wallCounts).reduce((total, value) => total + Number(value || 0), 0)
   const remainingWalls = Math.max(wallPieces - wallBuilt, 0)
   const wallMaxLevel = wallLevels.length > 0 ? Math.max(...wallLevels.map((wallLevel) => wallLevel.level || 0)) : 0
-  const displayedBuilderCount = Math.max(1, Math.min(5, Number(remainingBetaBuilderCount) || 2))
   const getWallRowMax = (levelNumber) => {
     const otherWalls = Object.entries(wallCounts).reduce((total, [levelKey, count]) => {
       if (Number(levelKey) === Number(levelNumber)) return total
@@ -1165,6 +1164,7 @@ export default function UserPage({ username, onLogout, userId }) {
     return accumulator
   }, {})
   let remainingBetaTotalSeconds = 0
+  let remainingBetaTotalUpgrades = 0
 
   activeLoadedTabBuildings
     .filter((building) => building?.id)
@@ -1182,6 +1182,7 @@ export default function UserPage({ username, onLogout, userId }) {
           ? Number(pendingUpgrade.toLevel)
           : Number(levelsArray[rowIndex] ?? getDefaultRowLevel(building, rowIndex, isCopyUnlocked(building, rowIndex)))
         const nextLevels = getNextUpgradeLevels(building, rowLevel)
+        remainingBetaTotalUpgrades += nextLevels.length
 
         nextLevels.forEach((levelInfo) => {
           const resourceKey = String(levelInfo.resource || '').trim().toLowerCase()
@@ -1200,9 +1201,26 @@ export default function UserPage({ username, onLogout, userId }) {
     }))
     .filter((resource) => resource.total > 0)
 
+  const remainingBetaMaxBuilderCount = Math.max(1, Math.min(5, remainingBetaTotalUpgrades || 1))
+  const remainingBetaSelectorCount = activeLoadedTab === 'troops' ? 1 : 5
+  const displayedBuilderCount = Math.max(1, Math.min(remainingBetaSelectorCount, Number(remainingBetaBuilderCount) || 2))
+  const remainingBetaUnitLabel = activeLoadedTab === 'troops' ? 'Lab Worker' : 'Builders'
+  const remainingBetaUnitLabelLower = activeLoadedTab === 'troops' ? 'lab worker' : 'builders'
+
   const remainingBetaTimeSeconds = Math.ceil(
     remainingBetaTotalSeconds / Math.max(1, Math.min(5, Number(remainingBetaBuilderCount) || 2))
   )
+
+  useEffect(() => {
+    if (activeLoadedTab === 'walls') return
+
+    if (activeLoadedTab === 'troops') {
+      setRemainingBetaBuilderCount(1)
+      return
+    }
+
+    setRemainingBetaBuilderCount(remainingBetaMaxBuilderCount)
+  }, [activeLoadedTab, remainingBetaTotalUpgrades])
 
   const getBuildingImagePath = (building, level) => {
     if (building?.image_path) {
@@ -2099,7 +2117,7 @@ export default function UserPage({ username, onLogout, userId }) {
                                 <strong className={styles.loadedRemainingCompleteValue}>Complete</strong>
                               ) : (
                                 <div className={styles.loadedRemainingTimeBlock}>
-                                  <span className={styles.loadedRemainingTimeBuilders}>With {displayedBuilderCount} builders:</span>
+                                  <span className={styles.loadedRemainingTimeBuilders}>With {displayedBuilderCount} {remainingBetaUnitLabelLower}:</span>
                                   <strong className={styles.loadedRemainingTimeValue}>{formatSeconds(remainingBetaTimeSeconds)}</strong>
                                 </div>
                               )}
@@ -2107,19 +2125,25 @@ export default function UserPage({ username, onLogout, userId }) {
                             {!activeRemainingBetaComplete && (
                               <div className={styles.loadedRemainingBuildersRow}>
                                 <div className={styles.loadedRemainingBuildersStack}>
-                                  <div className={styles.loadedRemainingBuildersLabel}>Set Builders:</div>
+                                  <div className={styles.loadedRemainingBuildersLabel}>{remainingBetaUnitLabel}:</div>
                                   <div className={styles.loadedRemainingBuildersNumbers}>
-                                    {Array.from({ length: 5 }, (_, index) => {
+                                    {Array.from({ length: remainingBetaSelectorCount }, (_, index) => {
                                       const builderNumber = index + 1
                                       const isActive = builderNumber === displayedBuilderCount
+                                      const isDisabled = builderNumber > remainingBetaMaxBuilderCount
 
                                       return (
                                         <button
                                           key={builderNumber}
                                           type="button"
-                                          className={`${styles.loadedRemainingBuilderBox} ${isActive ? styles.loadedRemainingBuilderBoxActive : ''}`}
-                                          onClick={() => setRemainingBetaBuilderCount(builderNumber)}
+                                          className={`${styles.loadedRemainingBuilderBox} ${isActive ? styles.loadedRemainingBuilderBoxActive : ''} ${isDisabled ? styles.loadedRemainingBuilderBoxDisabled : ''}`}
+                                          onClick={() => {
+                                            if (isDisabled) return
+                                            setRemainingBetaBuilderCount(builderNumber)
+                                          }}
+                                          disabled={isDisabled}
                                           aria-pressed={isActive}
+                                          aria-disabled={isDisabled}
                                           aria-label={`Show time with ${builderNumber} builders`}
                                         >
                                           {builderNumber}
