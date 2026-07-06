@@ -887,6 +887,29 @@ export default function UserPage({ username, onLogout, userId }) {
     }))
   }
 
+  const handleWallUpgradeOne = (levelNumber) => {
+    const currentLevelNumber = Number(levelNumber)
+    const nextLevelNumber = currentLevelNumber + 1
+
+    setWallCounts((current) => {
+      const currentCount = Number(current[currentLevelNumber] || 0)
+      if (currentCount <= 0) return current
+
+      const hasNextLevel = wallLevels.some((wallLevel) => Number(wallLevel.level) === nextLevelNumber)
+      if (!hasNextLevel) return current
+
+      return {
+        ...current,
+        [currentLevelNumber]: currentCount - 1,
+        [nextLevelNumber]: Number(current[nextLevelNumber] || 0) + 1,
+      }
+    })
+  }
+
+  const handleWallAddOne = (levelNumber) => {
+    handleWallCountChange(levelNumber, Number(wallCounts[levelNumber] || 0) + 1)
+  }
+
   const handleResetWalls = () => {
     const resetCounts = {}
     ;(wallConfig?.levels || []).forEach((wallLevel) => {
@@ -945,6 +968,17 @@ export default function UserPage({ username, onLogout, userId }) {
   const remainingWalls = Math.max(wallPieces - wallBuilt, 0)
   const wallMaxLevel = wallLevels.length > 0 ? Math.max(...wallLevels.map((wallLevel) => wallLevel.level || 0)) : 0
   const wallsAtMaxLevel = Number(wallCounts[wallMaxLevel] || 0)
+  const computeWallsCompletion = () => {
+    if (!wallPieces || !wallMaxLevel) return 0
+
+    const totalProgress = Object.entries(wallCounts).reduce((total, [levelKey, count]) => {
+      const levelNumber = Number(levelKey || 0)
+      const levelRatio = Math.min(Math.max(levelNumber / wallMaxLevel, 0), 1)
+      return total + (Number(count || 0) * levelRatio)
+    }, 0)
+
+    return Math.round((totalProgress / wallPieces) * 100)
+  }
   const isWallBuildComplete = wallPieces > 0 && remainingWalls === 0
   const isWallMaxComplete = wallPieces > 0 && wallMaxLevel > 0 && wallsAtMaxLevel >= wallPieces
   const getWallRowMax = (levelNumber) => {
@@ -2048,8 +2082,8 @@ export default function UserPage({ username, onLogout, userId }) {
 
                         <div className={styles.progressRow}>
                           <div className={styles.progressBarWrap}>
-                            <div className={styles.progressBarInner} style={{width: `${wallPieces ? Math.round((wallBuilt/(wallPieces||1))*100) : 0}%`}} />
-                            <span className={styles.progressOverlayLabel}>{wallPieces ? Math.round((wallBuilt/(wallPieces||1))*100) : 0}%</span>
+                            <div className={styles.progressBarInner} style={{width: `${Math.max(0, computeWallsCompletion())}%`}} />
+                            <span className={styles.progressOverlayLabel}>{Math.max(0, computeWallsCompletion())}%</span>
                           </div>
                           <div className={styles.progressName}>Walls</div>
                         </div>
@@ -2343,6 +2377,8 @@ export default function UserPage({ username, onLogout, userId }) {
                                               type="button"
                                               className={`${styles.loadedWallActionBtn} ${styles.loadedWallActionUpgrade}`}
                                               aria-label="Wall upgrade action"
+                                              onClick={() => handleWallUpgradeOne(wallLevel.level)}
+                                              disabled={Number(wallCounts[wallLevel.level] || 0) <= 0 || wallLevel.level >= wallMaxLevel}
                                             >
                                               ↑1
                                             </button>
@@ -2350,6 +2386,7 @@ export default function UserPage({ username, onLogout, userId }) {
                                               type="button"
                                               className={`${styles.loadedWallActionBtn} ${styles.loadedWallActionAdd}`}
                                               aria-label="Wall add action"
+                                              onClick={() => handleWallAddOne(wallLevel.level)}
                                             >
                                               +
                                             </button>
