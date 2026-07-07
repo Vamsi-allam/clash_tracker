@@ -2603,6 +2603,14 @@
 }
 
 .readOnlyRowsColumn {
+
+.readOnlyTroopRequirement {
+  margin-top: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--accent-2);
+  opacity: 0.9;
+}
   display: flex;
   flex-direction: column;
   min-width: 0;

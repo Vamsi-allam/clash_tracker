@@ -84,6 +84,15 @@
   line-height: 1.2;
 }
 
+.buildingUnlockLabel {
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 0.72rem;
+  margin: 0;
+  text-align: center;
+  line-height: 1.2;
+}
+
 .buildingCount {
   color: var(--muted);
   font-weight: 600;

@@ -101,10 +101,10 @@ const getDefaultBuildingData = (townhallLevel) => {
       gold_storage: { id: 'gold_storage', image_path: '/src/assets/Resources/gold_storage/5_', buildings_unlocked: 1, copy_unlocks: [true], levels: [{ level: 1, cost: 300, resource: 'elixir', time: '10sec' }, { level: 2, cost: 750, resource: 'elixir', time: '2min' }, { level: 3, cost: 1500, resource: 'elixir', time: '5min' }] },
       elixir_storage: { id: 'elixir_storage', image_path: '/src/assets/Resources/elixi_storage/6_', buildings_unlocked: 1, copy_unlocks: [true], levels: [{ level: 1, cost: 300, resource: 'gold', time: '10sec' }, { level: 2, cost: 750, resource: 'gold', time: '2min' }, { level: 3, cost: 1500, resource: 'gold', time: '5min' }] },
       walls: { id: 'walls', image_path: '/src/assets/Walls/60_', buildings_unlocked: 25, copy_unlocks: Array.from({ length: 25 }, (_, index) => index === 0), levels: [{ level: 1, cost: 0, resource: 'gold', time: '0sec' }, { level: 2, cost: 1000, resource: 'gold', time: '0sec' }] },
-      barbarian: { id: 'barbarian', image_path: '/src/assets/Troops/Barbarian/31_', copy_unlocks: [true], levels: [{ level: 1, cost: 0, resource: 'elixir', time: '0sec' }] },
-      archer: { id: 'archer', image_path: '/src/assets/Troops/Archer/32_', copy_unlocks: [true], levels: [{ level: 1, cost: 0, resource: 'elixir', time: '0sec' }] },
-      giant: { id: 'giant', image_path: '/src/assets/Troops/Giant/33_', copy_unlocks: [true], levels: [{ level: 1, cost: 0, resource: 'elixir', time: '0sec' }] },
-      goblin: { id: 'goblin', image_path: '/src/assets/Troops/Goblin/34_', copy_unlocks: [true], levels: [{ level: 1, cost: 0, resource: 'elixir', time: '0sec' }] },
+      barbarian: { id: 'barbarian', image_path: '/src/assets/Troops/Barbarian/31_', copy_unlocks: [true], barracks_level_unlocked: 1, levels: [{ level: 1, cost: 0, resource: 'elixir', time: '0sec' }] },
+      archer: { id: 'archer', image_path: '/src/assets/Troops/Archer/32_', copy_unlocks: [true], barracks_level_unlocked: 1, levels: [{ level: 1, cost: 0, resource: 'elixir', time: '0sec' }] },
+      giant: { id: 'giant', image_path: '/src/assets/Troops/Giant/33_', copy_unlocks: [true], barracks_level_unlocked: 1, levels: [{ level: 1, cost: 0, resource: 'elixir', time: '0sec' }] },
+      goblin: { id: 'goblin', image_path: '/src/assets/Troops/Goblin/34_', copy_unlocks: [true], barracks_level_unlocked: 1, levels: [{ level: 1, cost: 0, resource: 'elixir', time: '0sec' }] },
     }
   }
   return {}
@@ -431,6 +431,7 @@ export default function AdminPage({ username, onLogout }) {
                 const buildingData = dynamicData[building.id] || staticDefaults[building.id]
                 const levels = buildingData?.levels || []
                 const maxLevel = levels.length > 0 ? Math.max(...levels.map(l => l.level)) : 3
+                const barracksLevelNeeded = Number(buildingData?.barracks_level_unlocked ?? staticDefaults[building.id]?.barracks_level_unlocked ?? 1) || 1
                 
                 const getImagePath = () => {
                   if (building.id === 'archer_tower') return `16_${maxLevel}`
@@ -467,6 +468,11 @@ export default function AdminPage({ username, onLogout }) {
                         {buildingData?.buildings_unlocked != null && (
                           <p className={styles.buildingItemCount}>
                             Count: {buildingData.buildings_unlocked}
+                          </p>
+                        )}
+                        {activeTab === 'troops' && (
+                          <p className={styles.buildingItemCount}>
+                            Barracks level needed: {barracksLevelNeeded}
                           </p>
                         )}
                       </div>

@@ -99,13 +99,21 @@ const clampDurationPartsToMax = (parts, maxSeconds) => {
   return { days, hours, minutes, seconds }
 }
 
+const TROOP_BUILDING_IDS = new Set(['barbarian', 'archer', 'giant', 'goblin'])
+
 const getStructureRowCount = (building, currentLevels = []) => {
-  const troopIds = new Set(['barbarian', 'archer', 'giant', 'goblin'])
-  if (troopIds.has(String(building?.id || ''))) return 1
+  if (TROOP_BUILDING_IDS.has(String(building?.id || ''))) return 1
 
   const unlockedCount = Number(building?.buildings_unlocked) || 0
   const savedCount = Array.isArray(currentLevels) ? currentLevels.length : 0
   return Math.max(1, unlockedCount, savedCount)
+}
+
+const getTroopBarracksRequirement = (building) => Math.max(1, Number(building?.barracks_level_unlocked) || 1)
+
+const getCurrentBarracksLevel = (structureLevels = {}) => {
+  const barracksLevels = Array.isArray(structureLevels?.barracks) ? structureLevels.barracks : []
+  return barracksLevels.reduce((highest, value) => Math.max(highest, Number(value) || 0), 0)
 }
 
 const getUpgradeRowIndex = (buildingId = '') => {
@@ -213,6 +221,7 @@ export default function UserPage({ username, onLogout, userId }) {
   const townhallUpgradingRef = useRef(false)
   const previousLoadedTabRef = useRef('defences')
   const suppressSnapshotRefreshRef = useRef(false)
+  const currentBarracksLevel = getCurrentBarracksLevel(structureLevels)
 
   const setActiveVillagePersisted = async (villageId) => {
     if (!userId || !villageId) return
@@ -2248,6 +2257,8 @@ export default function UserPage({ username, onLogout, userId }) {
     const currentLevels = structureLevels[building.id] || []
     const rowCount = getStructureRowCount(building, currentLevels)
     const maxLevel = Math.max(...(building.levels || []).map((level) => level.level), 0)
+    const troopBarracksRequirement = getTroopBarracksRequirement(building)
+    const troopLocked = activeLoadedTab === 'troops' && currentBarracksLevel < troopBarracksRequirement
     const getMinimumLevel = (rowIndex) => getDefaultRowLevel(building, rowIndex, isCopyUnlocked(building, rowIndex))
     const clampLevel = (value, rowIndex) => Math.min(Math.max(Number(value || 0), getMinimumLevel(rowIndex)), maxLevel)
     const buttonLevels = Array.from({ length: maxLevel }, (_, index) => index + 1)
