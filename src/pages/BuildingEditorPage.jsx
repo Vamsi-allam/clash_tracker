@@ -4,6 +4,7 @@ import styles from './BuildingEditorPage.module.css'
 import { supabase } from '../supabaseClient'
 import Header from '../components/Header'
 import ToastNotification from '../components/ToastNotification'
+import { buildTownhallSnapshotFromRows } from '../utils/townhallSnapshot'
 
 const AVAILABLE_DEFENCES = [
   { id: 'canon', name: 'Canon', image: '/src/assets/Defences/canon' },
@@ -350,22 +351,28 @@ export default function BuildingEditorPage({ username, onLogout }) {
       try {
         const categoryField = getBuildingCategory(buildingId)
         // Load static data
-        const defaultData = getDefaultBuildingData(parseInt(townhallLevel))
-        let staticBuildingData = defaultData[buildingId] || { buildings_unlocked: 0, levels: [] }
-        setStaticData(staticBuildingData)
+        const defaultData = getDefaultBuildingData(2)
 
         // Fetch dynamic data from database
-        const { data, error } = await supabase
+        const selectedTownhall = parseInt(townhallLevel)
+        const { data: rows, error } = await supabase
           .from('townhall_buildings')
           .select('*')
-          .eq('townhall_level', parseInt(townhallLevel))
-          .single()
+          .lte('townhall_level', selectedTownhall)
+          .order('townhall_level', { ascending: true })
 
-        if (error && error.code !== 'PGRST116') throw error
-        
+        if (error) throw error
+
+        const inheritedTownhallData = buildTownhallSnapshotFromRows(rows || [], defaultData)
+        const staticBuildingData = categoryField === 'walls'
+          ? inheritedTownhallData.walls || { buildings_unlocked: 0, levels: [] }
+          : (inheritedTownhallData[categoryField] || []).find((entry) => entry?.id === buildingId) || { buildings_unlocked: 0, levels: [] }
+        setStaticData(staticBuildingData)
+
+        const exactTownhallRow = (rows || []).find((row) => Number(row.townhall_level) === selectedTownhall) || null
         const categoryData = categoryField === 'walls'
-          ? data?.walls
-          : data?.[categoryField]
+          ? exactTownhallRow?.walls || inheritedTownhallData.walls
+          : exactTownhallRow?.[categoryField] || inheritedTownhallData[categoryField]
 
         const buildingData = categoryField === 'walls'
           ? categoryData
@@ -542,15 +549,17 @@ export default function BuildingEditorPage({ username, onLogout }) {
   const handleSave = async () => {
     setSavingLoading(true)
     try {
-      // Fetch current data - handle case where no row exists yet
-      const { data: currentData, error: fetchError } = await supabase
+      // Fetch inherited townhall data so new higher levels keep previous buildings
+      const selectedTownhall = parseInt(townhallLevel)
+      const { data: rows, error: fetchError } = await supabase
         .from('townhall_buildings')
         .select('*')
-        .eq('townhall_level', parseInt(townhallLevel))
-        .single()
+        .lte('townhall_level', selectedTownhall)
+        .order('townhall_level', { ascending: true })
 
-      // If row doesn't exist (PGRST116), that's OK - we'll create it
-      if (fetchError && fetchError.code !== 'PGRST116') throw fetchError
+      if (fetchError) throw fetchError
+
+      const inheritedTownhallData = buildTownhallSnapshotFromRows(rows || [], getDefaultBuildingData(2))
 
       const categoryField = getBuildingCategory(buildingId)
       const normalizedLevels = isTroopBuilding ? normalizeTroopLevels(editingBuildingCount, editingLevels) : editingLevels
@@ -565,12 +574,12 @@ export default function BuildingEditorPage({ username, onLogout }) {
 
       // Build complete record with the correct category updated
       const recordToSave = {
-        townhall_level: parseInt(townhallLevel),
-        defences: currentData?.defences || {},
-        army: currentData?.army || {},
-        resources: currentData?.resources || {},
-        troops: currentData?.troops || {},
-        walls: currentData?.walls || {},
+        townhall_level: selectedTownhall,
+        defences: inheritedTownhallData.defences || [],
+        army: inheritedTownhallData.army || [],
+        resources: inheritedTownhallData.resources || [],
+        troops: inheritedTownhallData.troops || [],
+        walls: inheritedTownhallData.walls || {},
         updated_at: new Date().toISOString(),
       }
 

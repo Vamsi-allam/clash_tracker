@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import styles from './AdminPage.module.css'
 import Header from '../components/Header'
 import { supabase } from '../supabaseClient'
+import { buildTownhallSnapshotFromRows } from '../utils/townhallSnapshot'
 
 const formatSecondsToTimeDisplay = (seconds) => {
   if (!seconds || seconds === 0) return '0sec'
@@ -159,51 +160,40 @@ export default function AdminPage({ username, onLogout }) {
 
     const fetchDynamicData = async () => {
       try {
-        const staticDefaults = getDefaultBuildingData(townhallLevel)
-        const { data, error } = await supabase
+        const selectedTownhall = parseInt(townhallLevel)
+        const staticDefaults = getDefaultBuildingData(2)
+        const { data: rows, error } = await supabase
           .from('townhall_buildings')
           .select('*')
-          .eq('townhall_level', parseInt(townhallLevel))
-          .single()
+          .lte('townhall_level', selectedTownhall)
+          .order('townhall_level', { ascending: true })
 
-        if (data) {
-          const merged = {}
+        if (error) throw error
 
-          const normalizeCategory = (category) => {
-            if (!category) return []
-            if (Array.isArray(category)) return category
-            return Object.entries(category).map(([key, value]) => ({ id: key, ...(value || {}) }))
-          }
-          
-          // Merge all building categories into one object
-          ;[...normalizeCategory(data.defences), ...normalizeCategory(data.army), ...normalizeCategory(data.resources), ...normalizeCategory(data.troops)].forEach((building) => {
-            merged[building.id] = building
-          })
-          if (data.walls) {
-            merged.walls = data.walls
-          }
-          
-          setTownhallRecord(data)
-          setTownhallUpgradeCost(data.townhall_upgrade_cost != null ? String(data.townhall_upgrade_cost) : '')
-          setTownhallUpgradeResource(data.townhall_upgrade_resource || 'gold')
-          setTownhallUpgradeTimeSeconds(
-            data.townhall_upgrade_time_seconds != null
-              ? Number(data.townhall_upgrade_time_seconds)
-              : parseTimeStringToSeconds(data.townhall_upgrade_time || ''),
-          )
-          setTownhallCostModalValues({
-            cost: data.townhall_upgrade_cost != null ? String(data.townhall_upgrade_cost) : '',
-            resource: data.townhall_upgrade_resource || 'gold',
-          })
-          setDynamicData(merged)
-        } else {
-          setTownhallRecord(null)
-          setTownhallUpgradeCost('')
-          setTownhallUpgradeResource('gold')
-          setTownhallUpgradeTimeSeconds(0)
-          setTownhallCostModalValues({ cost: '', resource: 'gold' })
-          setDynamicData(staticDefaults)
+        const selectedTownhallRow = (rows || []).find((row) => Number(row.townhall_level) === selectedTownhall) || null
+        const inheritedSnapshot = buildTownhallSnapshotFromRows(rows || [], staticDefaults)
+        const merged = {}
+
+        ;[...(inheritedSnapshot.defences || []), ...(inheritedSnapshot.army || []), ...(inheritedSnapshot.resources || []), ...(inheritedSnapshot.troops || [])].forEach((building) => {
+          merged[building.id] = building
+        })
+        if (inheritedSnapshot.walls) {
+          merged.walls = inheritedSnapshot.walls
         }
+
+        setTownhallRecord(inheritedSnapshot)
+        setTownhallUpgradeCost(selectedTownhallRow?.townhall_upgrade_cost != null ? String(selectedTownhallRow.townhall_upgrade_cost) : '')
+        setTownhallUpgradeResource(selectedTownhallRow?.townhall_upgrade_resource || 'gold')
+        setTownhallUpgradeTimeSeconds(
+          selectedTownhallRow?.townhall_upgrade_time_seconds != null
+            ? Number(selectedTownhallRow.townhall_upgrade_time_seconds)
+            : parseTimeStringToSeconds(selectedTownhallRow?.townhall_upgrade_time || ''),
+        )
+        setTownhallCostModalValues({
+          cost: selectedTownhallRow?.townhall_upgrade_cost != null ? String(selectedTownhallRow.townhall_upgrade_cost) : '',
+          resource: selectedTownhallRow?.townhall_upgrade_resource || 'gold',
+        })
+        setDynamicData(merged)
       } catch (err) {
         console.error('Error fetching dynamic data:', err)
         setDynamicData(getDefaultBuildingData(townhallLevel))

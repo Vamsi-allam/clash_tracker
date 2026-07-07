@@ -17,6 +17,7 @@ import researchBoostImg from '../assets/magic-items/research-boost.png'
 import Header from '../components/Header'
 import ToastNotification from '../components/ToastNotification'
 import { supabase } from '../supabaseClient'
+import { buildTownhallSnapshotFromRows } from '../utils/townhallSnapshot'
 
 // Convert API asset URL to proxied URL
 const getProxiedAssetUrl = (assetUrl) => {
@@ -47,6 +48,28 @@ const formatCost = (value) => {
     return `${Number((numberValue / 1000).toFixed(2)).toString().replace(/\.0+$/, '')}K`
   }
   return `${numberValue}`
+}
+
+const parseTimeStringToSeconds = (timeString) => {
+  if (!timeString || typeof timeString !== 'string') return 0
+
+  let totalSeconds = 0
+  const timeLower = timeString.toLowerCase().trim()
+
+  const daysMatch = timeLower.match(/(\d+)\s*d(?:ays?)?/
+  )
+  if (daysMatch) totalSeconds += parseInt(daysMatch[1]) * 86400
+
+  const hoursMatch = timeLower.match(/(\d+)\s*h(?:r|ours?)?/)
+  if (hoursMatch) totalSeconds += parseInt(hoursMatch[1]) * 3600
+
+  const minutesMatch = timeLower.match(/(\d+)\s*m(?:in|inutes?)?/)
+  if (minutesMatch) totalSeconds += parseInt(minutesMatch[1]) * 60
+
+  const secondsMatch = timeLower.match(/(\d+)\s*s(?:ec|econds?)?/)
+  if (secondsMatch) totalSeconds += parseInt(secondsMatch[1])
+
+  return totalSeconds
 }
 
 const formatUpgradeClock = (remainingSeconds) => {
@@ -707,17 +730,18 @@ export default function UserPage({ username, onLogout, userId }) {
       }
     }
 
-    const { data } = await supabase
+    const { data: rows } = await supabase
       .from('townhall_buildings')
       .select('*')
-      .eq('townhall_level', townhallLevel)
-      .single()
+      .lte('townhall_level', townhallLevel)
+      .order('townhall_level', { ascending: true })
 
-    const normalizedData = normalizeTownhallBuildings(data)
+    const selectedTownhallRow = (rows || []).find((row) => Number(row.townhall_level) === Number(townhallLevel)) || null
+    const normalizedData = normalizeTownhallBuildings(buildTownhallSnapshotFromRows(rows || []))
     const nextTownhallUpgradeInfo = {
-      cost: Number(data?.townhall_upgrade_cost || 0),
-      resource: String(data?.townhall_upgrade_resource || 'gold').trim().toLowerCase(),
-      timeSeconds: Number(data?.townhall_upgrade_time_seconds || parseTimeStringToSeconds(data?.townhall_upgrade_time || '')),
+      cost: Number(selectedTownhallRow?.townhall_upgrade_cost || 0),
+      resource: String(selectedTownhallRow?.townhall_upgrade_resource || 'gold').trim().toLowerCase(),
+      timeSeconds: Number(selectedTownhallRow?.townhall_upgrade_time_seconds || parseTimeStringToSeconds(selectedTownhallRow?.townhall_upgrade_time || '')),
     }
     setTownhallUpgradeInfo(nextTownhallUpgradeInfo)
 
@@ -808,9 +832,9 @@ export default function UserPage({ username, onLogout, userId }) {
         ).values(),
       ).sort((left, right) => left.level - right.level)
 
-      const wallLevels = data?.walls?.levels?.length > 0 ? data.walls.levels : savedWallLevels
+      const wallLevels = normalizedData.walls?.levels?.length > 0 ? normalizedData.walls.levels : savedWallLevels
       const savedWallTotal = savedWallRows.reduce((total, row) => total + Number(row.quantity || 0), 0)
-      const buildingsUnlocked = Number(data?.walls?.buildings_unlocked) || savedWallTotal
+      const buildingsUnlocked = Number(normalizedData.walls?.buildings_unlocked) || savedWallTotal
 
       wallLevels.forEach((wallLevel) => {
         const savedRow = savedWallRows.find((row) => row.building_id === `walls-${wallLevel.level}`)
@@ -824,14 +848,14 @@ export default function UserPage({ username, onLogout, userId }) {
       })
 
       setWallConfig({
-        ...(data?.walls || {}),
+        ...(normalizedData.walls || {}),
         levels: wallLevels,
         buildings_unlocked: buildingsUnlocked,
       })
       setWallCounts(initialCounts)
 
       nextSnapshotCache.wallConfig = {
-        ...(data?.walls || {}),
+        ...(normalizedData.walls || {}),
         levels: wallLevels,
         buildings_unlocked: buildingsUnlocked,
       }
@@ -842,7 +866,7 @@ export default function UserPage({ username, onLogout, userId }) {
       writeTownhallSnapshotCache(villageId, townhallLevel, nextSnapshotCache)
     }
 
-    return data || null
+    return selectedTownhallRow || rows?.[rows.length - 1] || null
   }
 
   const loadTownhallStructures = async (townhallLevel, villageId = activeVillageRef.current?.id) => {
@@ -3177,11 +3201,11 @@ export default function UserPage({ username, onLogout, userId }) {
                   <div className={styles.massUpdateBox}>
                     <h4>Mass Update:</h4>
                     <div className={styles.massButtons}>
-                      <button className={`${styles.massBtn} ${styles.active}`}>
+                      <button type="button" className={`${styles.massBtn} ${styles.active}`} onClick={handleSetupVillageStructures}>
                         <GridViewIcon className={styles.massButtonIcon} />
                         Structures
                       </button>
-                      <button className={styles.massBtn}>
+                      <button type="button" className={styles.massBtn} onClick={handleOpenWallsEditor}>
                         <BorderAllIcon className={styles.massButtonIcon} />
                         Walls
                       </button>
