@@ -50,6 +50,44 @@ const formatUpgradeClock = (remainingSeconds) => {
   ].filter(Boolean).join(' ')
 }
 
+const splitDurationSeconds = (totalSeconds) => {
+  const safeSeconds = Math.max(0, Math.floor(Number(totalSeconds) || 0))
+  const days = Math.floor(safeSeconds / 86400)
+  const hours = Math.floor((safeSeconds % 86400) / 3600)
+  const minutes = Math.floor((safeSeconds % 3600) / 60)
+  const seconds = safeSeconds % 60
+
+  return { days, hours, minutes, seconds }
+}
+
+const getMaxAllowedRemainingSeconds = (upgrade) => {
+  const startedAt = Number(upgrade?.startedAt || 0)
+  const totalDurationSeconds = Number(upgrade?.durationSeconds || 0)
+  if (!startedAt || !totalDurationSeconds) return 0
+
+  const elapsedSeconds = Math.max(0, Math.floor((Date.now() - startedAt) / 1000))
+  return Math.max(0, totalDurationSeconds - elapsedSeconds)
+}
+
+const clampDurationPartsToMax = (parts, maxSeconds) => {
+  const limitedMax = Math.max(0, Math.floor(Number(maxSeconds) || 0))
+  const currentDays = Math.max(0, Math.floor(Number(parts?.days) || 0))
+  const currentHours = Math.max(0, Math.floor(Number(parts?.hours) || 0))
+  const currentMinutes = Math.max(0, Math.floor(Number(parts?.minutes) || 0))
+  const currentSeconds = Math.max(0, Math.floor(Number(parts?.seconds) || 0))
+
+  let remaining = limitedMax
+  const days = Math.min(currentDays, Math.floor(remaining / 86400))
+  remaining -= days * 86400
+  const hours = Math.min(currentHours, Math.floor(remaining / 3600))
+  remaining -= hours * 3600
+  const minutes = Math.min(currentMinutes, Math.floor(remaining / 60))
+  remaining -= minutes * 60
+  const seconds = Math.min(currentSeconds, remaining)
+
+  return { days, hours, minutes, seconds }
+}
+
 const getStructureRowCount = (building, currentLevels = []) => {
   const unlockedCount = Number(building?.buildings_unlocked) || 0
   const savedCount = Array.isArray(currentLevels) ? currentLevels.length : 0
@@ -144,6 +182,7 @@ export default function UserPage({ username, onLogout, userId }) {
   const [upgradeClock, setUpgradeClock] = useState(Date.now())
   const [openActionRowKey, setOpenActionRowKey] = useState('')
   const [actionPopup, setActionPopup] = useState({ open: false, title: '', action: '', rowKey: '' })
+  const [modifyUpgradePopup, setModifyUpgradePopup] = useState({ open: false, rowKey: '', upgrade: null, durationParts: { days: 0, hours: 0, minutes: 0, seconds: 0 }, saving: false })
   const [wallUpgradePopup, setWallUpgradePopup] = useState({ open: false, sourceLevel: 0, targetLevel: 0, amount: 1 })
   const [toast, setToast] = useState({ open: false, message: '', severity: 'success' })
   const activeVillageRef = useRef(null)
@@ -1362,6 +1401,34 @@ export default function UserPage({ username, onLogout, userId }) {
     setActionPopup({ open: false, title: '', action: '', rowKey: '' })
   }
 
+  const openModifyUpgradePopup = (rowState) => {
+    if (!rowState?.pendingUpgrade) return
+
+    const maxAllowedRemainingSeconds = getMaxAllowedRemainingSeconds(rowState.pendingUpgrade)
+
+    setModifyUpgradePopup({
+      open: true,
+      rowKey: rowState.actionRowKey,
+      upgrade: rowState.pendingUpgrade,
+      durationParts: clampDurationPartsToMax(splitDurationSeconds(rowState.pendingRemainingSeconds), maxAllowedRemainingSeconds),
+      saving: false,
+    })
+  }
+
+  const closeModifyUpgradePopup = () => {
+    setModifyUpgradePopup({ open: false, rowKey: '', upgrade: null, durationParts: { days: 0, hours: 0, minutes: 0, seconds: 0 }, saving: false })
+  }
+
+  const updateModifyUpgradeDurationPart = (part, value) => {
+    setModifyUpgradePopup((current) => ({
+      ...current,
+      durationParts: clampDurationPartsToMax({
+        ...current.durationParts,
+        [part]: Math.max(0, Math.floor(Number(value) || 0)),
+      }, getMaxAllowedRemainingSeconds(current.upgrade)),
+    }))
+  }
+
   const completePendingUpgrade = async (upgrade) => {
     if (!upgrade?.id || !upgrade?.villageId || !upgrade?.buildingId) return false
     const buildingKey = String(upgrade.buildingId).replace(/-\d+$/, '')
@@ -1395,6 +1462,110 @@ export default function UserPage({ username, onLogout, userId }) {
     }
 
     return true
+  }
+
+  const cancelPendingUpgrade = async (upgrade) => {
+    if (!upgrade?.id || !upgrade?.villageId || !upgrade?.buildingId) return false
+
+    const { error: updateError } = await supabase
+      .from('user_village_buildings')
+      .update({
+        current_level: Number(upgrade.fromLevel),
+        upgrade_started_at: null,
+        upgrade_finish_at: null,
+        upgrade_from_level: null,
+        upgrade_to_level: null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('village_id', upgrade.villageId)
+      .eq('building_id', upgrade.buildingId)
+
+    if (updateError) throw updateError
+
+    setPendingUpgrades((current) => current.filter((item) => item.id !== upgrade.id))
+
+    if (activeVillageRef.current?.id === upgrade.villageId) {
+      const buildingKey = String(upgrade.buildingId).replace(/-\d+$/, '')
+
+      setStructureLevels((current) => {
+        const nextLevels = [...(current[buildingKey] || [])]
+        nextLevels[Number(upgrade.rowIndex)] = Number(upgrade.fromLevel)
+        return {
+          ...current,
+          [buildingKey]: nextLevels,
+        }
+      })
+    }
+
+    return true
+  }
+
+  const saveModifiedUpgradeTime = async () => {
+    const upgrade = modifyUpgradePopup.upgrade
+    if (!upgrade?.id || !upgrade?.villageId || !upgrade?.buildingId) return
+
+    const maxAllowedRemainingSeconds = getMaxAllowedRemainingSeconds(upgrade)
+    const remainingSeconds = Math.max(0, Math.floor(
+      (Number(modifyUpgradePopup.durationParts.days) || 0) * 86400
+      + (Number(modifyUpgradePopup.durationParts.hours) || 0) * 3600
+      + (Number(modifyUpgradePopup.durationParts.minutes) || 0) * 60
+      + (Number(modifyUpgradePopup.durationParts.seconds) || 0),
+    ))
+
+    if (remainingSeconds > maxAllowedRemainingSeconds) {
+      setError(`Upgrade time cannot exceed ${formatUpgradeClock(maxAllowedRemainingSeconds)}`)
+      return
+    }
+
+    const newFinishAt = Date.now() + (remainingSeconds * 1000)
+    const elapsedSeconds = Math.max(0, Math.floor((Date.now() - Number(upgrade.startedAt || Date.now())) / 1000))
+    const nextDurationSeconds = elapsedSeconds + remainingSeconds
+
+    setModifyUpgradePopup((current) => ({
+      ...current,
+      saving: true,
+    }))
+
+    try {
+      const { error: updateError } = await supabase
+        .from('user_village_buildings')
+        .update({
+          upgrade_finish_at: new Date(newFinishAt).toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq('village_id', upgrade.villageId)
+        .eq('building_id', upgrade.buildingId)
+
+      if (updateError) throw updateError
+
+      setPendingUpgrades((current) => current.map((item) => {
+        if (item.id !== upgrade.id) return item
+
+        return {
+          ...item,
+          finishAt: newFinishAt,
+          durationSeconds: nextDurationSeconds,
+        }
+      }))
+
+      setModifyUpgradePopup((current) => ({
+        ...current,
+        upgrade: {
+          ...upgrade,
+          finishAt: newFinishAt,
+          durationSeconds: nextDurationSeconds,
+        },
+        remainingText: formatUpgradeClock(remainingSeconds),
+        saving: false,
+      }))
+      closeModifyUpgradePopup()
+    } catch (saveError) {
+      setModifyUpgradePopup((current) => ({
+        ...current,
+        saving: false,
+      }))
+      setError(saveError.message || 'Failed to update upgrade time')
+    }
   }
 
   const startStructureUpgrade = async (building, rowState) => {
@@ -1835,9 +2006,9 @@ export default function UserPage({ username, onLogout, userId }) {
                             <button
                               type="button"
                               className={`${styles.readOnlyActionBtn} ${styles.readOnlyActionChoiceBtn} ${styles.readOnlyActionBtnConstruct}`}
-                              onClick={() => openComingSoonPopup(rowState.rowLevel <= 0 ? 'Construct' : 'Upgrade', 'wrench', rowState.actionRowKey)}
-                              aria-label="Started"
-                              title="Started"
+                              onClick={() => openModifyUpgradePopup(rowState)}
+                              aria-label="Modify upgrade"
+                              title="Modify upgrade"
                             >
                               <HandymanOutlinedIcon className={styles.readOnlyActionIcon} />
                             </button>
@@ -1851,10 +2022,10 @@ export default function UserPage({ username, onLogout, userId }) {
                               <CheckIcon className={styles.readOnlyActionIcon} />
                             </button>
                           </div>
-                          {actionPopup.open && actionPopup.rowKey === rowState.actionRowKey && (
+                          {actionPopup.open && actionPopup.rowKey === rowState.actionRowKey && actionPopup.action === 'check' && (
                             <div className={styles.comingSoonInlinePopup} role="status" aria-live="polite">
                               <div className={styles.comingSoonInlineTitleRow}>
-                                <span className={styles.comingSoonInlineIcon}>{actionPopup.action === 'check' ? <CheckIcon /> : <HandymanOutlinedIcon />}</span>
+                                <span className={styles.comingSoonInlineIcon}><CheckIcon /></span>
                                 <span className={styles.comingSoonInlineTitle}>{actionPopup.title} feature</span>
                               </div>
                               <div className={styles.comingSoonInlineText}>Features adding soon.</div>
@@ -1887,6 +2058,116 @@ export default function UserPage({ username, onLogout, userId }) {
                             <ArrowUpwardIcon className={styles.readOnlyActionIcon} />
                           )}
                         </button>
+                      )}
+
+                      {modifyUpgradePopup.open && modifyUpgradePopup.rowKey === rowState.actionRowKey && rowState.pendingUpgrade && (
+                        typeof document !== 'undefined' ? createPortal(
+                          <div className={styles.modifyUpgradeOverlay} onClick={closeModifyUpgradePopup}>
+                            <div className={styles.modifyUpgradePopup} onClick={(event) => event.stopPropagation()}>
+                              <button type="button" className={styles.modifyUpgradeCloseBtn} onClick={closeModifyUpgradePopup} aria-label="Close upgrade popup">
+                                ×
+                              </button>
+
+                              <h3 className={styles.modifyUpgradeTitle}>Modify Upgrade</h3>
+
+                              <div className={styles.modifyUpgradeImagesRow}>
+                                <div className={styles.modifyUpgradeImageBlock}>
+                                  <img
+                                    src={getBuildingImagePath(building, rowState.pendingUpgrade.fromLevel)}
+                                    alt={`${displayName} Level ${rowState.pendingUpgrade.fromLevel}`}
+                                    className={styles.modifyUpgradeImage}
+                                  />
+                                </div>
+                                <div className={styles.modifyUpgradeArrow}>→</div>
+                                <div className={styles.modifyUpgradeImageBlock}>
+                                  <img
+                                    src={getBuildingImagePath(building, rowState.pendingUpgrade.toLevel)}
+                                    alt={`${displayName} Level ${rowState.pendingUpgrade.toLevel}`}
+                                    className={styles.modifyUpgradeImage}
+                                  />
+                                </div>
+                              </div>
+
+                              <p className={styles.modifyUpgradePrompt}>
+                                Update the upgrade time of {displayName} from level {rowState.pendingUpgrade.fromLevel} to level {rowState.pendingUpgrade.toLevel}:
+                              </p>
+
+                              <div className={styles.modifyUpgradeRemainingBlock}>
+                                <div className={styles.modifyUpgradeRemainingLabel}>Remaining Time:</div>
+                                <div className={styles.modifyUpgradeRemainingHint}>Maximum: {formatUpgradeClock(getMaxAllowedRemainingSeconds(modifyUpgradePopup.upgrade))}</div>
+                                <div className={styles.modifyUpgradeTimeGrid}>
+                                  {[
+                                    ['days', 'Days'],
+                                    ['hours', 'Hours'],
+                                    ['minutes', 'Minutes'],
+                                    ['seconds', 'Seconds'],
+                                  ].map(([key, label]) => (
+                                    <label key={key} className={styles.modifyUpgradeTimeCell}>
+                                      <span className={styles.modifyUpgradeTimeLabel}>{label}</span>
+                                      <select
+                                        className={styles.modifyUpgradeTimeSelect}
+                                        value={modifyUpgradePopup.durationParts[key]}
+                                        onChange={(event) => updateModifyUpgradeDurationPart(key, event.target.value)}
+                                        aria-label={label}
+                                      >
+                                        {Array.from({ length: (() => {
+                                          const maxAllowed = getMaxAllowedRemainingSeconds(modifyUpgradePopup.upgrade)
+                                          const parts = modifyUpgradePopup.durationParts
+                                          const daysMax = Math.floor(maxAllowed / 86400)
+                                          const currentDayLimit = Math.max(0, Math.min(daysMax, 366))
+                                          if (key === 'days') return currentDayLimit + 1
+
+                                          const remainingAfterDays = Math.max(0, maxAllowed - (Number(parts.days) || 0) * 86400)
+                                          const hoursMax = (Number(parts.days) || 0) >= daysMax ? Math.floor(remainingAfterDays / 3600) : 23
+                                          if (key === 'hours') return Math.max(0, Math.min(hoursMax, 23)) + 1
+
+                                          const remainingAfterHours = Math.max(0, remainingAfterDays - (Number(parts.hours) || 0) * 3600)
+                                          const minutesMax = (Number(parts.days) || 0) >= daysMax && (Number(parts.hours) || 0) >= hoursMax ? Math.floor(remainingAfterHours / 60) : 59
+                                          if (key === 'minutes') return Math.max(0, Math.min(minutesMax, 59)) + 1
+
+                                          const remainingAfterMinutes = Math.max(0, remainingAfterHours - (Number(parts.minutes) || 0) * 60)
+                                          const secondsMax = (Number(parts.days) || 0) >= daysMax && (Number(parts.hours) || 0) >= hoursMax && (Number(parts.minutes) || 0) >= minutesMax ? remainingAfterMinutes : 59
+                                          return Math.max(0, Math.min(secondsMax, 59)) + 1
+                                        })() }, (_, index) => index).map((optionValue) => (
+                                          <option key={`${key}-${optionValue}`} value={optionValue}>{optionValue}</option>
+                                        ))}
+                                      </select>
+                                    </label>
+                                  ))}
+                                </div>
+                              </div>
+
+                              <div className={styles.modifyUpgradeActions}>
+                                <button type="button" className={styles.modifyUpgradeBackBtn} onClick={closeModifyUpgradePopup}>← Back</button>
+                                <button
+                                  type="button"
+                                  className={styles.modifyUpgradeSaveBtn}
+                                  onClick={() => {
+                                    void saveModifiedUpgradeTime()
+                                  }}
+                                  disabled={modifyUpgradePopup.saving}
+                                >
+                                  {modifyUpgradePopup.saving ? 'Saving...' : '✓ Update Time'}
+                                </button>
+                                <button
+                                  type="button"
+                                  className={styles.modifyUpgradeCancelBtn}
+                                  onClick={async () => {
+                                    try {
+                                      await cancelPendingUpgrade(rowState.pendingUpgrade)
+                                      closeModifyUpgradePopup()
+                                    } catch (cancelError) {
+                                      setError(cancelError.message || 'Failed to cancel upgrade')
+                                    }
+                                  }}
+                                >
+                                  ✕ Cancel Upgrade
+                                </button>
+                              </div>
+                            </div>
+                          </div>,
+                          document.body,
+                        ) : null
                       )}
                     </div>
                   </div>
