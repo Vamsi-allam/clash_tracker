@@ -1072,7 +1072,7 @@ export default function UserPage({ username, onLogout, userId }) {
     suppressSnapshotRefreshRef.current = true
 
     try {
-      const structureRowsToSave = [...editDefenseBuildings, ...editArmyBuildings, ...editResourceBuildings]
+      const structureRowsToSave = [...editDefenseBuildings, ...editTrapBuildings, ...editArmyBuildings, ...editResourceBuildings]
         .flatMap((building) => {
           const currentLevels = structureLevels[building.id] || []
           const rowCount = getStructureRowCount(building, currentLevels)
@@ -1116,7 +1116,7 @@ export default function UserPage({ username, onLogout, userId }) {
 
   const handleSetAllToZero = () => {
     const resetLevels = {}
-    ;[...editDefenseBuildings, ...editArmyBuildings, ...editResourceBuildings].forEach((building) => {
+    ;[...editDefenseBuildings, ...editTrapBuildings, ...editArmyBuildings, ...editResourceBuildings].forEach((building) => {
       const rowCount = getStructureRowCount(building, structureLevels[building.id] || [])
       resetLevels[building.id] = Array.from({ length: rowCount }, (_, index) => getDefaultRowLevel(building, index, isCopyUnlocked(building, index)))
     })
@@ -1125,7 +1125,7 @@ export default function UserPage({ username, onLogout, userId }) {
 
   const handleSetAllToMax = () => {
     const maxedLevels = {}
-    ;[...editDefenseBuildings, ...editArmyBuildings, ...editResourceBuildings].forEach((building) => {
+    ;[...editDefenseBuildings, ...editTrapBuildings, ...editArmyBuildings, ...editResourceBuildings].forEach((building) => {
       const rowCount = getStructureRowCount(building, structureLevels[building.id] || [])
       const maxLevel = Math.max(...(building.levels || []).map((level) => level.level), 0)
       maxedLevels[building.id] = Array.from({ length: rowCount }, () => maxLevel)
@@ -1916,7 +1916,12 @@ export default function UserPage({ username, onLogout, userId }) {
     if (!activeVillage?.id || hasReachedMaxTownHall) return
     if (activeTownhallUpgrade) return
     if (!townhallConstructionReady) {
-      setError('Construct all buildings before upgrading the Town Hall.')
+      showToast('Construct all buildings before upgrading the Town Hall.', 'warning')
+      return
+    }
+
+    if (!isWallBuildComplete) {
+      showToast('Build all the walls before upgrading to the next Town Hall.', 'warning')
       return
     }
 
@@ -3239,8 +3244,7 @@ export default function UserPage({ username, onLogout, userId }) {
   })()
   const activeRemainingBetaComplete = isWallsTabActive ? isWallMaxComplete : Boolean(loadedTabCompletion[activeLoadedTab])
   const canStartTownhallUpgrade = Boolean(
-    townhallConstructionReady
-    && townhallUpgradeInfo?.timeSeconds
+    townhallUpgradeInfo?.timeSeconds
     && townhallUpgradeInfo?.cost
     && !activeTownhallUpgrade
     && !hasReachedMaxTownHall,
@@ -3512,7 +3516,7 @@ export default function UserPage({ username, onLogout, userId }) {
                           </div>
 
                           <div className={styles.nextThActionRow}>
-                            <button className={styles.startUpgradeBtn} onClick={handleStartTownhallUpgrade} disabled={!canStartTownhallUpgrade} title={townhallConstructionReady ? '' : 'Construct all buildings before upgrading the Town Hall'}>
+                            <button className={styles.startUpgradeBtn} onClick={handleStartTownhallUpgrade} disabled={!canStartTownhallUpgrade}>
                               Start TH Upgrade
                             </button>
                             <span className={styles.nextThHelp}>?</span>
@@ -4200,6 +4204,15 @@ export default function UserPage({ username, onLogout, userId }) {
                     <div className={styles.structuresDatabaseGrid}>
                       {editArmyBuildings.map((building, index) => renderStructureCard(building, `army-${building.id}-${index}`))}
                     </div>
+
+                    {editTrapBuildings.length > 0 && (
+                      <>
+                        <h2 className={styles.structuresDatabaseTitle}>Traps</h2>
+                        <div className={styles.structuresDatabaseGrid}>
+                          {editTrapBuildings.map((building, index) => renderStructureCard(building, `traps-${building.id}-${index}`))}
+                        </div>
+                      </>
+                    )}
                   </div>
                 </section>
 
