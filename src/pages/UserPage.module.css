@@ -2988,6 +2988,10 @@
   color: rgba(255, 255, 255, 0.9);
   font-size: 0.84rem;
   font-weight: 400;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   align-self: stretch;
   text-align: center;
 }
@@ -2998,9 +3002,8 @@
 }
 
 .readOnlyUpgradeSummary > span:last-child {
-  margin-left: 10px;
-  color: #ffd84f;
-  font-weight: 700;
+  color: #fff;
+  font-weight: 400;
 }
 
 .readOnlyUpgradeSummary.readOnlyTroopLockedSummary > span:last-child {
