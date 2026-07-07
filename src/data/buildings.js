@@ -20,6 +20,7 @@ export const BUILDING_SECTIONS = {
     { id: 'barracks', name: 'Barracks', image: '/src/assets/Army/Barracks' },
     { id: 'clan_castle', name: 'Clan Castle', image: '/src/assets/Army/clan_castle' },
     { id: 'lab', name: 'Lab', image: '/src/assets/Army/Lab' },
+    { id: 'hero_hall', name: 'Hero Hall', image: '/src/assets/Army/Hero_Hall' },
   ],
   resources: [
     { id: 'gold_mine', name: 'Gold Mine', image: '/src/assets/Resources/goldmine' },
@@ -115,6 +116,20 @@ export const getDefaultBuildingData = (townhallLevel) => {
         levels: [
           { level: 1, cost: 0, resource: 'elixir', time: '0sec', lab_level_unlocked: 1 },
           { level: 2, cost: 1000, resource: 'elixir', time: '1min', lab_level_unlocked: 2 },
+        ],
+      },
+    }
+  }
+
+  if (Number(townhallLevel) === 4) {
+    return {
+      hero_hall: {
+        id: 'hero_hall',
+        image_path: '/src/assets/Army/Hero_Hall/202_',
+        buildings_unlocked: 1,
+        copy_unlocks: createCopyUnlocks(1, 1),
+        levels: [
+          { level: 1, cost: 0, resource: 'elixir', time: '0sec' },
         ],
       },
     }
