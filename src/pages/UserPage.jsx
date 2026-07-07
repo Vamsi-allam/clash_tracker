@@ -182,6 +182,7 @@ export default function UserPage({ username, onLogout, userId }) {
   const [upgradeClock, setUpgradeClock] = useState(Date.now())
   const [openActionRowKey, setOpenActionRowKey] = useState('')
   const [actionPopup, setActionPopup] = useState({ open: false, title: '', action: '', rowKey: '' })
+  const [completeUpgradePopup, setCompleteUpgradePopup] = useState({ open: false, rowKey: '', upgrade: null, magicItem: 'none', saving: false })
   const [modifyUpgradePopup, setModifyUpgradePopup] = useState({ open: false, rowKey: '', upgrade: null, durationParts: { days: 0, hours: 0, minutes: 0, seconds: 0 }, saving: false })
   const [wallUpgradePopup, setWallUpgradePopup] = useState({ open: false, sourceLevel: 0, targetLevel: 0, amount: 1 })
   const [toast, setToast] = useState({ open: false, message: '', severity: 'success' })
@@ -1269,6 +1270,25 @@ export default function UserPage({ username, onLogout, userId }) {
 
   const isWallsTabActive = activeLoadedTab === 'walls'
 
+  const getPendingUpgradeCountForBuildings = (buildings = []) => {
+    if (!Array.isArray(buildings) || buildings.length === 0) return 0
+
+    const buildingIds = new Set(buildings.map((building) => building?.id).filter(Boolean))
+
+    return pendingUpgrades.reduce((total, upgrade) => {
+      const baseBuildingId = String(upgrade?.buildingId || '').replace(/-\d+$/, '')
+      return buildingIds.has(baseBuildingId) ? total + 1 : total
+    }, 0)
+  }
+
+  const loadedTabUpgradeCounts = {
+    defences: getPendingUpgradeCountForBuildings(visibleDefenseBuildings),
+    army: getPendingUpgradeCountForBuildings(visibleArmyBuildings),
+    resources: getPendingUpgradeCountForBuildings(visibleResourceBuildings),
+    troops: getPendingUpgradeCountForBuildings(structureCatalog.troops || []),
+    walls: 0,
+  }
+
   const remainingBetaResourceDefinitions = [
     { id: 'gold', label: 'Gold', icon: '/src/assets/magic-items/gold.png' },
     { id: 'elixir', label: 'Elixir', icon: '/src/assets/magic-items/elixir.png' },
@@ -1399,6 +1419,50 @@ export default function UserPage({ username, onLogout, userId }) {
 
   const closeComingSoonPopup = () => {
     setActionPopup({ open: false, title: '', action: '', rowKey: '' })
+  }
+
+  const openCompleteUpgradePopup = (rowState) => {
+    if (!rowState?.pendingUpgrade) return
+
+    setCompleteUpgradePopup({
+      open: true,
+      rowKey: rowState.actionRowKey,
+      upgrade: rowState.pendingUpgrade,
+      magicItem: 'none',
+      saving: false,
+    })
+  }
+
+  const closeCompleteUpgradePopup = () => {
+    setCompleteUpgradePopup({ open: false, rowKey: '', upgrade: null, magicItem: 'none', saving: false })
+  }
+
+  const updateCompleteUpgradeMagicItem = (value) => {
+    setCompleteUpgradePopup((current) => ({
+      ...current,
+      magicItem: value,
+    }))
+  }
+
+  const confirmCompleteUpgradePopup = async () => {
+    const upgrade = completeUpgradePopup.upgrade
+    if (!upgrade) return
+
+    setCompleteUpgradePopup((current) => ({
+      ...current,
+      saving: true,
+    }))
+
+    try {
+      await completePendingUpgrade(upgrade)
+      closeCompleteUpgradePopup()
+    } catch (completeError) {
+      setCompleteUpgradePopup((current) => ({
+        ...current,
+        saving: false,
+      }))
+      setError(completeError.message || 'Failed to complete upgrade')
+    }
   }
 
   const openModifyUpgradePopup = (rowState) => {
@@ -2015,25 +2079,13 @@ export default function UserPage({ username, onLogout, userId }) {
                             <button
                               type="button"
                               className={`${styles.readOnlyActionBtn} ${styles.readOnlyActionChoiceBtn} ${styles.readOnlyActionBtnConfirm}`}
-                              onClick={() => openComingSoonPopup(rowState.rowLevel <= 0 ? 'Construct' : 'Upgrade', 'check', rowState.actionRowKey)}
+                              onClick={() => openCompleteUpgradePopup(rowState)}
                               aria-label={rowState.rowLevel <= 0 ? 'Construct started' : 'Upgrade started'}
                               title={rowState.rowLevel <= 0 ? 'Construct started' : 'Upgrade started'}
                             >
                               <CheckIcon className={styles.readOnlyActionIcon} />
                             </button>
                           </div>
-                          {actionPopup.open && actionPopup.rowKey === rowState.actionRowKey && actionPopup.action === 'check' && (
-                            <div className={styles.comingSoonInlinePopup} role="status" aria-live="polite">
-                              <div className={styles.comingSoonInlineTitleRow}>
-                                <span className={styles.comingSoonInlineIcon}><CheckIcon /></span>
-                                <span className={styles.comingSoonInlineTitle}>{actionPopup.title} feature</span>
-                              </div>
-                              <div className={styles.comingSoonInlineText}>Features adding soon.</div>
-                              <button type="button" className={styles.comingSoonInlineButton} onClick={closeComingSoonPopup}>
-                                OK
-                              </button>
-                            </div>
-                          )}
                         </div>
                       ) : rowState.rowLevel >= maxLevel ? (
                         <div className={`${styles.readOnlyActionBtn} ${styles.readOnlyActionBtnComplete}`} aria-label="Fully upgraded" title="Fully upgraded">
@@ -2058,6 +2110,79 @@ export default function UserPage({ username, onLogout, userId }) {
                             <ArrowUpwardIcon className={styles.readOnlyActionIcon} />
                           )}
                         </button>
+                      )}
+
+                      {completeUpgradePopup.open && completeUpgradePopup.rowKey === rowState.actionRowKey && rowState.pendingUpgrade && (
+                        typeof document !== 'undefined' ? createPortal(
+                          <div className={styles.completeUpgradeOverlay} onClick={closeCompleteUpgradePopup}>
+                            <div className={styles.completeUpgradePopup} onClick={(event) => event.stopPropagation()}>
+                              <button type="button" className={styles.completeUpgradeCloseBtn} onClick={closeCompleteUpgradePopup} aria-label="Close complete upgrade popup">
+                                ×
+                              </button>
+
+                              <h3 className={styles.completeUpgradeTitle}>Complete Upgrade</h3>
+
+                              <div className={styles.completeUpgradeImagesRow}>
+                                <div className={styles.completeUpgradeImageBlock}>
+                                  <img
+                                    src={getBuildingImagePath(building, rowState.pendingUpgrade.fromLevel)}
+                                    alt={`${displayName} Level ${rowState.pendingUpgrade.fromLevel}`}
+                                    className={styles.completeUpgradeImage}
+                                  />
+                                </div>
+                                <div className={styles.completeUpgradeArrow}>→</div>
+                                <div className={styles.completeUpgradeImageBlock}>
+                                  <img
+                                    src={getBuildingImagePath(building, rowState.pendingUpgrade.toLevel)}
+                                    alt={`${displayName} Level ${rowState.pendingUpgrade.toLevel}`}
+                                    className={styles.completeUpgradeImage}
+                                  />
+                                </div>
+                              </div>
+
+                              <p className={styles.completeUpgradePrompt}>
+                                Do you wish to complete {displayName} upgrading from level {rowState.pendingUpgrade.fromLevel} to level {rowState.pendingUpgrade.toLevel}?
+                              </p>
+
+                              <div className={styles.completeUpgradeChoiceTitle}>Use Magic Item?</div>
+                              <div className={styles.completeUpgradeChoiceNote}>This will be used for historical upgrade records.</div>
+
+                              <div className={styles.completeUpgradeChoices} role="radiogroup" aria-label="Use magic item">
+                                {[
+                                  ['none', 'None'],
+                                  ['book', 'Book'],
+                                  ['hammer', 'Hammer'],
+                                ].map(([value, label]) => (
+                                  <label key={value} className={styles.completeUpgradeChoiceOption}>
+                                    <span className={styles.completeUpgradeChoiceLabel}>{label}</span>
+                                    <input
+                                      type="radio"
+                                      name={`complete-upgrade-${rowState.actionRowKey}`}
+                                      value={value}
+                                      checked={completeUpgradePopup.magicItem === value}
+                                      onChange={() => updateCompleteUpgradeMagicItem(value)}
+                                    />
+                                  </label>
+                                ))}
+                              </div>
+
+                              <div className={styles.completeUpgradeActions}>
+                                <button type="button" className={styles.completeUpgradeBackBtn} onClick={closeCompleteUpgradePopup}>← Back</button>
+                                <button
+                                  type="button"
+                                  className={styles.completeUpgradeConfirmBtn}
+                                  onClick={() => {
+                                    void confirmCompleteUpgradePopup()
+                                  }}
+                                  disabled={completeUpgradePopup.saving}
+                                >
+                                  {completeUpgradePopup.saving ? 'Completing...' : '✓ Complete'}
+                                </button>
+                              </div>
+                            </div>
+                          </div>,
+                          document.body,
+                        ) : null
                       )}
 
                       {modifyUpgradePopup.open && modifyUpgradePopup.rowKey === rowState.actionRowKey && rowState.pendingUpgrade && (
@@ -2664,18 +2789,31 @@ export default function UserPage({ username, onLogout, userId }) {
                 <div className={styles.loadedTabShell}>
                   <div className={styles.loadedTabBar}>
                     {['defences', 'army', 'resources', 'troops', 'walls'].map((tab) => (
+                      (() => {
+                        const upgradeCount = loadedTabUpgradeCounts[tab] || 0
+                        const isUpgrading = upgradeCount > 0
+
+                        return (
                       <button
                         type="button"
                         key={tab}
-                        className={`${styles.loadedTabBtn} ${activeLoadedTab === tab ? styles.loadedTabBtnActive : ''} ${loadedTabCompletion[tab] ? styles.loadedTabBtnComplete : ''}`}
+                          className={`${styles.loadedTabBtn} ${activeLoadedTab === tab ? styles.loadedTabBtnActive : ''} ${isUpgrading ? styles.loadedTabBtnUpgrading : ''} ${loadedTabCompletion[tab] && !isUpgrading ? styles.loadedTabBtnComplete : ''}`}
                         onMouseDown={() => setActiveLoadedTab(tab)}
                         onTouchStart={() => setActiveLoadedTab(tab)}
                       >
-                        <span className={styles.loadedTabBtnLabel}>{tabLabels[tab]}</span>
-                        {loadedTabCompletion[tab] && (
-                          <CheckIcon className={styles.loadedTabBtnIcon} />
-                        )}
-                      </button>
+                          <span className={styles.loadedTabBtnLabel}>{tabLabels[tab]}</span>
+                          {isUpgrading ? (
+                            <span className={styles.loadedTabBtnUpgradeMeta}>↑ ({upgradeCount})</span>
+                          ) : (
+                              loadedTabCompletion[tab] && (
+                                <span className={styles.loadedTabBtnCompleteMeta}>
+                                  <CheckIcon className={styles.loadedTabBtnIcon} />
+                                </span>
+                              )
+                          )}
+                        </button>
+                        )
+                      })()
                     ))}
                   </div>
 

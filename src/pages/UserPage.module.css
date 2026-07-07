@@ -558,6 +558,8 @@
   flex: 0 0 auto;
   margin: 0;
   padding: 7px 10px;
+  min-height: 47px;
+  box-sizing: border-box;
   border: 1px solid rgba(255, 255, 255, 0.82);
   border-top: none;
   background: #c9c9c9;
@@ -577,8 +579,8 @@
 
 .loadedTabBtnIcon {
   display: inline-block;
-  width: 0.5rem;
-  height: 0.5rem;
+  width: 0.38rem;
+  height: 0.38rem;
   margin-top: 0;
   flex-shrink: 0;
   color: currentColor;
@@ -612,14 +614,53 @@
 
 .loadedTabBtnComplete {
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0;
+  gap: 2px;
   min-width: 64px;
+  min-height: 38px;
   padding: 7px 10px;
+  box-sizing: border-box;
   background: linear-gradient(180deg, #86c84b 0%, #72b33a 100%);
   color: #ffffff;
+  font-weight: 400;
+}
+
+.loadedTabBtnCompleteMeta {
+  display: block;
+  line-height: 1;
+}
+
+.loadedTabBtnUpgrading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: 64px;
+  min-height: 38px;
+  padding: 7px 10px;
+  box-sizing: border-box;
+  background: #ffd36a;
+  color: #171200;
+  font-weight: 400;
+}
+
+.loadedTabBtnUpgrading:hover {
+  background: #ffd36a;
+  color: #171200;
+}
+
+.loadedTabBtnActive.loadedTabBtnUpgrading {
+  background: #ffd36a;
+  color: #171200;
+}
+
+.loadedTabBtnUpgradeMeta {
+  display: block;
+  font-size: 0.88rem;
+  line-height: 1;
   font-weight: 400;
 }
 
@@ -2101,6 +2142,167 @@
 }
 
 .modifyUpgradeCancelBtn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.completeUpgradeOverlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(3, 10, 22, 0.42);
+  backdrop-filter: blur(1px);
+  z-index: 1200;
+}
+
+.completeUpgradePopup {
+  position: relative;
+  width: min(600px, 100%);
+  border: 1px solid rgba(78, 124, 192, 0.55);
+  border-radius: 4px;
+  background: linear-gradient(180deg, #132947 0%, #0d1b31 100%);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.45);
+  padding: 16px 18px 18px;
+  color: #f5f7fb;
+  font-weight: 400;
+}
+
+.completeUpgradeCloseBtn {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 1.6rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.completeUpgradeTitle {
+  margin: 0 0 10px;
+  text-align: center;
+  color: #4d88db;
+  font-size: clamp(1.65rem, 2.5vw, 2.2rem);
+  font-weight: 400;
+}
+
+.completeUpgradeImagesRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  margin: 2px 0 12px;
+}
+
+.completeUpgradeImageBlock {
+  width: 88px;
+  height: 88px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.completeUpgradeImage {
+  width: 68px;
+  height: 68px;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 8px rgba(0, 0, 0, 0.35));
+}
+
+.completeUpgradeArrow {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 1.9rem;
+  font-weight: 700;
+}
+
+.completeUpgradePrompt {
+  margin: 0 auto 12px;
+  max-width: 520px;
+  color: #f2f4f8;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  text-align: center;
+  font-weight: 400;
+}
+
+.completeUpgradeChoiceTitle {
+  color: #4d88db;
+  font-size: 1.05rem;
+  font-weight: 400;
+  text-align: center;
+}
+
+.completeUpgradeChoiceNote {
+  margin-top: 8px;
+  color: #f2f4f8;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.completeUpgradeChoices {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 28px;
+  margin-top: 14px;
+}
+
+.completeUpgradeChoiceOption {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: #4d88db;
+  font-size: 1rem;
+  font-weight: 400;
+}
+
+.completeUpgradeChoiceLabel {
+  line-height: 1.2;
+}
+
+.completeUpgradeChoiceOption input[type='radio'] {
+  width: 18px;
+  height: 18px;
+  accent-color: #4d88db;
+}
+
+.completeUpgradeActions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.completeUpgradeBackBtn,
+.completeUpgradeConfirmBtn {
+  min-width: 118px;
+  padding: 12px 18px;
+  border: none;
+  border-radius: 3px;
+  color: #f4f4f4;
+  font-size: 0.95rem;
+  font-weight: 400;
+  cursor: pointer;
+}
+
+.completeUpgradeBackBtn {
+  background: linear-gradient(180deg, #5f8fd1 0%, #4e7ec4 100%);
+}
+
+.completeUpgradeConfirmBtn {
+  background: linear-gradient(180deg, #86c84b 0%, #72b33a 100%);
+}
+
+.completeUpgradeConfirmBtn:disabled {
   cursor: not-allowed;
   opacity: 0.6;
 }
