@@ -123,6 +123,15 @@ export const getDefaultBuildingData = (townhallLevel) => {
 
   if (Number(townhallLevel) === 4) {
     return {
+      air_defense: {
+        id: 'air_defense',
+        image_path: '/src/assets/Defences/air_defense/14_',
+        buildings_unlocked: 1,
+        copy_unlocks: createCopyUnlocks(1, 1),
+        levels: [
+          { level: 1, cost: 0, resource: 'gold', time: '0sec' },
+        ],
+      },
       hero_hall: {
         id: 'hero_hall',
         image_path: '/src/assets/Army/Hero_Hall/202_',
