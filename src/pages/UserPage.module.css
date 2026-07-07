@@ -96,6 +96,11 @@
   font-size: 1.32rem !important;
 }
 
+.readOnlyTroopStateIconPending {
+  color: #ffd35a !important;
+  font-size: 1.32rem !important;
+}
+
 .readOnlyTroopDetails {
   display: flex;
   align-items: center;

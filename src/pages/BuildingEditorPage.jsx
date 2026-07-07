@@ -269,7 +269,7 @@ const getDefaultBuildingData = (townhallLevel) => {
         copy_unlocks: createCopyUnlocks(1, 1),
         barracks_level_unlocked: 1,
         levels: [
-          { level: 1, cost: 2000, resource: 'elixir', time: '1min' },
+          { level: 1, cost: 0, resource: 'elixir', time: '0sec' },
         ],
       },
       archer: {
@@ -278,7 +278,7 @@ const getDefaultBuildingData = (townhallLevel) => {
         copy_unlocks: createCopyUnlocks(1, 1),
         barracks_level_unlocked: 2,
         levels: [
-          { level: 1, cost: 300, resource: 'elixir', time: '1min' },
+          { level: 1, cost: 0, resource: 'elixir', time: '0sec' },
         ],
       },
       giant: {

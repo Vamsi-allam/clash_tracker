@@ -101,10 +101,10 @@ const getDefaultBuildingData = (townhallLevel) => {
       gold_storage: { id: 'gold_storage', image_path: '/src/assets/Resources/gold_storage/5_', buildings_unlocked: 1, copy_unlocks: [true], levels: [{ level: 1, cost: 300, resource: 'elixir', time: '10sec' }, { level: 2, cost: 750, resource: 'elixir', time: '2min' }, { level: 3, cost: 1500, resource: 'elixir', time: '5min' }] },
       elixir_storage: { id: 'elixir_storage', image_path: '/src/assets/Resources/elixi_storage/6_', buildings_unlocked: 1, copy_unlocks: [true], levels: [{ level: 1, cost: 300, resource: 'gold', time: '10sec' }, { level: 2, cost: 750, resource: 'gold', time: '2min' }, { level: 3, cost: 1500, resource: 'gold', time: '5min' }] },
       walls: { id: 'walls', image_path: '/src/assets/Walls/60_', buildings_unlocked: 25, copy_unlocks: Array.from({ length: 25 }, (_, index) => index === 0), levels: [{ level: 1, cost: 0, resource: 'gold', time: '0sec' }, { level: 2, cost: 1000, resource: 'gold', time: '0sec' }] },
-      barbarian: { id: 'barbarian', image_path: '/src/assets/Troops/Barbarian/31_', copy_unlocks: [true], barracks_level_unlocked: 1, levels: [{ level: 1, cost: 0, resource: 'elixir', time: '0sec' }] },
-      archer: { id: 'archer', image_path: '/src/assets/Troops/Archer/32_', copy_unlocks: [true], barracks_level_unlocked: 1, levels: [{ level: 1, cost: 0, resource: 'elixir', time: '0sec' }] },
-      giant: { id: 'giant', image_path: '/src/assets/Troops/Giant/33_', copy_unlocks: [true], barracks_level_unlocked: 1, levels: [{ level: 1, cost: 0, resource: 'elixir', time: '0sec' }] },
-      goblin: { id: 'goblin', image_path: '/src/assets/Troops/Goblin/34_', copy_unlocks: [true], barracks_level_unlocked: 1, levels: [{ level: 1, cost: 0, resource: 'elixir', time: '0sec' }] },
+      barbarian: { id: 'barbarian', image_path: '/src/assets/Troops/Barbarian/31_', copy_unlocks: [true], barracks_level_unlocked: 1, levels: [{ level: 1, cost: 0, resource: 'elixir', time: '0sec' }, { level: 2, cost: 2000, resource: 'elixir', time: '1min' }] },
+      archer: { id: 'archer', image_path: '/src/assets/Troops/Archer/32_', copy_unlocks: [true], barracks_level_unlocked: 1, levels: [{ level: 1, cost: 0, resource: 'elixir', time: '0sec' }, { level: 2, cost: 300, resource: 'elixir', time: '1min' }] },
+      giant: { id: 'giant', image_path: '/src/assets/Troops/Giant/33_', copy_unlocks: [true], barracks_level_unlocked: 1, levels: [{ level: 1, cost: 0, resource: 'elixir', time: '0sec' }, { level: 2, cost: 2000, resource: 'elixir', time: '5min' }] },
+      goblin: { id: 'goblin', image_path: '/src/assets/Troops/Goblin/34_', copy_unlocks: [true], barracks_level_unlocked: 1, levels: [{ level: 1, cost: 0, resource: 'elixir', time: '0sec' }, { level: 2, cost: 1500, resource: 'elixir', time: '2min' }] },
     }
   }
   return {}

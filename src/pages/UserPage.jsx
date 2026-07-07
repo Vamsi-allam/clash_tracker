@@ -2322,67 +2322,60 @@ export default function UserPage({ username, onLogout, userId }) {
 
     if (readOnly) {
             if (activeLoadedTab === 'troops' && TROOP_BUILDING_IDS.has(String(building?.id || ''))) {
+              const troopRowState = rowStates[0] || null
               const troopUnlocked = currentBarracksLevel >= troopBarracksRequirement
-              const troopRowLevel = troopUnlocked ? 1 : 0
-              const troopRowImageLevel = troopUnlocked ? 1 : 0
+              const troopRowLevel = troopUnlocked ? Number(troopRowState?.rowLevel || 0) : 0
+              const troopRowImageLevel = troopRowLevel
 
-              return (
-                <section key={cardKey} className={`${styles.defenceCard} ${styles.readOnlyBuildingBlock}`}>
-                  <div className={styles.readOnlyCardGrid} style={tableRowStyle}>
-                    <div className={styles.readOnlySummaryPanel} style={{ gridRow: `1 / span ${rowCount}` }}>
-                      {getBuildingImagePath(building, troopRowImageLevel) ? (
-                        <img
-                          src={getBuildingImagePath(building, troopRowImageLevel)}
-                          alt={displayName}
-                          className={styles.readOnlySummaryImage}
-                        />
-                      ) : (
-                        <div className={styles.readOnlySummaryImagePlaceholder} />
-                      )}
+              if (!troopUnlocked) {
+                return (
+                  <section key={cardKey} className={`${styles.defenceCard} ${styles.readOnlyBuildingBlock}`}>
+                    <div className={styles.readOnlyCardGrid} style={tableRowStyle}>
+                      <div className={styles.readOnlySummaryPanel} style={{ gridRow: `1 / span ${rowCount}` }}>
+                        {getBuildingImagePath(building, troopRowImageLevel) ? (
+                          <img
+                            src={getBuildingImagePath(building, troopRowImageLevel)}
+                            alt={displayName}
+                            className={styles.readOnlySummaryImage}
+                          />
+                        ) : (
+                          <div className={styles.readOnlySummaryImagePlaceholder} />
+                        )}
 
-                      <div className={styles.readOnlySummaryName}>{displayName}</div>
-                    </div>
+                        <div className={styles.readOnlySummaryName}>{displayName}</div>
+                      </div>
 
-                    <div className={styles.readOnlyRowsColumn} style={rowsColumnStyle}>
-                      <div className={styles.readOnlyRow}>
-                        <div className={styles.readOnlyTroopLevelCell}>
-                          {getBuildingImagePath(building, troopRowImageLevel) ? (
-                            <img
-                              src={getBuildingImagePath(building, troopRowImageLevel)}
-                              alt={displayName}
-                              className={styles.readOnlyRowImage}
-                            />
-                          ) : (
-                            <div className={styles.defenceIconPlaceholder} />
-                          )}
-
-                          <div className={styles.readOnlyTroopLevelMeta}>
-                            <div className={styles.readOnlyLevelValue}>{troopRowLevel}/1</div>
-                            {troopUnlocked ? (
-                              <CheckIcon className={`${styles.readOnlyActionIcon} ${styles.readOnlyTroopStateIconUnlocked}`} />
+                      <div className={styles.readOnlyRowsColumn} style={rowsColumnStyle}>
+                        <div className={styles.readOnlyRow}>
+                          <div className={styles.readOnlyTroopLevelCell}>
+                            {getBuildingImagePath(building, troopRowImageLevel) ? (
+                              <img
+                                src={getBuildingImagePath(building, troopRowImageLevel)}
+                                alt={displayName}
+                                className={styles.readOnlyRowImage}
+                              />
                             ) : (
-                              <LockOutlinedIcon className={`${styles.readOnlyActionIcon} ${styles.readOnlyTroopStateIconLocked}`} />
+                              <div className={styles.defenceIconPlaceholder} />
                             )}
-                          </div>
-                        </div>
 
-                        <div className={styles.readOnlyTroopDetails}>
-                          {troopUnlocked ? (
-                            <div className={`${styles.readOnlyUpgradeSummary} ${styles.readOnlyUpgradeSummaryComplete}`}>
-                              <span>Fully upgraded for this Town Hall level.</span>
-                              <CheckIcon className={styles.readOnlyUpgradeSummaryIcon} aria-label="Fully upgraded for this Town Hall level" titleAccess="Fully upgraded for this Town Hall level" />
+                            <div className={styles.readOnlyTroopLevelMeta}>
+                              <div className={styles.readOnlyLevelValue}>{troopRowLevel}/1</div>
+                              <LockOutlinedIcon className={`${styles.readOnlyActionIcon} ${styles.readOnlyTroopStateIconLocked}`} />
                             </div>
-                          ) : (
+                          </div>
+
+                          <div className={styles.readOnlyTroopDetails}>
                             <div className={`${styles.readOnlyUpgradeSummary} ${styles.readOnlyTroopLockedSummary}`}>
                               <span>Requires Barracks level {troopBarracksRequirement} to unlock</span>
                             </div>
-                          )}
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                </section>
-              )
+                  </section>
+                )
+              }
+
             }
       const totalRemainingUpgrades = rowStates.reduce((total, rowState) => total + (rowState.pendingUpgrade ? rowState.visibleNextLevels.length : rowState.upgradeSummary.nextLevels.length), 0)
       const totalCost = rowStates.reduce((total, rowState) => {
@@ -2884,11 +2877,28 @@ export default function UserPage({ username, onLogout, userId }) {
     })
   }
 
+  const isTroopCategoryComplete = (buildings = []) => {
+    if (!Array.isArray(buildings) || buildings.length === 0) return false
+
+    return buildings.every((building) => {
+      const maxLevel = Math.max(...(building.levels || []).map((level) => Number(level.level || 0)), 0)
+      if (maxLevel <= 0) return false
+
+      const troopRequirement = getTroopBarracksRequirement(building)
+      if (currentBarracksLevel < troopRequirement) return false
+
+      const rowLevels = structureLevels[building.id] || []
+      const rowCount = getStructureRowCount(building, rowLevels)
+
+      return Array.from({ length: rowCount }, (_, index) => Number(rowLevels[index] || 0) >= maxLevel).every(Boolean)
+    })
+  }
+
   const loadedTabCompletion = {
     defences: isBuildingCategoryComplete(visibleDefenseBuildings),
     army: isBuildingCategoryComplete(visibleArmyBuildings),
     resources: isBuildingCategoryComplete(visibleResourceBuildings),
-    troops: isBuildingCategoryComplete(structureCatalog.troops || []),
+    troops: isTroopCategoryComplete(structureCatalog.troops || []),
     walls: isWallMaxComplete,
   }
   const activeRemainingBetaComplete = isWallsTabActive ? isWallMaxComplete : Boolean(loadedTabCompletion[activeLoadedTab])
