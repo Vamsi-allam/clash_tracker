@@ -617,10 +617,10 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
+  gap: 0;
   min-width: 64px;
-  min-height: 38px;
-  padding: 7px 10px;
+  min-height: 47px;
+  padding: 4px 10px 3px;
   box-sizing: border-box;
   background: linear-gradient(180deg, #86c84b 0%, #72b33a 100%);
   color: #ffffff;
@@ -630,6 +630,7 @@
 .loadedTabBtnCompleteMeta {
   display: block;
   line-height: 1;
+  margin-top: -1px;
 }
 
 .loadedTabBtnUpgrading {
