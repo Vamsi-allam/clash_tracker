@@ -1118,7 +1118,7 @@
 .nextThUpgradePreview { display: flex; flex-direction: column; gap: 14px; padding-top: 8px }
 .nextThUpgradeTopRow { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px }
 .nextThUpgradeActionIcons { display: flex; align-items: center; gap: 8px; padding-top: 12px }
-.nextThUpgradeIconBtn { width: 32px; height: 32px; border: 1px solid rgba(198,225,255,0.5); border-radius: 3px; background: linear-gradient(180deg,#f0a72a,#e59508); color: #ffffff; display: inline-flex; align-items: center; justify-content: center; padding: 0 }
+.nextThUpgradeIconBtn { width: 32px; height: 32px; border: none; border-radius: 3px; background: linear-gradient(180deg,#f0a72a,#e59508); color: #ffffff; display: inline-flex; align-items: center; justify-content: center; padding: 0 }
 .nextThUpgradeIconBtn:last-child { background: linear-gradient(180deg,#6bbf4a,#4ea231) }
 .nextThUpgradeIcon { font-size: 1.05rem }
 .nextThProgressWrap { display: flex; flex-direction: column; gap: 8px; width: 100% }

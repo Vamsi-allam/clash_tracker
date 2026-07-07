@@ -2363,8 +2363,8 @@ export default function UserPage({ username, onLogout, userId }) {
                               type="button"
                               className={`${styles.readOnlyActionBtn} ${styles.readOnlyActionChoiceBtn} ${styles.readOnlyActionBtnConfirm}`}
                               onClick={() => openCompleteUpgradePopup(rowState)}
-                              aria-label={rowState.rowLevel <= 0 ? 'Construct started' : 'Upgrade started'}
-                              title={rowState.rowLevel <= 0 ? 'Construct started' : 'Upgrade started'}
+                              aria-label={rowState.rowLevel <= 0 ? 'complete construction' : 'Complete Upgrade'}
+                              title={rowState.rowLevel <= 0 ? 'Complete Construction' : 'Complete Upgrade'}
                             >
                               <CheckIcon className={styles.readOnlyActionIcon} />
                             </button>
@@ -2379,7 +2379,7 @@ export default function UserPage({ username, onLogout, userId }) {
                           type="button"
                           className={`${styles.readOnlyActionBtn} ${rowState.rowLevel <= 0 ? styles.readOnlyActionBtnConstruct : styles.readOnlyActionBtnUpgrade} ${rowState.pendingUpgrade ? styles.readOnlyActionBtnPending : ''}`}
                           disabled={Boolean(rowState.pendingUpgrade)}
-                          aria-label={rowState.rowLevel <= 0 ? 'Construct' : 'Upgrade'}
+                          aria-label={rowState.rowLevel <= 0 ? 'Complete Construction' : 'Complete Construction'}
                           title={rowState.rowLevel <= 0 ? 'Construct' : 'Upgrade'}
                           onClick={() => {
                             setOpenActionRowKey(rowState.actionRowKey)
