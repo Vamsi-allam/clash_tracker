@@ -34,6 +34,7 @@ export const BUILDING_SECTIONS = {
     { id: 'goblin', name: 'Goblin', image: '/src/assets/Troops/Goblin' },
     { id: 'wall_breaker', name: 'Wall Breaker', image: '/src/assets/Troops/Wall_breaker' },
   ],
+  heroes: [],
   walls: [
     { id: 'walls', name: 'Walls', image: '/src/assets/Walls' },
   ],
@@ -45,6 +46,7 @@ export const ADMIN_BUILDINGS_BY_CATEGORY = {
   army: BUILDING_SECTIONS.army,
   resources: BUILDING_SECTIONS.resources,
   troops: BUILDING_SECTIONS.troops,
+  heroes: BUILDING_SECTIONS.heroes,
   walls: BUILDING_SECTIONS.walls,
 }
 
@@ -54,6 +56,7 @@ export const ALL_BUILDINGS = [
   ...BUILDING_SECTIONS.army,
   ...BUILDING_SECTIONS.resources,
   ...BUILDING_SECTIONS.troops,
+  ...BUILDING_SECTIONS.heroes,
   ...BUILDING_SECTIONS.walls,
 ]
 
@@ -69,6 +72,7 @@ export const getBuildingCategory = (buildingId) => {
   if (BUILDING_SECTIONS.army.some((building) => building.id === buildingId)) return 'army'
   if (BUILDING_SECTIONS.resources.some((building) => building.id === buildingId)) return 'resources'
   if (BUILDING_SECTIONS.troops.some((building) => building.id === buildingId)) return 'troops'
+  if (BUILDING_SECTIONS.heroes.some((building) => building.id === buildingId)) return 'heroes'
   if (BUILDING_SECTIONS.walls.some((building) => building.id === buildingId)) return 'walls'
   return 'defences'
 }

@@ -352,7 +352,12 @@ export default function UserPage({ username, onLogout, userId }) {
   const currentBarracksLevel = getCurrentBarracksLevel(structureLevels)
   const currentLabLevel = getCurrentLabLevel(structureLevels)
   const showTrapsTab = Number(activeVillage?.townhall_level || 0) >= 3
-  const displayedLoadedTab = !showTrapsTab && activeLoadedTab === 'traps' ? 'defences' : activeLoadedTab
+  const showHeroesTab = Number(activeVillage?.townhall_level || 0) >= 4
+  const displayedLoadedTab = !showTrapsTab && activeLoadedTab === 'traps'
+    ? 'defences'
+    : !showHeroesTab && activeLoadedTab === 'heroes'
+      ? 'defences'
+      : activeLoadedTab
 
   const setActiveVillagePersisted = async (villageId) => {
     if (!userId || !villageId) return
@@ -1510,6 +1515,8 @@ export default function UserPage({ username, onLogout, userId }) {
         ? visibleResourceBuildings
         : activeLoadedTab === 'troops'
           ? (structureCatalog.troops || [])
+          : activeLoadedTab === 'heroes'
+            ? []
           : []
 
   const isWallsTabActive = activeLoadedTab === 'walls'
@@ -2441,6 +2448,12 @@ export default function UserPage({ username, onLogout, userId }) {
     }
   }, [activeLoadedTab, showTrapsTab])
 
+  useEffect(() => {
+    if (!showHeroesTab && activeLoadedTab === 'heroes') {
+      setActiveLoadedTab('defences')
+    }
+  }, [activeLoadedTab, showHeroesTab])
+
   const getBuildingImagePath = (building, level) => {
     const requestedLevel = Math.max(0, Number(level) || 0)
     const fallbackLevel = requestedLevel === 0 ? 1 : requestedLevel
@@ -3152,6 +3165,8 @@ export default function UserPage({ username, onLogout, userId }) {
           ? 'Resources'
           : displayedLoadedTab === 'troops'
             ? 'Troop'
+            : displayedLoadedTab === 'heroes'
+              ? 'Hero'
             : 'Walls'
 
   const loadedTabSecondaryLabel = activeLoadedTab === 'walls' ? 'Wall Quantity' : 'Level'
@@ -3167,6 +3182,8 @@ export default function UserPage({ username, onLogout, userId }) {
             ? 'Resources'
             : displayedLoadedTab === 'troops'
               ? 'Troop'
+              : displayedLoadedTab === 'heroes'
+                ? 'Heroes'
               : 'Walls'
 
   const visibleTroopBuildings = activeLoadedTab === 'troops'
@@ -3179,6 +3196,7 @@ export default function UserPage({ username, onLogout, userId }) {
     army: 'Army',
     resources: 'Resources',
     troops: 'Troops',
+    heroes: 'Heroes',
     walls: 'Walls',
   }
 
@@ -3219,6 +3237,7 @@ export default function UserPage({ username, onLogout, userId }) {
     army: isBuildingCategoryComplete(visibleArmyBuildings),
     resources: isBuildingCategoryComplete(visibleResourceBuildings),
     troops: isTroopCategoryComplete(structureCatalog.troops || []),
+    heroes: false,
     walls: isWallMaxComplete,
   }
   const showTroopsProgress = currentTownHallLevel >= 3
@@ -3578,7 +3597,7 @@ export default function UserPage({ username, onLogout, userId }) {
 
                 <div className={styles.loadedTabShell}>
                   <div className={styles.loadedTabBar}>
-                    {['defences', ...(showTrapsTab ? ['traps'] : []), 'army', 'resources', 'troops', 'walls'].map((tab) => (
+                    {['defences', ...(showTrapsTab ? ['traps'] : []), 'army', 'resources', 'troops', ...(showHeroesTab ? ['heroes'] : []), 'walls'].map((tab) => (
                       (() => {
                         const upgradeCount = loadedTabUpgradeCounts[tab] || 0
                         const isUpgrading = upgradeCount > 0
@@ -3664,6 +3683,22 @@ export default function UserPage({ username, onLogout, userId }) {
                             </div>
                             <div className={styles.readOnlyLoadedList}>
                               {editTrapBuildings.map((building, index) => renderStructureCard(building, `tab-traps-${building.id}-${index}`, { readOnly: true }))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {displayedLoadedTab === 'heroes' && showHeroesTab && (
+                        <div className={styles.loadedTabSection}>
+                          <div className={styles.loadedTabSectionHeader}>
+                            <div className={styles.loadedTabHeaderLeft}>
+                              <h3 className={styles.loadedTabSectionTitle}>{loadedTabSectionTitle}</h3>
+                              <SettingsIcon className={styles.loadedTabSettingsIcon} />
+                            </div>
+                          </div>
+                          <div className={styles.loadedStructureFrame}>
+                            <div className={styles.readOnlyLoadedList}>
+                              <p>Heroes will be added here.</p>
                             </div>
                           </div>
                         </div>

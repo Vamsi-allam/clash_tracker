@@ -94,6 +94,7 @@ export default function AdminPage({ username, onLogout }) {
   const navigate = useNavigate()
   const { townhallLevel } = useParams()
   const showTrapsTab = Number(townhallLevel) >= 3
+  const showHeroesTab = Number(townhallLevel) >= 4
   const townhalls = Array.from({ length: 17 }, (_, i) => i + 2) // Town halls 2-18
   const [activeTab, setActiveTab] = useState('defenses')
   const [dynamicData, setDynamicData] = useState({})
@@ -161,6 +162,12 @@ export default function AdminPage({ username, onLogout }) {
       setActiveTab('defenses')
     }
   }, [activeTab, showTrapsTab])
+
+  useEffect(() => {
+    if (!showHeroesTab && activeTab === 'heroes') {
+      setActiveTab('defenses')
+    }
+  }, [activeTab, showHeroesTab])
 
   const handleTownhallClick = (level) => {
     navigate(`/admin/${level}`)
@@ -362,7 +369,7 @@ export default function AdminPage({ username, onLogout }) {
             )}
 
             <div className={styles.tabsContainer}>
-              {['defenses', ...(showTrapsTab ? ['traps'] : []), 'army', 'resources', 'troops', 'walls'].map((tab) => (
+              {['defenses', ...(showTrapsTab ? ['traps'] : []), 'army', 'resources', 'troops', ...(showHeroesTab ? ['heroes'] : []), 'walls'].map((tab) => (
                 <button
                   key={tab}
                   className={`${styles.tab} ${activeTab === tab ? styles.tabActive : ''}`}
