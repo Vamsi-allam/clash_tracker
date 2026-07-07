@@ -207,6 +207,7 @@ const barbarianTroopImages = import.meta.glob('../assets/Troops/Barbarian/*.png'
 const archerTroopImages = import.meta.glob('../assets/Troops/Archer/*.png', { eager: true, import: 'default' })
 const giantTroopImages = import.meta.glob('../assets/Troops/Giant/*.png', { eager: true, import: 'default' })
 const goblinTroopImages = import.meta.glob('../assets/Troops/Goblin/*.png', { eager: true, import: 'default' })
+const wallBreakerImages = import.meta.glob('../assets/Troops/Wall_breaker/*.png', { eager: true, import: 'default' })
 const upgradeResourceIcons = {
   gold: '/src/assets/magic-items/gold.png',
   elixir: '/src/assets/magic-items/elixir.png',
@@ -1806,6 +1807,10 @@ export default function UserPage({ username, onLogout, userId }) {
   const handleStartTownhallUpgrade = async () => {
     if (!activeVillage?.id || hasReachedMaxTownHall) return
     if (activeTownhallUpgrade) return
+    if (!townhallConstructionReady) {
+      setError('Construct all buildings before upgrading the Town Hall.')
+      return
+    }
 
     const durationSeconds = Math.max(0, Math.floor(Number(townhallUpgradeInfo?.timeSeconds) || 0))
     if (durationSeconds <= 0) {
@@ -2307,6 +2312,7 @@ export default function UserPage({ username, onLogout, userId }) {
       archer: (imageLevel) => archerTroopImages[`../assets/Troops/Archer/32_${imageLevel}.png`] || '',
       giant: (imageLevel) => giantTroopImages[`../assets/Troops/Giant/33_${imageLevel}.png`] || '',
       goblin: (imageLevel) => goblinTroopImages[`../assets/Troops/Goblin/34_${imageLevel}.png`] || '',
+      wall_breaker: (imageLevel) => wallBreakerImages[`../assets/Troops/Wall_breaker/35_${imageLevel}.png`] || '',
     }
 
     const prefix = imageMap[buildingId]
@@ -2984,7 +2990,34 @@ export default function UserPage({ username, onLogout, userId }) {
     troops: isTroopCategoryComplete(structureCatalog.troops || []),
     walls: isWallMaxComplete,
   }
+  const townhallConstructionReady = (() => {
+    const constructibleBuildings = [
+      ...(structureCatalog.defences || []),
+      ...(structureCatalog.traps || []),
+      ...(structureCatalog.army || []),
+      ...(structureCatalog.resources || []),
+      ...(structureCatalog.troops || []),
+    ].filter((building) => building?.id)
+
+    if (constructibleBuildings.length === 0) return false
+
+    return constructibleBuildings.every((building) => {
+      const rowCount = getStructureRowCount(building, structureLevels[building.id] || [])
+      if (rowCount <= 0) return false
+
+      const rowLevels = structureLevels[building.id] || Array.from({ length: rowCount }, (_, index) => getDefaultRowLevel(building, index, isCopyUnlocked(building, index)))
+
+      return Array.from({ length: rowCount }, (_, index) => Number(rowLevels[index] || 0) > 0).every(Boolean)
+    })
+  })()
   const activeRemainingBetaComplete = isWallsTabActive ? isWallMaxComplete : Boolean(loadedTabCompletion[activeLoadedTab])
+  const canStartTownhallUpgrade = Boolean(
+    townhallConstructionReady
+    && townhallUpgradeInfo?.timeSeconds
+    && townhallUpgradeInfo?.cost
+    && !activeTownhallUpgrade
+    && !hasReachedMaxTownHall,
+  )
 
   return (
     <>
@@ -3242,7 +3275,7 @@ export default function UserPage({ username, onLogout, userId }) {
                           </div>
 
                           <div className={styles.nextThActionRow}>
-                            <button className={styles.startUpgradeBtn} onClick={handleStartTownhallUpgrade} disabled={!townhallUpgradeInfo?.timeSeconds || !townhallUpgradeInfo?.cost || activeTownhallUpgrade}>
+                            <button className={styles.startUpgradeBtn} onClick={handleStartTownhallUpgrade} disabled={!canStartTownhallUpgrade} title={townhallConstructionReady ? '' : 'Construct all buildings before upgrading the Town Hall'}>
                               Start TH Upgrade
                             </button>
                             <span className={styles.nextThHelp}>?</span>

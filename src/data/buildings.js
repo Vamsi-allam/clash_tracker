@@ -32,6 +32,7 @@ export const BUILDING_SECTIONS = {
     { id: 'archer', name: 'Archer', image: '/src/assets/Troops/Archer' },
     { id: 'giant', name: 'Giant', image: '/src/assets/Troops/Giant' },
     { id: 'goblin', name: 'Goblin', image: '/src/assets/Troops/Goblin' },
+    { id: 'wall_breaker', name: 'Wall Breaker', image: '/src/assets/Troops/Wall_breaker' },
   ],
   walls: [
     { id: 'walls', name: 'Walls', image: '/src/assets/Walls' },
@@ -100,6 +101,16 @@ export const getDefaultBuildingData = (townhallLevel) => {
         copy_unlocks: createCopyUnlocks(1, 1),
         levels: [
           { level: 1, cost: 200, resource: 'gold', time: '30sec' },
+        ],
+      },
+      wall_breaker: {
+        id: 'wall_breaker',
+        image_path: '/src/assets/Troops/Wall_breaker/35_',
+        copy_unlocks: [true],
+        barracks_level_unlocked: 2,
+        levels: [
+          { level: 1, cost: 0, resource: 'elixir', time: '0sec' },
+          { level: 2, cost: 1000, resource: 'elixir', time: '1min' },
         ],
       },
     }
