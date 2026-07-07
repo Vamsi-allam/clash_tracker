@@ -100,6 +100,9 @@ const clampDurationPartsToMax = (parts, maxSeconds) => {
 }
 
 const getStructureRowCount = (building, currentLevels = []) => {
+  const troopIds = new Set(['barbarian', 'archer', 'giant', 'goblin'])
+  if (troopIds.has(String(building?.id || ''))) return 1
+
   const unlockedCount = Number(building?.buildings_unlocked) || 0
   const savedCount = Array.isArray(currentLevels) ? currentLevels.length : 0
   return Math.max(1, unlockedCount, savedCount)
@@ -163,6 +166,10 @@ const goldMineImages = import.meta.glob('../assets/Resources/goldmine/*.png', { 
 const elixirCollectorImages = import.meta.glob('../assets/Resources/elixir_collector/*.png', { eager: true, import: 'default' })
 const goldStorageImages = import.meta.glob('../assets/Resources/gold_storage/*.png', { eager: true, import: 'default' })
 const elixirStorageImages = import.meta.glob('../assets/Resources/elixi_storage/*.png', { eager: true, import: 'default' })
+const barbarianTroopImages = import.meta.glob('../assets/Troops/Barbarian/*.png', { eager: true, import: 'default' })
+const archerTroopImages = import.meta.glob('../assets/Troops/Archer/*.png', { eager: true, import: 'default' })
+const giantTroopImages = import.meta.glob('../assets/Troops/Giant/*.png', { eager: true, import: 'default' })
+const goblinTroopImages = import.meta.glob('../assets/Troops/Goblin/*.png', { eager: true, import: 'default' })
 const upgradeResourceIcons = {
   gold: '/src/assets/magic-items/gold.png',
   elixir: '/src/assets/magic-items/elixir.png',
@@ -2158,20 +2165,20 @@ export default function UserPage({ username, onLogout, userId }) {
   const remainingBetaUnitLabelLower = activeLoadedTab === 'troops' ? 'lab worker' : 'builders'
 
   const remainingBetaTimeSeconds = Math.ceil(
-    remainingBetaTotalSeconds / Math.max(1, Math.min(5, Number(remainingBetaBuilderCount) || 2))
+    remainingBetaTotalSeconds / displayedBuilderCount
   )
 
   useEffect(() => {
     if (activeLoadedTab === 'walls') return
 
-    const savedBuilderCount = Number(activeVillage?.builder_count)
-    if (savedBuilderCount) {
-      setRemainingBetaBuilderCount(Math.min(5, Math.max(1, savedBuilderCount)))
+    if (activeLoadedTab === 'troops') {
+      setRemainingBetaBuilderCount(1)
       return
     }
 
-    if (activeLoadedTab === 'troops') {
-      setRemainingBetaBuilderCount(1)
+    const savedBuilderCount = Number(activeVillage?.builder_count)
+    if (savedBuilderCount) {
+      setRemainingBetaBuilderCount(Math.min(5, Math.max(1, savedBuilderCount)))
       return
     }
 
@@ -2200,6 +2207,10 @@ export default function UserPage({ username, onLogout, userId }) {
       elixir_collector: (imageLevel) => elixirCollectorImages[`../assets/Resources/elixir_collector/3_${imageLevel}.png`] || '',
       gold_storage: (imageLevel) => goldStorageImages[`../assets/Resources/gold_storage/5_${imageLevel}.png`] || '',
       elixir_storage: (imageLevel) => elixirStorageImages[`../assets/Resources/elixi_storage/6_${imageLevel}.png`] || '',
+      barbarian: (imageLevel) => barbarianTroopImages[`../assets/Troops/Barbarian/31_${imageLevel}.png`] || '',
+      archer: (imageLevel) => archerTroopImages[`../assets/Troops/Archer/32_${imageLevel}.png`] || '',
+      giant: (imageLevel) => giantTroopImages[`../assets/Troops/Giant/33_${imageLevel}.png`] || '',
+      goblin: (imageLevel) => goblinTroopImages[`../assets/Troops/Goblin/34_${imageLevel}.png`] || '',
     }
 
     const prefix = imageMap[buildingId]
@@ -2651,8 +2662,8 @@ export default function UserPage({ username, onLogout, userId }) {
                       </>
                     ) : (
                       <div className={`${styles.readOnlyUpgradeSummary} ${styles.readOnlyUpgradeSummaryComplete}`}>
-                        <span>Fully upgraded</span>
-                        <CheckIcon className={styles.readOnlyUpgradeSummaryIcon} aria-label="Fully upgraded" titleAccess="Fully upgraded" />
+                        <span>Fully upgraded for this Town Hall level.</span>
+                        <CheckIcon className={styles.readOnlyUpgradeSummaryIcon} aria-label="Fully upgraded for this Town Hall level" titleAccess="Fully upgraded for this Town Hall level" />
                       </div>
                     )}
                   </div>
@@ -2746,10 +2757,10 @@ export default function UserPage({ username, onLogout, userId }) {
         : activeLoadedTab === 'resources'
           ? 'Resources'
           : activeLoadedTab === 'troops'
-            ? 'Troops'
+            ? 'Troop'
             : 'Walls'
 
-        const loadedTabSecondaryLabel = activeLoadedTab === 'walls' ? 'Wall Quantity' : 'Level'
+  const loadedTabSecondaryLabel = activeLoadedTab === 'walls' ? 'Wall Quantity' : 'Level'
 
     const loadedTabSectionTitle =
       activeLoadedTab === 'defences'
@@ -2759,8 +2770,12 @@ export default function UserPage({ username, onLogout, userId }) {
           : activeLoadedTab === 'resources'
             ? 'Resources'
             : activeLoadedTab === 'troops'
-              ? 'Troops'
+              ? 'Troop'
               : 'Walls'
+
+  const visibleTroopBuildings = activeLoadedTab === 'troops'
+    ? (structureCatalog.troops || [])
+    : []
 
   const tabLabels = {
     defences: 'Defenses',
@@ -3235,8 +3250,10 @@ export default function UserPage({ username, onLogout, userId }) {
                       {activeLoadedTab === 'troops' && (
                         <div className={styles.loadedTabSection}>
                           <div className={styles.loadedTabSectionHeader}>
-                            <h3 className={styles.loadedTabSectionTitle}>{loadedTabSectionTitle}</h3>
-                            <SettingsIcon className={styles.loadedTabSettingsIcon} />
+                            <div className={styles.loadedTabHeaderLeft}>
+                              <h3 className={styles.loadedTabSectionTitle}>{loadedTabSectionTitle}</h3>
+                              <SettingsIcon className={styles.loadedTabSettingsIcon} />
+                            </div>
                           </div>
                           <div className={styles.loadedStructureFrame}>
                             <div className={styles.loadedStructureHeader}>
@@ -3245,7 +3262,7 @@ export default function UserPage({ username, onLogout, userId }) {
                               <span>Upgrades</span>
                             </div>
                             <div className={styles.readOnlyLoadedList}>
-                              {(structureCatalog.troops || []).map((building, index) => renderStructureCard(building, `tab-troops-${building.id}-${index}`, { readOnly: true }))}
+                              {visibleTroopBuildings.map((building, index) => renderStructureCard(building, `tab-troops-${building.id}-${index}`, { readOnly: true }))}
                             </div>
                           </div>
                         </div>
@@ -3549,7 +3566,20 @@ export default function UserPage({ username, onLogout, userId }) {
                                 <img src={resource.icon} alt={resource.label} className={styles.loadedRemainingResourceIcon} />
                                 {resource.label}
                               </span>
-                              <strong className={styles.loadedRemainingResourceValue}>{formatNumberShort(resource.total)}</strong>
+                              <span
+                                className={[
+                                  styles.loadedRemainingResourceValue,
+                                  resource.id === 'gold'
+                                    ? styles.readOnlyResourceCostGold
+                                    : resource.id === 'elixir'
+                                      ? styles.readOnlyResourceCostElixir
+                                      : resource.id === 'dark_elixir'
+                                        ? styles.readOnlyResourceCostDarkElixir
+                                        : '',
+                                ].filter(Boolean).join(' ')}
+                              >
+                                {formatNumberShort(resource.total)}
+                              </span>
                             </div>
                           ))}
 
@@ -3572,7 +3602,7 @@ export default function UserPage({ username, onLogout, userId }) {
                                 ) : (
                                   <div className={styles.loadedRemainingTimeBlock}>
                                     <span className={styles.loadedRemainingTimeBuilders}>With {displayedBuilderCount} {remainingBetaUnitLabelLower}:</span>
-                                    <strong className={styles.loadedRemainingTimeValue}>{formatSeconds(remainingBetaTimeSeconds)}</strong>
+                                    <span className={styles.loadedRemainingTimeValue}>{formatSeconds(remainingBetaTimeSeconds)}</span>
                                   </div>
                                 )}
                               </div>
