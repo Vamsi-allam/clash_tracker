@@ -109,8 +109,8 @@ export const getDefaultBuildingData = (townhallLevel) => {
         copy_unlocks: [true],
         barracks_level_unlocked: 2,
         levels: [
-          { level: 1, cost: 0, resource: 'elixir', time: '0sec' },
-          { level: 2, cost: 1000, resource: 'elixir', time: '1min' },
+          { level: 1, cost: 0, resource: 'elixir', time: '0sec', lab_level_unlocked: 1 },
+          { level: 2, cost: 1000, resource: 'elixir', time: '1min', lab_level_unlocked: 2 },
         ],
       },
     }

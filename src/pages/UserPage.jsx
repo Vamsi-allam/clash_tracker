@@ -17,7 +17,7 @@ import researchBoostImg from '../assets/magic-items/research-boost.png'
 import Header from '../components/Header'
 import ToastNotification from '../components/ToastNotification'
 import { supabase } from '../supabaseClient'
-import { buildTownhallSnapshotFromRows } from '../utils/townhallSnapshot'
+import { getTownhallSnapshotForLevel } from '../utils/townhallSnapshot'
 import { BUILDING_SECTIONS, TROOP_BARRACKS_REQUIREMENTS, TROOP_BUILDING_IDS, getDefaultBuildingData } from '../data/buildings'
 
 // Convert API asset URL to proxied URL
@@ -142,6 +142,84 @@ const getCurrentBarracksLevel = (structureLevels = {}) => {
   return barracksLevels.reduce((highest, value) => Math.max(highest, Number(value) || 0), 0)
 }
 
+const getCurrentLabLevel = (structureLevels = {}) => {
+  const labLevels = Array.isArray(structureLevels?.lab) ? structureLevels.lab : []
+  return labLevels.reduce((highest, value) => Math.max(highest, Number(value) || 0), 0)
+}
+
+const getAllowedBuildingRowIdsForSnapshot = (snapshot = {}) => {
+  const rowIds = new Set()
+
+  ;['defences', 'traps', 'army', 'resources', 'troops'].forEach((categoryKey) => {
+    const category = Array.isArray(snapshot?.[categoryKey]) ? snapshot[categoryKey] : []
+
+    category.forEach((building) => {
+      const buildingId = String(building?.id || '').trim()
+      if (!buildingId) return
+
+      const rowCount = Math.max(
+        1,
+        Number(building?.buildings_unlocked || 0),
+        Array.isArray(building?.copy_unlocks) ? building.copy_unlocks.length : 0,
+      )
+
+      for (let index = 0; index < rowCount; index += 1) {
+        rowIds.add(`${buildingId}-${index + 1}`)
+      }
+    })
+  })
+
+  if (snapshot?.walls && typeof snapshot.walls === 'object') {
+    const wallLevels = Array.isArray(snapshot.walls.levels) ? snapshot.walls.levels : []
+    wallLevels.forEach((level) => {
+      const levelNumber = Number(level?.level || 0)
+      if (levelNumber > 0) {
+        rowIds.add(`walls-${levelNumber}`)
+      }
+    })
+  }
+
+  return rowIds
+}
+
+const syncVillageBuildingRowsToTownhall = async (villageId, townhallLevel) => {
+  if (!villageId || !townhallLevel) return
+
+  const { data: rows, error } = await supabase
+    .from('townhall_buildings')
+    .select('*')
+    .lte('townhall_level', townhallLevel)
+    .order('townhall_level', { ascending: true })
+
+  if (error) throw error
+
+  const snapshot = getTownhallSnapshotForLevel(rows || [], townhallLevel, getDefaultBuildingData(townhallLevel))
+  const allowedRowIds = getAllowedBuildingRowIdsForSnapshot(snapshot)
+
+  const { data: existingRows, error: loadError } = await supabase
+    .from('user_village_buildings')
+    .select('building_id')
+    .eq('village_id', villageId)
+
+  if (loadError) throw loadError
+
+  const idsToDelete = (existingRows || [])
+    .map((row) => String(row?.building_id || '').trim())
+    .filter((buildingId) => buildingId && !allowedRowIds.has(buildingId))
+
+  if (idsToDelete.length === 0) return
+
+  const { error: deleteError } = await supabase
+    .from('user_village_buildings')
+    .delete()
+    .eq('village_id', villageId)
+    .in('building_id', idsToDelete)
+
+  if (deleteError) throw deleteError
+
+  clearTownhallSnapshotCache(villageId)
+}
+
 const getUpgradeRowIndex = (buildingId = '') => {
   const match = String(buildingId).match(/-(\d+)$/)
   if (!match) return null
@@ -188,6 +266,26 @@ const writeTownhallSnapshotCache = (villageId, townhallLevel, nextSnapshot) => {
     )
   } catch {
     // Ignore cache write failures.
+  }
+}
+
+const clearTownhallSnapshotCache = (villageId) => {
+  if (typeof window === 'undefined' || !villageId) return
+
+  try {
+    const prefix = `clash_tracker_townhall_snapshot:${villageId}:`
+    const keysToRemove = []
+
+    for (let index = 0; index < window.localStorage.length; index += 1) {
+      const key = window.localStorage.key(index)
+      if (key && key.startsWith(prefix)) {
+        keysToRemove.push(key)
+      }
+    }
+
+    keysToRemove.forEach((key) => window.localStorage.removeItem(key))
+  } catch {
+    // Ignore cache clear failures.
   }
 }
 
@@ -252,6 +350,7 @@ export default function UserPage({ username, onLogout, userId }) {
   const previousLoadedTabRef = useRef('defences')
   const suppressSnapshotRefreshRef = useRef(false)
   const currentBarracksLevel = getCurrentBarracksLevel(structureLevels)
+  const currentLabLevel = getCurrentLabLevel(structureLevels)
   const showTrapsTab = Number(activeVillage?.townhall_level || 0) >= 3
   const displayedLoadedTab = !showTrapsTab && activeLoadedTab === 'traps' ? 'defences' : activeLoadedTab
 
@@ -371,7 +470,8 @@ export default function UserPage({ username, onLogout, userId }) {
         builderCountRef.current = selectedBuilderCount
         setBuilderCount(selectedBuilderCount)
         setRemainingBetaBuilderCount(selectedBuilderCount)
-        loadTownhallStructures(selectedVillage.townhall_level, selectedVillage.id)
+        await syncVillageBuildingRowsToTownhall(selectedVillage.id, selectedVillage.townhall_level)
+        await loadTownhallStructures(selectedVillage.townhall_level, selectedVillage.id)
       }
       setViewMode('loaded')
     } else {
@@ -451,7 +551,8 @@ export default function UserPage({ username, onLogout, userId }) {
       await setActiveVillagePersisted(data.id)
       await loadVillages()
       setActiveVillage(data)
-      loadTownhallStructures(data.townhall_level, data.id)
+      await syncVillageBuildingRowsToTownhall(data.id, data.townhall_level)
+      await loadTownhallStructures(data.townhall_level, data.id)
       setViewMode('structures')
       setPlayerData(null)
       setTag('')
@@ -572,6 +673,8 @@ export default function UserPage({ username, onLogout, userId }) {
           if (updateError) throw updateError
 
           setActiveVillage(updatedVillage)
+          await syncVillageBuildingRowsToTownhall(updatedVillage.id, updatedVillage.townhall_level)
+          await loadTownhallStructures(updatedVillage.townhall_level, updatedVillage.id)
         }
 
         // Update preview data so user can see the refreshed info
@@ -748,7 +851,7 @@ export default function UserPage({ username, onLogout, userId }) {
       .order('townhall_level', { ascending: true })
 
     const selectedTownhallRow = (rows || []).find((row) => Number(row.townhall_level) === Number(townhallLevel)) || null
-    const normalizedData = normalizeTownhallBuildings(buildTownhallSnapshotFromRows(rows || []))
+    const normalizedData = normalizeTownhallBuildings(getTownhallSnapshotForLevel(rows || [], townhallLevel, getDefaultBuildingData(townhallLevel)))
     const hasSavedTraps = (rows || []).some((row) => {
       const traps = row?.traps
       if (Array.isArray(traps)) return traps.some((entry) => Boolean(entry))
@@ -1524,12 +1627,16 @@ export default function UserPage({ username, onLogout, userId }) {
     return styles.readOnlyResourceCostGold
   }
 
-  const getUpgradeSummary = (building, currentLevel) => {
-    const nextLevels = getNextUpgradeLevels(building, currentLevel)
+  const getUpgradeSummary = (building, currentLevel, labLevel = 0) => {
+    const allNextLevels = getNextUpgradeLevels(building, currentLevel)
+    const nextLevels = TROOP_BUILDING_IDS.has(String(building?.id || ''))
+      ? allNextLevels.filter((level) => Number(level.lab_level_unlocked ?? 0) <= Number(labLevel || 0))
+      : allNextLevels
     const totalCost = nextLevels.reduce((total, level) => total + Number(level.cost || 0), 0)
     const totalSeconds = nextLevels.reduce((total, level) => total + getTimeSeconds(level.time), 0)
 
     return {
+      allNextLevels,
       nextLevels,
       totalCost,
       totalResource: nextLevels[0]?.resource || '',
@@ -1694,6 +1801,7 @@ export default function UserPage({ username, onLogout, userId }) {
     if (updatedVillage) {
       setActiveVillage(updatedVillage)
       setVillages((current) => current.map((village) => (village.id === updatedVillage.id ? updatedVillage : village)))
+      await syncVillageBuildingRowsToTownhall(updatedVillage.id, updatedVillage.townhall_level)
       await loadTownhallStructures(updatedVillage.townhall_level, updatedVillage.id)
     }
 
@@ -1986,6 +2094,7 @@ export default function UserPage({ username, onLogout, userId }) {
       if (updatedVillage) {
         setActiveVillage(updatedVillage)
         setVillages((current) => current.map((village) => (village.id === updatedVillage.id ? updatedVillage : village)))
+        await syncVillageBuildingRowsToTownhall(updatedVillage.id, updatedVillage.townhall_level)
         await loadTownhallStructures(updatedVillage.townhall_level, updatedVillage.id)
       }
 
@@ -2002,6 +2111,11 @@ export default function UserPage({ username, onLogout, userId }) {
     const buildingRowId = `${building.id}-${rowIndex + 1}`
     const existingUpgrade = getPendingUpgradeForRow(activeVillage.id, buildingRowId, rowIndex)
     if (existingUpgrade) return
+
+    if (TROOP_BUILDING_IDS.has(String(building.id || '')) && rowState.labRequirementLevel != null && rowState.visibleNextLevels.length === 0) {
+      showToast(`Lab level ${rowState.labRequirementLevel} is required to upgrade this troop.`, 'error')
+      return
+    }
 
     const nextLevel = getNextUpgradeLevels(building, rowState.rowLevel)[0]
     if (!nextLevel) return
@@ -2258,7 +2372,9 @@ export default function UserPage({ username, onLogout, userId }) {
           const rowLevel = pendingUpgrade
             ? Number(pendingUpgrade.toLevel)
             : Number(levelsArray[rowIndex] ?? getDefaultRowLevel(building, rowIndex, isCopyUnlocked(building, rowIndex)))
-          const nextLevels = getNextUpgradeLevels(building, rowLevel)
+          const nextLevels = TROOP_BUILDING_IDS.has(String(building?.id || ''))
+            ? getNextUpgradeLevels(building, rowLevel).filter((levelInfo) => Number(levelInfo.lab_level_unlocked ?? 0) <= Number(currentLabLevel || 0))
+            : getNextUpgradeLevels(building, rowLevel)
           remainingBetaTotalUpgrades += nextLevels.length
 
           nextLevels.forEach((levelInfo) => {
@@ -2390,7 +2506,7 @@ export default function UserPage({ username, onLogout, userId }) {
       const defaultLevel = getDefaultRowLevel(building, rowIndex, isCopyUnlocked(building, rowIndex))
       const rowLevel = clampLevel(currentLevels[rowIndex] ?? defaultLevel, rowIndex)
       const minimumLevel = getMinimumLevel(rowIndex)
-      const upgradeSummary = getUpgradeSummary(building, rowLevel)
+      const upgradeSummary = getUpgradeSummary(building, rowLevel, currentLabLevel)
       const pendingUpgrade = getPendingUpgradeForRow(activeVillage?.id, `${building.id}-${rowIndex + 1}`, rowIndex)
       const pendingRemainingSeconds = pendingUpgrade ? Math.max(0, Math.ceil((Number(pendingUpgrade.finishAt) - upgradeClock) / 1000)) : 0
       const pendingDurationSeconds = pendingUpgrade ? Math.max(0, Number(pendingUpgrade.durationSeconds || 0)) : 0
@@ -2400,9 +2516,18 @@ export default function UserPage({ username, onLogout, userId }) {
       const visibleNextLevels = pendingUpgrade
         ? upgradeSummary.nextLevels.filter((levelInfo) => Number(levelInfo.level) > Number(pendingUpgrade.toLevel))
         : upgradeSummary.nextLevels
+      const labLockedNextLevels = TROOP_BUILDING_IDS.has(String(building?.id || ''))
+        ? upgradeSummary.allNextLevels.filter((levelInfo) => Number(levelInfo.lab_level_unlocked ?? 0) > Number(currentLabLevel || 0))
+        : []
+      const labRequirementLevel = labLockedNextLevels.length > 0
+        ? Math.min(...labLockedNextLevels.map((levelInfo) => Number(levelInfo.lab_level_unlocked || 0) || 0))
+        : null
       const pendingLevelInfo = pendingUpgrade ? visibleNextLevels[0] || null : null
       const visibleTotalCost = visibleNextLevels.reduce((total, level) => total + Number(level.cost || 0), 0)
       const visibleTotalSeconds = visibleNextLevels.reduce((total, level) => total + getTimeSeconds(level.time), 0)
+      const labLockedTotalCost = labLockedNextLevels.reduce((total, level) => total + Number(level.cost || 0), 0)
+      const labLockedTotalSeconds = labLockedNextLevels.reduce((total, level) => total + getTimeSeconds(level.time), 0)
+      const summaryResource = visibleNextLevels[0]?.resource || upgradeSummary.totalResource || ''
       const actionRowKey = `${building.id}-${rowIndex + 1}`
 
       return {
@@ -2416,8 +2541,13 @@ export default function UserPage({ username, onLogout, userId }) {
         pendingProgressPercent,
         pendingLevelInfo,
         visibleNextLevels,
+        labLockedNextLevels,
+        labRequirementLevel,
         visibleTotalCost,
         visibleTotalSeconds,
+        labLockedTotalCost,
+        labLockedTotalSeconds,
+        summaryResource,
         statusIcon: rowLevel <= 0 ? (
           <HandymanOutlinedIcon className={styles.readOnlyActionIcon} />
         ) : (
@@ -2580,7 +2710,7 @@ export default function UserPage({ username, onLogout, userId }) {
                         <button
                           type="button"
                           className={`${styles.readOnlyActionBtn} ${rowState.rowLevel <= 0 ? styles.readOnlyActionBtnConstruct : styles.readOnlyActionBtnUpgrade} ${rowState.pendingUpgrade ? styles.readOnlyActionBtnPending : ''}`}
-                          disabled={Boolean(rowState.pendingUpgrade)}
+                            disabled={Boolean(rowState.pendingUpgrade)}
                           aria-label={rowState.rowLevel <= 0 ? 'Complete Construction' : 'Complete Construction'}
                           title={rowState.rowLevel <= 0 ? 'Construct' : 'Upgrade'}
                           onClick={() => {
@@ -2795,7 +2925,7 @@ export default function UserPage({ username, onLogout, userId }) {
                           <span>{rowState.pendingProgressPercent}%</span>
                         </div>
 
-                        {rowState.visibleNextLevels.length > 0 && (
+                        {rowState.visibleNextLevels.length > 0 ? (
                           <>
                             <div className={styles.readOnlyUpgradeList}>
                               {rowState.visibleNextLevels.map((levelInfo) => (
@@ -2808,7 +2938,6 @@ export default function UserPage({ username, onLogout, userId }) {
                                         className={styles.readOnlyUpgradeResourceIcon}
                                       />
                                     ) : null}
-                                    {getUpgradeResourceLabel(levelInfo.resource)}
                                   </span>
                                   <span className={styles.readOnlyUpgradeLevel}>Lvl {levelInfo.level}:</span>
                                   <span className={`${styles.readOnlyUpgradeCost} ${getUpgradeResourceClass(levelInfo.resource)}`}>
@@ -2819,10 +2948,44 @@ export default function UserPage({ username, onLogout, userId }) {
                               ))}
                             </div>
                             <div className={styles.readOnlyUpgradeSummary}>
-                              {rowState.visibleNextLevels.length} Levels - {formatNumberShort(rowState.visibleTotalCost)} - {formatSeconds(rowState.visibleTotalSeconds)}
+                              <span>{rowState.visibleNextLevels.length} Levels</span>
+                              <span>-</span>
+                              <span className={`${styles.readOnlyUpgradeCost} ${getUpgradeResourceClass(rowState.summaryResource)}`}>
+                                {formatNumberShort(rowState.visibleTotalCost)}
+                              </span>
+                              <span>-</span>
+                              <span>{formatSeconds(rowState.visibleTotalSeconds)}</span>
                             </div>
                           </>
-                        )}
+                        ) : rowState.labRequirementLevel != null ? (
+                          <>
+                            <div className={styles.readOnlyUpgradeList}>
+                              {rowState.labLockedNextLevels.map((levelInfo) => (
+                                <div key={`${building.id}-${rowState.rowIndex}-locked-lvl-${levelInfo.level}`} className={styles.readOnlyUpgradeItem}>
+                                  <span className={styles.readOnlyUpgradeResourceLabel}>
+                                    {upgradeResourceIcons[String(levelInfo.resource || '').trim().toLowerCase()] ? (
+                                      <img
+                                        src={upgradeResourceIcons[String(levelInfo.resource || '').trim().toLowerCase()]}
+                                        alt={getUpgradeResourceLabel(levelInfo.resource)}
+                                        className={styles.readOnlyUpgradeResourceIcon}
+                                      />
+                                    ) : null}
+                                  </span>
+                                  <span className={styles.readOnlyUpgradeLevel}>Lvl {levelInfo.level}:</span>
+                                  <span className={`${styles.readOnlyUpgradeCost} ${getUpgradeResourceClass(levelInfo.resource)}`}>
+                                    {formatNumberShort(levelInfo.cost)}
+                                  </span>
+                                  <span className={styles.readOnlyUpgradeTime}>{formatUpgradeTime(levelInfo.time)}</span>
+                                </div>
+                              ))}
+                            </div>
+                            <div className={`${styles.readOnlyUpgradeSummary} ${styles.readOnlyTroopLockedSummary}`}>
+                              <span>
+                                Requires Lab level {rowState.labRequirementLevel} to unlock upgrades
+                              </span>
+                            </div>
+                          </>
+                        ) : null}
                       </div>
                     ) : rowState.visibleNextLevels.length > 0 ? (
                       <>
@@ -2837,7 +3000,6 @@ export default function UserPage({ username, onLogout, userId }) {
                                     className={styles.readOnlyUpgradeResourceIcon}
                                   />
                                 ) : null}
-                                {getUpgradeResourceLabel(levelInfo.resource)}
                               </span>
                               <span className={styles.readOnlyUpgradeLevel}>Lvl {levelInfo.level}:</span>
                               <span className={`${styles.readOnlyUpgradeCost} ${getUpgradeResourceClass(levelInfo.resource)}`}>
@@ -2848,7 +3010,41 @@ export default function UserPage({ username, onLogout, userId }) {
                           ))}
                         </div>
                         <div className={styles.readOnlyUpgradeSummary}>
-                          {rowState.visibleNextLevels.length} Levels - {formatNumberShort(rowState.visibleTotalCost)} - {formatSeconds(rowState.visibleTotalSeconds)}
+                          <span>{rowState.visibleNextLevels.length} Levels</span>
+                          <span>-</span>
+                          <span className={`${styles.readOnlyUpgradeCost} ${getUpgradeResourceClass(rowState.summaryResource)}`}>
+                            {formatNumberShort(rowState.visibleTotalCost)}
+                          </span>
+                          <span>-</span>
+                          <span>{formatSeconds(rowState.visibleTotalSeconds)}</span>
+                        </div>
+                      </>
+                    ) : rowState.labRequirementLevel != null ? (
+                      <>
+                        <div className={styles.readOnlyUpgradeList}>
+                          {rowState.labLockedNextLevels.map((levelInfo) => (
+                            <div key={`${building.id}-${rowState.rowIndex}-locked-lvl-${levelInfo.level}`} className={styles.readOnlyUpgradeItem}>
+                              <span className={styles.readOnlyUpgradeResourceLabel}>
+                                {upgradeResourceIcons[String(levelInfo.resource || '').trim().toLowerCase()] ? (
+                                  <img
+                                    src={upgradeResourceIcons[String(levelInfo.resource || '').trim().toLowerCase()]}
+                                    alt={getUpgradeResourceLabel(levelInfo.resource)}
+                                    className={styles.readOnlyUpgradeResourceIcon}
+                                  />
+                                ) : null}
+                              </span>
+                              <span className={styles.readOnlyUpgradeLevel}>Lvl {levelInfo.level}:</span>
+                              <span className={`${styles.readOnlyUpgradeCost} ${getUpgradeResourceClass(levelInfo.resource)}`}>
+                                {formatNumberShort(levelInfo.cost)}
+                              </span>
+                              <span className={styles.readOnlyUpgradeTime}>{formatUpgradeTime(levelInfo.time)}</span>
+                            </div>
+                          ))}
+                        </div>
+                        <div className={`${styles.readOnlyUpgradeSummary} ${styles.readOnlyTroopLockedSummary}`}>
+                          <span>
+                            Requires Lab level {rowState.labRequirementLevel} to unlock upgrades
+                          </span>
                         </div>
                       </>
                     ) : (

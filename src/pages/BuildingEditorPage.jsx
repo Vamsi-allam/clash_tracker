@@ -4,7 +4,7 @@ import styles from './BuildingEditorPage.module.css'
 import { supabase } from '../supabaseClient'
 import Header from '../components/Header'
 import ToastNotification from '../components/ToastNotification'
-import { buildTownhallSnapshotFromRows } from '../utils/townhallSnapshot'
+import { getTownhallSnapshotForLevel } from '../utils/townhallSnapshot'
 import { ALL_BUILDINGS, BUILDING_SECTIONS, getBuildingCategory, getDefaultBuildingData } from '../data/buildings'
 
 const RESOURCE_ICONS = {
@@ -108,6 +108,7 @@ const createTroopLevelDraft = (levelNumber, sourceLevel = {}) => ({
   costMagnitude: sourceLevel.costMagnitude || '',
   resource: sourceLevel.resource || 'gold',
   time: sourceLevel.time || '0sec',
+  lab_level_unlocked: Number(sourceLevel.lab_level_unlocked ?? 0),
 })
 
 const normalizeTroopLevels = (count, sourceLevels = []) =>
@@ -188,7 +189,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
 
         if (error) throw error
 
-        const inheritedTownhallData = buildTownhallSnapshotFromRows(rows || [], defaultData)
+        const inheritedTownhallData = getTownhallSnapshotForLevel(rows || [], selectedTownhall, defaultData)
         const staticBuildingData = categoryField === 'walls'
           ? inheritedTownhallData.walls || { buildings_unlocked: 0, levels: [] }
           : (inheritedTownhallData[categoryField] || []).find((entry) => entry?.id === buildingId) || { buildings_unlocked: 0, levels: [] }
@@ -215,7 +216,6 @@ export default function BuildingEditorPage({ username, onLogout }) {
           ? initialLevelCount
           : Math.max(0, resolvedLevels.length)
         const initialBarracksLevelUnlocked = Number(buildingData?.barracks_level_unlocked ?? staticBuildingData.barracks_level_unlocked ?? 1) || 1
-
         if (buildingData) {
           // Only update if still not editing
           if (!isEditingRef.current) {
@@ -283,7 +283,8 @@ export default function BuildingEditorPage({ username, onLogout }) {
     return (
       staticLevel.cost === dynamicLevel.cost &&
       staticLevel.time === dynamicLevel.time &&
-      staticLevel.resource === dynamicLevel.resource
+      staticLevel.resource === dynamicLevel.resource &&
+      Number(staticLevel.lab_level_unlocked ?? 0) === Number(dynamicLevel.lab_level_unlocked ?? 0)
     )
   }
 
@@ -397,7 +398,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
 
       if (fetchError) throw fetchError
 
-      const inheritedTownhallData = buildTownhallSnapshotFromRows(rows || [], getDefaultBuildingData(selectedTownhall))
+      const inheritedTownhallData = getTownhallSnapshotForLevel(rows || [], selectedTownhall, getDefaultBuildingData(selectedTownhall))
 
       const categoryField = getBuildingCategory(buildingId)
       const normalizedLevels = isTroopBuilding ? normalizeTroopLevels(editingBuildingCount, editingLevels) : normalizeBuildingLevels(editingLevelCount, editingLevels)
@@ -536,7 +537,8 @@ export default function BuildingEditorPage({ username, onLogout }) {
       return (
         level.cost !== original.cost ||
         level.time !== original.time ||
-        level.resource !== original.resource
+        level.resource !== original.resource ||
+        Number(level.lab_level_unlocked ?? 0) !== Number(original.lab_level_unlocked ?? 0)
       )
     })
   }
@@ -680,7 +682,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
                         />
                       </>
                     )}
-                    {isTroopBuilding && (
+                    {isTroopBuilding && Number(townhallLevel) >= 3 && (
                       <>
                         <span style={{ fontSize: '0.75rem', color: 'var(--muted)', marginLeft: '12px' }}>Barracks level:</span>
                         <input
@@ -795,6 +797,18 @@ export default function BuildingEditorPage({ username, onLogout }) {
                       >
                         {level.time}
                       </button>
+                      {isTroopBuilding && Number(townhallLevel) >= 3 && (
+                        <div className={styles.troopLabGroup}>
+                          <span className={styles.troopLabLabel}>Lab:</span>
+                          <input
+                            type="number"
+                            value={level.lab_level_unlocked ?? 0}
+                            onChange={(e) => handleEditLevel(idx, 'lab_level_unlocked', Math.max(0, parseInt(e.target.value) || 0))}
+                            min="0"
+                            className={`${styles.headingCountInput} ${styles.troopLabInput}`}
+                          />
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

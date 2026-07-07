@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import styles from './AdminPage.module.css'
 import Header from '../components/Header'
 import { supabase } from '../supabaseClient'
-import { buildTownhallSnapshotFromRows } from '../utils/townhallSnapshot'
+import { getTownhallSnapshotForLevel } from '../utils/townhallSnapshot'
 import { ADMIN_BUILDINGS_BY_CATEGORY, getDefaultBuildingData } from '../data/buildings'
 
 const formatSecondsToTimeDisplay = (seconds) => {
@@ -124,7 +124,7 @@ export default function AdminPage({ username, onLogout }) {
         if (error) throw error
 
         const selectedTownhallRow = (rows || []).find((row) => Number(row.townhall_level) === selectedTownhall) || null
-        const inheritedSnapshot = buildTownhallSnapshotFromRows(rows || [], staticDefaults)
+        const inheritedSnapshot = getTownhallSnapshotForLevel(rows || [], selectedTownhall, staticDefaults)
         const merged = {}
 
         ;[...(inheritedSnapshot.defences || []), ...(inheritedSnapshot.traps || []), ...(inheritedSnapshot.army || []), ...(inheritedSnapshot.resources || []), ...(inheritedSnapshot.troops || [])].forEach((building) => {
@@ -431,9 +431,11 @@ export default function AdminPage({ username, onLogout }) {
                           </p>
                         )}
                         {activeTab === 'troops' && (
-                          <p className={styles.buildingItemCount}>
-                            Barracks level needed: {barracksLevelNeeded}
-                          </p>
+                          <>
+                            <p className={styles.buildingItemCount}>
+                              Barracks level needed: {barracksLevelNeeded}
+                            </p>
+                          </>
                         )}
                       </div>
                       {levels.length > 0 ? (
@@ -455,6 +457,11 @@ export default function AdminPage({ username, onLogout }) {
                                 <span className={styles.levelNumber}>Lvl: {level.level}</span>
                                 <span className={styles.levelCost}>{formatCost(level.cost)}</span>
                                 <span className={styles.levelTime}>{timeDisplay}</span>
+                                {activeTab === 'troops' && (
+                                  <span className={styles.levelNumber}>
+                                    Lab Lvl: {Number(level.lab_level_unlocked ?? 0)}
+                                  </span>
+                                )}
                               </div>
                             )
                           })}

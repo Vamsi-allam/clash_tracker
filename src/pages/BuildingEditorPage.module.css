@@ -573,6 +573,30 @@
   background: rgba(102, 227, 196, 0.1);
 }
 
+.troopLabGroup {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.troopLabLabel {
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1;
+  margin-left: 2px;
+}
+
+.troopLabInput {
+  width: 48px;
+  padding: 3px 6px;
+  margin-top: 0;
+  text-align: center;
+}
+
 .modalOverlay {
   position: fixed;
   top: 0;

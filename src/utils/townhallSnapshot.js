@@ -105,6 +105,59 @@ const mergeObjectCategory = (previousCategory = {}, nextCategory = {}) => {
   return mergeBuildingEntry(previousObject, nextObject)
 }
 
+const pruneBuildingEntryToSeed = (entry = {}, seedEntry = {}) => {
+  const prunedEntry = {
+    ...cloneBuildingEntry(entry),
+  }
+
+  if (Array.isArray(seedEntry?.levels)) {
+    prunedEntry.levels = mergeLevelLists([], prunedEntry.levels || []).slice(0, seedEntry.levels.length)
+  }
+
+  if (Array.isArray(seedEntry?.copy_unlocks)) {
+    prunedEntry.copy_unlocks = cloneUnlockList(prunedEntry.copy_unlocks || []).slice(0, seedEntry.copy_unlocks.length)
+  }
+
+  if (seedEntry?.buildings_unlocked != null) {
+    prunedEntry.buildings_unlocked = Math.min(
+      Number(prunedEntry.buildings_unlocked || 0),
+      Number(seedEntry.buildings_unlocked || 0),
+    )
+  }
+
+  return prunedEntry
+}
+
+const pruneArrayCategoryToSeed = (category = [], seedCategory = {}) => {
+  const seedEntries = normalizeCategoryEntries(seedCategory)
+  const seedEntriesById = new Map(seedEntries.map((entry) => [entry.id, entry]))
+
+  return normalizeCategoryEntries(category)
+    .filter((entry) => seedEntriesById.has(entry.id))
+    .map((entry) => pruneBuildingEntryToSeed(entry, seedEntriesById.get(entry.id)))
+}
+
+const pruneObjectCategoryToSeed = (category = {}, seedCategory = {}) => {
+  const seedObject = seedCategory && typeof seedCategory === 'object' && !Array.isArray(seedCategory)
+    ? seedCategory
+    : {}
+  const entryId = category?.id
+
+  if (!entryId || !seedObject[entryId]) return {}
+
+  return pruneBuildingEntryToSeed(category, seedObject[entryId])
+}
+
+export const pruneTownhallSnapshotToSeed = (snapshot = {}, seedSnapshot = {}) => ({
+  ...snapshot,
+  defences: pruneArrayCategoryToSeed(snapshot.defences, seedSnapshot.defences),
+  traps: pruneArrayCategoryToSeed(snapshot.traps, seedSnapshot.traps),
+  army: pruneArrayCategoryToSeed(snapshot.army, seedSnapshot.army),
+  resources: pruneArrayCategoryToSeed(snapshot.resources, seedSnapshot.resources),
+  troops: pruneArrayCategoryToSeed(snapshot.troops, seedSnapshot.troops),
+  walls: pruneObjectCategoryToSeed(snapshot.walls, seedSnapshot.walls),
+})
+
 export const mergeTownhallSnapshot = (previousSnapshot = {}, nextSnapshot = {}) => ({
   ...previousSnapshot,
   ...nextSnapshot,
@@ -120,3 +173,28 @@ export const buildTownhallSnapshotFromRows = (rows = [], seedSnapshot = {}) =>
   [...rows]
     .sort((left, right) => Number(left?.townhall_level || 0) - Number(right?.townhall_level || 0))
     .reduce((snapshot, row) => mergeTownhallSnapshot(snapshot, row), seedSnapshot || {})
+
+export const getTownhallSnapshotForLevel = (rows = [], townhallLevel, seedSnapshot = {}) => {
+  const selectedTownhallLevel = Number(townhallLevel)
+  if (!Number.isFinite(selectedTownhallLevel) || selectedTownhallLevel <= 0) {
+    return seedSnapshot || {}
+  }
+
+  const exactTownhallRow = Array.isArray(rows)
+    ? rows.find((row) => Number(row?.townhall_level) === selectedTownhallLevel) || null
+    : null
+
+  if (exactTownhallRow) {
+    const exactSnapshot = mergeTownhallSnapshot(seedSnapshot || {}, exactTownhallRow)
+    const prunedSnapshot = pruneTownhallSnapshotToSeed(exactSnapshot, seedSnapshot || {})
+    const hasPrunedContent = ['defences', 'traps', 'army', 'resources', 'troops'].some((key) => Array.isArray(prunedSnapshot[key]) && prunedSnapshot[key].length > 0)
+
+    return hasPrunedContent ? prunedSnapshot : exactSnapshot
+  }
+
+  const inheritedSnapshot = buildTownhallSnapshotFromRows(rows, seedSnapshot)
+  const prunedInheritedSnapshot = pruneTownhallSnapshotToSeed(inheritedSnapshot, seedSnapshot || {})
+  const hasPrunedInheritedContent = ['defences', 'traps', 'army', 'resources', 'troops'].some((key) => Array.isArray(prunedInheritedSnapshot[key]) && prunedInheritedSnapshot[key].length > 0)
+
+  return hasPrunedInheritedContent ? prunedInheritedSnapshot : inheritedSnapshot
+}
