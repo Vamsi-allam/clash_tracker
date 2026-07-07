@@ -11,6 +11,7 @@ import SettingsIcon from '@mui/icons-material/Settings'
 import HandymanOutlinedIcon from '@mui/icons-material/HandymanOutlined'
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward'
 import CheckIcon from '@mui/icons-material/Check'
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined'
 import builderBoostImg from '../assets/magic-items/builder-boost.png'
 import researchBoostImg from '../assets/magic-items/research-boost.png'
 import Header from '../components/Header'
@@ -100,6 +101,12 @@ const clampDurationPartsToMax = (parts, maxSeconds) => {
 }
 
 const TROOP_BUILDING_IDS = new Set(['barbarian', 'archer', 'giant', 'goblin'])
+const TROOP_BARRACKS_REQUIREMENTS = {
+  barbarian: 1,
+  archer: 2,
+  giant: 3,
+  goblin: 4,
+}
 
 const getStructureRowCount = (building, currentLevels = []) => {
   if (TROOP_BUILDING_IDS.has(String(building?.id || ''))) return 1
@@ -109,7 +116,10 @@ const getStructureRowCount = (building, currentLevels = []) => {
   return Math.max(1, unlockedCount, savedCount)
 }
 
-const getTroopBarracksRequirement = (building) => Math.max(1, Number(building?.barracks_level_unlocked) || 1)
+const getTroopBarracksRequirement = (building) => {
+  const fallbackRequirement = TROOP_BARRACKS_REQUIREMENTS[String(building?.id || '').toLowerCase()] || 1
+  return Math.max(fallbackRequirement, Number(building?.barracks_level_unlocked) || 0)
+}
 
 const getCurrentBarracksLevel = (structureLevels = {}) => {
   const barracksLevels = Array.isArray(structureLevels?.barracks) ? structureLevels.barracks : []
@@ -2303,7 +2313,77 @@ export default function UserPage({ username, onLogout, userId }) {
       }
     })
 
+    const tableRowStyle = {
+      gridTemplateRows: `repeat(${rowCount}, minmax(0, auto))`,
+    }
+    const rowsColumnStyle = {
+      gridRow: `1 / span ${rowCount}`,
+    }
+
     if (readOnly) {
+            if (activeLoadedTab === 'troops' && TROOP_BUILDING_IDS.has(String(building?.id || ''))) {
+              const troopUnlocked = currentBarracksLevel >= troopBarracksRequirement
+              const troopRowLevel = troopUnlocked ? 1 : 0
+              const troopRowImageLevel = troopUnlocked ? 1 : 0
+
+              return (
+                <section key={cardKey} className={`${styles.defenceCard} ${styles.readOnlyBuildingBlock}`}>
+                  <div className={styles.readOnlyCardGrid} style={tableRowStyle}>
+                    <div className={styles.readOnlySummaryPanel} style={{ gridRow: `1 / span ${rowCount}` }}>
+                      {getBuildingImagePath(building, troopRowImageLevel) ? (
+                        <img
+                          src={getBuildingImagePath(building, troopRowImageLevel)}
+                          alt={displayName}
+                          className={styles.readOnlySummaryImage}
+                        />
+                      ) : (
+                        <div className={styles.readOnlySummaryImagePlaceholder} />
+                      )}
+
+                      <div className={styles.readOnlySummaryName}>{displayName}</div>
+                    </div>
+
+                    <div className={styles.readOnlyRowsColumn} style={rowsColumnStyle}>
+                      <div className={styles.readOnlyRow}>
+                        <div className={styles.readOnlyTroopLevelCell}>
+                          {getBuildingImagePath(building, troopRowImageLevel) ? (
+                            <img
+                              src={getBuildingImagePath(building, troopRowImageLevel)}
+                              alt={displayName}
+                              className={styles.readOnlyRowImage}
+                            />
+                          ) : (
+                            <div className={styles.defenceIconPlaceholder} />
+                          )}
+
+                          <div className={styles.readOnlyTroopLevelMeta}>
+                            <div className={styles.readOnlyLevelValue}>{troopRowLevel}/1</div>
+                            {troopUnlocked ? (
+                              <CheckIcon className={`${styles.readOnlyActionIcon} ${styles.readOnlyTroopStateIconUnlocked}`} />
+                            ) : (
+                              <LockOutlinedIcon className={`${styles.readOnlyActionIcon} ${styles.readOnlyTroopStateIconLocked}`} />
+                            )}
+                          </div>
+                        </div>
+
+                        <div className={styles.readOnlyTroopDetails}>
+                          {troopUnlocked ? (
+                            <div className={`${styles.readOnlyUpgradeSummary} ${styles.readOnlyUpgradeSummaryComplete}`}>
+                              <span>Fully upgraded for this Town Hall level.</span>
+                              <CheckIcon className={styles.readOnlyUpgradeSummaryIcon} aria-label="Fully upgraded for this Town Hall level" titleAccess="Fully upgraded for this Town Hall level" />
+                            </div>
+                          ) : (
+                            <div className={`${styles.readOnlyUpgradeSummary} ${styles.readOnlyTroopLockedSummary}`}>
+                              <span>Requires Barracks level {troopBarracksRequirement} to unlock</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+              )
+            }
       const totalRemainingUpgrades = rowStates.reduce((total, rowState) => total + (rowState.pendingUpgrade ? rowState.visibleNextLevels.length : rowState.upgradeSummary.nextLevels.length), 0)
       const totalCost = rowStates.reduce((total, rowState) => {
         const nextLevels = rowState.pendingUpgrade ? rowState.visibleNextLevels : rowState.upgradeSummary.nextLevels
@@ -2314,12 +2394,6 @@ export default function UserPage({ username, onLogout, userId }) {
         return total + nextLevels.reduce((rowTotal, levelInfo) => rowTotal + getTimeSeconds(levelInfo.time), 0)
       }, 0)
       const summaryImageLevel = rowStates[0]?.rowLevel ?? 0
-      const tableRowStyle = {
-        gridTemplateRows: `repeat(${rowCount}, minmax(0, auto))`,
-      }
-      const rowsColumnStyle = {
-        gridRow: `1 / span ${rowCount}`,
-      }
 
       return (
         <section key={cardKey} className={`${styles.defenceCard} ${styles.readOnlyBuildingBlock}`}>

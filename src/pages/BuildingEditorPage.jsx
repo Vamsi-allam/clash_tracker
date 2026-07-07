@@ -650,6 +650,9 @@ export default function BuildingEditorPage({ username, onLogout }) {
   const currentDynamicLevel = dynamicData.levels || staticData.levels || []
   const currentStaticLevel = staticData.levels || []
   const troopCountLabel = isTroopBuilding ? 'Level Count' : 'Count'
+  const troopBarracksLevel = isTroopBuilding
+    ? Number(dynamicData.barracks_level_unlocked || staticData.barracks_level_unlocked || 1)
+    : 0
 
   // Detect if there are changes
   const hasChanges = () => {
@@ -762,6 +765,11 @@ export default function BuildingEditorPage({ username, onLogout }) {
                 <span style={{ fontSize: '0.75rem', color: 'var(--muted)', marginLeft: '8px' }}>
                   {troopCountLabel}: {staticData.buildings_unlocked || 0}
                 </span>
+                {isTroopBuilding && (
+                  <span style={{ fontSize: '0.75rem', color: 'var(--muted)', marginLeft: '8px' }}>
+                    Barracks level needed: {troopBarracksLevel}
+                  </span>
+                )}
               </div>
               <div className={styles.levelsList}>
                 {currentStaticLevel.map((level) => (
@@ -811,6 +819,11 @@ export default function BuildingEditorPage({ username, onLogout }) {
                       </>
                     )}
                   </>
+                )}
+                {isTroopBuilding && (
+                  <span style={{ fontSize: '0.75rem', color: 'var(--muted)', marginLeft: '8px' }}>
+                    Barracks level needed: {troopBarracksLevel}
+                  </span>
                 )}
               </div>
               {isEditing && !isWallBuilding && !isTroopBuilding && editingBuildingCount > 0 && (

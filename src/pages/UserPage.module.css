@@ -51,9 +51,89 @@
 
 .content h2 {
   margin-top: 0;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
   color: var(--text);
-  font-size: 1.4rem;
+  font-size: 1.8rem;
+}
+
+.readOnlyRowsColumn {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  width: 100%;
+}
+
+.readOnlyTroopLevelCell {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  padding: 12px 16px;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.readOnlyTroopLevelMeta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.readOnlyTroopStateIconLocked {
+  color: #f01b1b !important;
+  font-size: 1.32rem !important;
+}
+
+.readOnlyTroopStateIconUnlocked {
+  color: #5cd65c !important;
+  font-size: 1.32rem !important;
+}
+
+.readOnlyTroopDetails {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  width: 100%;
+  height: 100%;
+  padding: 12px 16px;
+  box-sizing: border-box;
+}
+
+.readOnlyTroopLockedMessage {
+  color: #ff2424;
+  font-size: 0.92rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.readOnlyTroopUnlockedMessage {
+  color: #5cd65c;
+  font-size: 0.92rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.readOnlyTroopStatusIconLocked {
+  color: #ff2424;
+}
+
+.readOnlyTroopLockedSummary {
+  background: transparent;
+  color: #ff2424;
+}
+
+.readOnlyTroopLockedSummary > span:last-child {
+  margin-left: 0;
+  color: #ff2424;
+  font-weight: 700;
 }
 
 /* Search */
@@ -2916,6 +2996,23 @@
   margin-left: 10px;
   color: #ffd84f;
   font-weight: 700;
+}
+
+.readOnlyUpgradeSummary.readOnlyTroopLockedSummary > span:last-child {
+  margin-left: 0;
+  color: #ff2424;
+  font-weight: 700;
+}
+
+.readOnlyUpgradeSummary.readOnlyTroopLockedSummary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+}
+
+.readOnlyUpgradeSummary.readOnlyTroopLockedSummary > span {
+  margin: 0;
 }
 
 .readOnlyUpgradeSummaryComplete {
