@@ -397,6 +397,7 @@ export default function AdminPage({ username, onLogout }) {
                   if (building.id === 'spring_trap') return `30_${maxLevel}`
                   if (building.id === 'mortar') return `23_${maxLevel}`
                   if (building.id === 'lab') return `13_${maxLevel}`
+                  if (building.id === 'hero_hall') return `202_${maxLevel}`
                   if (building.id === 'army_camp') return `10_${maxLevel}`
                   if (building.id === 'barracks') return `8_${maxLevel}`
                   if (building.id === 'clan_castle') return `19_${maxLevel}`

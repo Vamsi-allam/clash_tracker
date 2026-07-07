@@ -566,6 +566,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
                 if (defence.id === 'spring_trap') return `30_${maxLevel}`
                 if (defence.id === 'mortar') return `23_${maxLevel}`
                 if (defence.id === 'lab') return `13_${maxLevel}`
+                if (defence.id === 'hero_hall') return `202_${maxLevel}`
                 if (defence.id === 'army_camp') return `10_${maxLevel}`
                 if (defence.id === 'barracks') return `8_${maxLevel}`
                 if (defence.id === 'clan_castle') return `19_${maxLevel}`

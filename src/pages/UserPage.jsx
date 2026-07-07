@@ -297,6 +297,7 @@ const armyCampImages = import.meta.glob('../assets/Army/Army_Camp/*.png', { eage
 const barracksImages = import.meta.glob('../assets/Army/Barracks/*.png', { eager: true, import: 'default' })
 const clanCastleImages = import.meta.glob('../assets/Army/clan_castle/*.png', { eager: true, import: 'default' })
 const labImages = import.meta.glob('../assets/Army/Lab/*.png', { eager: true, import: 'default' })
+const heroHallImages = import.meta.glob('../assets/Army/Hero_Hall/*.png', { eager: true, import: 'default' })
 const goldMineImages = import.meta.glob('../assets/Resources/goldmine/*.png', { eager: true, import: 'default' })
 const elixirCollectorImages = import.meta.glob('../assets/Resources/elixir_collector/*.png', { eager: true, import: 'default' })
 const goldStorageImages = import.meta.glob('../assets/Resources/gold_storage/*.png', { eager: true, import: 'default' })
@@ -2468,6 +2469,7 @@ export default function UserPage({ username, onLogout, userId }) {
       barracks: (imageLevel) => barracksImages[`../assets/Army/Barracks/8_${imageLevel}.png`] || '',
       clan_castle: (imageLevel) => clanCastleImages[`../assets/Army/clan_castle/19_${imageLevel}.png`] || '',
       lab: (imageLevel) => labImages[`../assets/Army/Lab/13_${imageLevel}.png`] || '',
+      hero_hall: (imageLevel) => heroHallImages[`../assets/Army/Hero_Hall/202_${imageLevel}.png`] || '',
       gold_mine: (imageLevel) => goldMineImages[`../assets/Resources/goldmine/2_${imageLevel}.png`] || '',
       elixir_collector: (imageLevel) => elixirCollectorImages[`../assets/Resources/elixir_collector/3_${imageLevel}.png`] || '',
       gold_storage: (imageLevel) => goldStorageImages[`../assets/Resources/gold_storage/5_${imageLevel}.png`] || '',
