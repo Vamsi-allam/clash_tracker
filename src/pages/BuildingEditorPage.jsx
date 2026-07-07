@@ -158,6 +158,18 @@ const createTroopLevelDraft = (levelNumber, sourceLevel = {}) => ({
 const normalizeTroopLevels = (count, sourceLevels = []) =>
   Array.from({ length: Math.max(0, count) }, (_, index) => createTroopLevelDraft(index + 1, sourceLevels[index]))
 
+const createBuildingLevelDraft = (levelNumber, sourceLevel = {}) => ({
+  level: levelNumber,
+  cost: Number(sourceLevel.cost ?? 0),
+  costDisplay: Number(sourceLevel.costDisplay ?? sourceLevel.cost ?? 0),
+  costMagnitude: sourceLevel.costMagnitude || '',
+  resource: sourceLevel.resource || 'gold',
+  time: sourceLevel.time || '0sec',
+})
+
+const normalizeBuildingLevels = (count, sourceLevels = []) =>
+  Array.from({ length: Math.max(0, count) }, (_, index) => createBuildingLevelDraft(index + 1, sourceLevels[index]))
+
 const normalizeTroopLevelCount = (levels = [], fallbackCount = 0) => {
   const levelCount = Array.isArray(levels) ? levels.length : 0
   return Math.max(1, levelCount || Number(fallbackCount) || 1)
@@ -317,6 +329,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
   const [isEditing, setIsEditing] = useState(false)
   const [editingLevels, setEditingLevels] = useState([])
   const [editingBuildingCount, setEditingBuildingCount] = useState(0)
+  const [editingLevelCount, setEditingLevelCount] = useState(0)
   const [editingCopyUnlocks, setEditingCopyUnlocks] = useState([])
   const [editingBarracksLevelUnlocked, setEditingBarracksLevelUnlocked] = useState(1)
   const [savingLoading, setSavingLoading] = useState(false)
@@ -369,10 +382,9 @@ export default function BuildingEditorPage({ username, onLogout }) {
           : (inheritedTownhallData[categoryField] || []).find((entry) => entry?.id === buildingId) || { buildings_unlocked: 0, levels: [] }
         setStaticData(staticBuildingData)
 
-        const exactTownhallRow = (rows || []).find((row) => Number(row.townhall_level) === selectedTownhall) || null
         const categoryData = categoryField === 'walls'
-          ? exactTownhallRow?.walls || inheritedTownhallData.walls
-          : exactTownhallRow?.[categoryField] || inheritedTownhallData[categoryField]
+          ? inheritedTownhallData.walls
+          : inheritedTownhallData[categoryField]
 
         const buildingData = categoryField === 'walls'
           ? categoryData
@@ -387,6 +399,9 @@ export default function BuildingEditorPage({ username, onLogout }) {
         const initialLevelCount = isTroopBuilding
           ? normalizeTroopLevelCount(resolvedLevels, buildingData?.buildings_unlocked || staticBuildingData.buildings_unlocked || 0)
           : Number(buildingData?.buildings_unlocked || staticBuildingData.buildings_unlocked || 0)
+        const initialBuildingLevelCount = isTroopBuilding
+          ? initialLevelCount
+          : Math.max(0, resolvedLevels.length)
         const initialBarracksLevelUnlocked = Number(buildingData?.barracks_level_unlocked ?? staticBuildingData.barracks_level_unlocked ?? 1) || 1
 
         if (buildingData) {
@@ -396,8 +411,9 @@ export default function BuildingEditorPage({ username, onLogout }) {
               ...buildingData,
               levels: resolvedLevels,
             })
-            setEditingLevels(isTroopBuilding ? normalizeTroopLevels(initialLevelCount, resolvedLevels) : resolvedLevels)
+            setEditingLevels(isTroopBuilding ? normalizeTroopLevels(initialLevelCount, resolvedLevels) : normalizeBuildingLevels(initialBuildingLevelCount, resolvedLevels))
             setEditingBuildingCount(initialLevelCount)
+            setEditingLevelCount(initialBuildingLevelCount)
             setEditingBarracksLevelUnlocked(initialBarracksLevelUnlocked)
             setEditingCopyUnlocks(
               isTroopBuilding
@@ -416,6 +432,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
             const draftCount = isTroopBuilding
               ? normalizeTroopLevelCount(draftLevels, staticBuildingData.buildings_unlocked || 0)
               : staticBuildingData.buildings_unlocked || 0
+            const draftLevelCount = isTroopBuilding ? draftCount : draftLevels.length
             const draftUnlocks = isTroopBuilding
               ? createCopyUnlocks(1, 1)
               : normalizeCopyUnlocks(
@@ -427,11 +444,12 @@ export default function BuildingEditorPage({ username, onLogout }) {
             setDynamicData({
               buildings_unlocked: draftCount,
               copy_unlocks: draftUnlocks,
-              levels: isTroopBuilding ? normalizeTroopLevels(draftCount, draftLevels) : draftLevels,
+              levels: isTroopBuilding ? normalizeTroopLevels(draftCount, draftLevels) : normalizeBuildingLevels(draftLevelCount, draftLevels),
               ...(isTroopBuilding ? { barracks_level_unlocked: Number(staticBuildingData.barracks_level_unlocked ?? 1) || 1 } : {}),
             })
-            setEditingLevels(isTroopBuilding ? normalizeTroopLevels(draftCount, draftLevels) : draftLevels)
+            setEditingLevels(isTroopBuilding ? normalizeTroopLevels(draftCount, draftLevels) : normalizeBuildingLevels(draftLevelCount, draftLevels))
             setEditingBuildingCount(draftCount)
+            setEditingLevelCount(draftLevelCount)
             setEditingBarracksLevelUnlocked(Number(staticBuildingData.barracks_level_unlocked ?? 1) || 1)
             setEditingCopyUnlocks(draftUnlocks)
           }
@@ -500,6 +518,14 @@ export default function BuildingEditorPage({ username, onLogout }) {
     }
   }
 
+  const handleEditingLevelCountChange = (value) => {
+    const nextCount = Math.max(0, parseInt(value) || 0)
+    setEditingLevelCount(nextCount)
+    if (!isTroopBuilding) {
+      setEditingLevels((current) => normalizeBuildingLevels(nextCount, current))
+    }
+  }
+
   const handleEditingBarracksLevelUnlockedChange = (value) => {
     setEditingBarracksLevelUnlocked(Math.max(1, parseInt(value) || 1))
   }
@@ -562,7 +588,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
       const inheritedTownhallData = buildTownhallSnapshotFromRows(rows || [], getDefaultBuildingData(2))
 
       const categoryField = getBuildingCategory(buildingId)
-      const normalizedLevels = isTroopBuilding ? normalizeTroopLevels(editingBuildingCount, editingLevels) : editingLevels
+      const normalizedLevels = isTroopBuilding ? normalizeTroopLevels(editingBuildingCount, editingLevels) : normalizeBuildingLevels(editingLevelCount, editingLevels)
       const troopLevelCount = isTroopBuilding ? normalizedLevels.length : editingBuildingCount
       const updatedBuildingData = {
         buildings_unlocked: troopLevelCount,
@@ -659,6 +685,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
   const currentDynamicLevel = dynamicData.levels || staticData.levels || []
   const currentStaticLevel = staticData.levels || []
   const troopCountLabel = isTroopBuilding ? 'Level Count' : 'Count'
+  const levelCountLabel = 'Level Count'
   const troopBarracksLevel = isTroopBuilding
     ? Number(dynamicData.barracks_level_unlocked || staticData.barracks_level_unlocked || 1)
     : 0
@@ -666,6 +693,9 @@ export default function BuildingEditorPage({ username, onLogout }) {
   // Detect if there are changes
   const hasChanges = () => {
     if (editingBuildingCount !== (dynamicData.buildings_unlocked || 0)) {
+      return true
+    }
+    if (!isTroopBuilding && editingLevelCount !== (dynamicData.levels || []).length) {
       return true
     }
     const currentUnlocks = normalizeCopyUnlocks(
@@ -774,6 +804,11 @@ export default function BuildingEditorPage({ username, onLogout }) {
                 <span style={{ fontSize: '0.75rem', color: 'var(--muted)', marginLeft: '8px' }}>
                   {troopCountLabel}: {staticData.buildings_unlocked || 0}
                 </span>
+                {!isTroopBuilding && (
+                  <span style={{ fontSize: '0.75rem', color: 'var(--muted)', marginLeft: '8px' }}>
+                    {levelCountLabel}: {currentStaticLevel.length}
+                  </span>
+                )}
                 {isTroopBuilding && (
                   <span style={{ fontSize: '0.75rem', color: 'var(--muted)', marginLeft: '8px' }}>
                     Barracks level needed: {troopBarracksLevel}
@@ -815,6 +850,18 @@ export default function BuildingEditorPage({ username, onLogout }) {
                       min="0"
                       className={styles.headingCountInput}
                     />
+                    {!isTroopBuilding && (
+                      <>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--muted)', marginLeft: '12px' }}>{levelCountLabel}:</span>
+                        <input
+                          type="number"
+                          value={editingLevelCount}
+                          onChange={(e) => handleEditingLevelCountChange(e.target.value)}
+                          min="0"
+                          className={styles.headingCountInput}
+                        />
+                      </>
+                    )}
                     {isTroopBuilding && (
                       <>
                         <span style={{ fontSize: '0.75rem', color: 'var(--muted)', marginLeft: '12px' }}>Barracks level:</span>
@@ -832,6 +879,11 @@ export default function BuildingEditorPage({ username, onLogout }) {
                 {isTroopBuilding && (
                   <span style={{ fontSize: '0.75rem', color: 'var(--muted)', marginLeft: '8px' }}>
                     Barracks level needed: {troopBarracksLevel}
+                  </span>
+                )}
+                {!isTroopBuilding && !isEditing && (
+                  <span style={{ fontSize: '0.75rem', color: 'var(--muted)', marginLeft: '8px' }}>
+                    {levelCountLabel}: {dynamicData.levels?.length || 0}
                   </span>
                 )}
               </div>

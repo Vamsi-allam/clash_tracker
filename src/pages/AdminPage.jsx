@@ -460,6 +460,11 @@ export default function AdminPage({ username, onLogout }) {
                             Count: {buildingData.buildings_unlocked}
                           </p>
                         )}
+                        {activeTab !== 'troops' && (
+                          <p className={styles.buildingItemCount}>
+                            Level Count: {levels.length}
+                          </p>
+                        )}
                         {activeTab === 'troops' && (
                           <p className={styles.buildingItemCount}>
                             Barracks level needed: {barracksLevelNeeded}

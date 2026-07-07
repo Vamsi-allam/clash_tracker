@@ -12,6 +12,29 @@ const cloneBuildingEntry = (entry = {}) => ({
   ...(Array.isArray(entry?.copy_unlocks) ? { copy_unlocks: cloneUnlockList(entry.copy_unlocks) } : {}),
 })
 
+const mergeLevelLists = (previousLevels = [], nextLevels = []) => {
+  const mergedByLevel = new Map()
+
+  cloneLevelList(previousLevels).forEach((level) => {
+    if (level?.level != null) {
+      mergedByLevel.set(Number(level.level), level)
+    }
+  })
+
+  cloneLevelList(nextLevels).forEach((level) => {
+    if (level?.level != null) {
+      mergedByLevel.set(Number(level.level), level)
+    }
+  })
+
+  return Array.from(mergedByLevel.values()).sort((left, right) => Number(left.level) - Number(right.level))
+}
+
+const mergeUnlockLists = (previousUnlocks = [], nextUnlocks = []) => {
+  const length = Math.max(previousUnlocks.length, nextUnlocks.length)
+  return Array.from({ length }, (_, index) => Boolean(nextUnlocks[index] ?? previousUnlocks[index] ?? false))
+}
+
 const normalizeCategoryEntries = (category) => {
   if (!category) return []
 
@@ -35,15 +58,19 @@ const mergeBuildingEntry = (previousEntry = {}, nextEntry = {}) => {
   }
 
   if (Array.isArray(nextEntry?.levels)) {
-    merged.levels = cloneLevelList(nextEntry.levels)
+    merged.levels = mergeLevelLists(previousEntry?.levels || [], nextEntry.levels || [])
   } else if (Array.isArray(previousEntry?.levels)) {
     merged.levels = cloneLevelList(previousEntry.levels)
   }
 
   if (Array.isArray(nextEntry?.copy_unlocks)) {
-    merged.copy_unlocks = cloneUnlockList(nextEntry.copy_unlocks)
+    merged.copy_unlocks = mergeUnlockLists(previousEntry?.copy_unlocks || [], nextEntry.copy_unlocks || [])
   } else if (Array.isArray(previousEntry?.copy_unlocks)) {
     merged.copy_unlocks = cloneUnlockList(previousEntry.copy_unlocks)
+  }
+
+  if (previousEntry?.buildings_unlocked != null || nextEntry?.buildings_unlocked != null) {
+    merged.buildings_unlocked = Math.max(Number(previousEntry?.buildings_unlocked || 0), Number(nextEntry?.buildings_unlocked || 0))
   }
 
   return merged
