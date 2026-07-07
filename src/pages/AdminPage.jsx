@@ -45,6 +45,49 @@ const formatCost = (value) => {
   return value.toString()
 }
 
+const formatTownhallResourceLabel = (resource) => {
+  if (resource === 'elixir') return 'Elixir'
+  if (resource === 'dark_elixir') return 'Dark Elixir'
+  return 'Gold'
+}
+
+const parseTimeStringToSeconds = (timeString) => {
+  if (!timeString || typeof timeString !== 'string') return 0
+
+  let totalSeconds = 0
+  const timeLower = timeString.toLowerCase().trim()
+
+  const daysMatch = timeLower.match(/(\d+)\s*d(?:ays?)?/) 
+  if (daysMatch) totalSeconds += parseInt(daysMatch[1]) * 86400
+
+  const hoursMatch = timeLower.match(/(\d+)\s*h(?:r|ours?)?/)
+  if (hoursMatch) totalSeconds += parseInt(hoursMatch[1]) * 3600
+
+  const minutesMatch = timeLower.match(/(\d+)\s*m(?:in|inutes?)?/)
+  if (minutesMatch) totalSeconds += parseInt(minutesMatch[1]) * 60
+
+  const secondsMatch = timeLower.match(/(\d+)\s*s(?:ec|econds?)?/)
+  if (secondsMatch) totalSeconds += parseInt(secondsMatch[1])
+
+  return totalSeconds
+}
+
+const parseSecondsToDropdowns = (seconds) => {
+  const totalSeconds = Math.round(seconds || 0)
+  let remaining = totalSeconds
+
+  const days = Math.floor(remaining / 86400)
+  remaining %= 86400
+
+  const hours = Math.floor(remaining / 3600)
+  remaining %= 3600
+
+  const minutes = Math.floor(remaining / 60)
+  remaining %= 60
+
+  return { days, hours, minutes, seconds: remaining }
+}
+
 const getDefaultBuildingData = (townhallLevel) => {
   if (parseInt(townhallLevel) === 2) {
     return {
@@ -100,6 +143,15 @@ export default function AdminPage({ username, onLogout }) {
   const townhalls = Array.from({ length: 17 }, (_, i) => i + 2) // Town halls 2-18
   const [activeTab, setActiveTab] = useState('defenses')
   const [dynamicData, setDynamicData] = useState({})
+  const [townhallRecord, setTownhallRecord] = useState(null)
+  const [townhallUpgradeCost, setTownhallUpgradeCost] = useState('')
+  const [townhallUpgradeResource, setTownhallUpgradeResource] = useState('gold')
+  const [townhallUpgradeTimeSeconds, setTownhallUpgradeTimeSeconds] = useState(0)
+  const [savingTownhallUpgrade, setSavingTownhallUpgrade] = useState(false)
+  const [townhallCostModalOpen, setTownhallCostModalOpen] = useState(false)
+  const [townhallCostModalValues, setTownhallCostModalValues] = useState({ cost: '', resource: 'gold' })
+  const [townhallTimeModalOpen, setTownhallTimeModalOpen] = useState(false)
+  const [townhallTimeModalValues, setTownhallTimeModalValues] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 })
 
   // Fetch dynamic data from Supabase
   useEffect(() => {
@@ -131,8 +183,25 @@ export default function AdminPage({ username, onLogout }) {
             merged.walls = data.walls
           }
           
+          setTownhallRecord(data)
+          setTownhallUpgradeCost(data.townhall_upgrade_cost != null ? String(data.townhall_upgrade_cost) : '')
+          setTownhallUpgradeResource(data.townhall_upgrade_resource || 'gold')
+          setTownhallUpgradeTimeSeconds(
+            data.townhall_upgrade_time_seconds != null
+              ? Number(data.townhall_upgrade_time_seconds)
+              : parseTimeStringToSeconds(data.townhall_upgrade_time || ''),
+          )
+          setTownhallCostModalValues({
+            cost: data.townhall_upgrade_cost != null ? String(data.townhall_upgrade_cost) : '',
+            resource: data.townhall_upgrade_resource || 'gold',
+          })
           setDynamicData(merged)
         } else {
+          setTownhallRecord(null)
+          setTownhallUpgradeCost('')
+          setTownhallUpgradeResource('gold')
+          setTownhallUpgradeTimeSeconds(0)
+          setTownhallCostModalValues({ cost: '', resource: 'gold' })
           setDynamicData(staticDefaults)
         }
       } catch (err) {
@@ -158,6 +227,94 @@ export default function AdminPage({ username, onLogout }) {
     navigate(`/admin/building/${townhallLevel}/${buildingId}`)
   }
 
+  const openTownhallCostModal = () => {
+    setTownhallCostModalValues({
+      cost: townhallUpgradeCost,
+      resource: townhallUpgradeResource,
+    })
+    setTownhallCostModalOpen(true)
+  }
+
+  const closeTownhallCostModal = () => {
+    setTownhallCostModalOpen(false)
+  }
+
+  const handleTownhallCostChange = (field, value) => {
+    setTownhallCostModalValues({
+      ...townhallCostModalValues,
+      [field]: value,
+    })
+  }
+
+  const saveTownhallCostModal = () => {
+    setTownhallUpgradeCost(townhallCostModalValues.cost)
+    setTownhallUpgradeResource(townhallCostModalValues.resource)
+    closeTownhallCostModal()
+  }
+
+  const openTownhallTimeModal = () => {
+    setTownhallTimeModalValues(parseSecondsToDropdowns(townhallUpgradeTimeSeconds))
+    setTownhallTimeModalOpen(true)
+  }
+
+  const closeTownhallTimeModal = () => {
+    setTownhallTimeModalOpen(false)
+  }
+
+  const handleTownhallTimeChange = (timeUnit, value) => {
+    setTownhallTimeModalValues({
+      ...townhallTimeModalValues,
+      [timeUnit]: Math.min(Math.max(0, parseInt(value) || 0), timeUnit === 'days' ? 31 : timeUnit === 'hours' ? 23 : 59),
+    })
+  }
+
+  const saveTownhallTimeModal = () => {
+    const { days, hours, minutes, seconds } = townhallTimeModalValues
+    const totalSeconds = days * 86400 + hours * 3600 + minutes * 60 + seconds
+    setTownhallUpgradeTimeSeconds(totalSeconds)
+    closeTownhallTimeModal()
+  }
+
+  const handleSaveTownhallUpgrade = async () => {
+    if (!townhallLevel) return
+
+    setSavingTownhallUpgrade(true)
+    try {
+      const parsedCost = townhallUpgradeCost.trim() === '' ? null : Number(townhallUpgradeCost)
+      if (parsedCost != null && Number.isNaN(parsedCost)) {
+        throw new Error('Town Hall upgrade cost must be a number.')
+      }
+
+      const { error } = await supabase
+        .from('townhall_buildings')
+        .upsert({
+          townhall_level: parseInt(townhallLevel),
+          defences: townhallRecord?.defences || {},
+          army: townhallRecord?.army || {},
+          resources: townhallRecord?.resources || {},
+          troops: townhallRecord?.troops || {},
+          walls: townhallRecord?.walls || {},
+          townhall_upgrade_cost: parsedCost,
+          townhall_upgrade_resource: townhallUpgradeResource,
+          townhall_upgrade_time_seconds: townhallUpgradeTimeSeconds,
+        }, { onConflict: 'townhall_level' })
+
+      if (error) throw error
+
+      setTownhallRecord((current) => ({
+        ...(current || {}),
+        townhall_level: parseInt(townhallLevel),
+        townhall_upgrade_cost: parsedCost,
+        townhall_upgrade_resource: townhallUpgradeResource,
+        townhall_upgrade_time_seconds: townhallUpgradeTimeSeconds,
+      }))
+    } catch (err) {
+      console.error('Error saving townhall upgrade:', err)
+    } finally {
+      setSavingTownhallUpgrade(false)
+    }
+  }
+
   // Show buildings page if townhallLevel is in URL
   if (townhallLevel) {
     const selectedTownhall = parseInt(townhallLevel)
@@ -170,6 +327,92 @@ export default function AdminPage({ username, onLogout }) {
           </button>
 
           <div className={styles.buildingsPage}>
+            <div className={styles.townhallUpgradeCard}>
+              <div className={styles.townhallUpgradeHeader}>
+                <div>
+                  <p className={styles.townhallUpgradeEyebrow}>Town Hall upgrade data</p>
+                  <h2 className={styles.townhallUpgradeTitle}>Town Hall {selectedTownhall} to {selectedTownhall + 1}</h2>
+                  <p className={styles.townhallUpgradeText}>
+                    Store the upgrade cost and duration here so the user page can read them later.
+                  </p>
+                </div>
+                <img
+                  src={`/src/assets/townhall/1_${selectedTownhall}.png`}
+                  alt={`Town Hall ${selectedTownhall}`}
+                  className={styles.townhallUpgradeImage}
+                />
+              </div>
+
+              <div className={styles.townhallUpgradeForm}>
+                <div className={styles.townhallUpgradeField}>
+                  <span className={styles.townhallUpgradeLabel}>Upgrade cost</span>
+                  <button
+                    type="button"
+                    className={styles.townhallUpgradeTimeBtn}
+                    onClick={openTownhallCostModal}
+                  >
+                    {townhallUpgradeCost ? `${formatCost(townhallUpgradeCost)} ${formatTownhallResourceLabel(townhallUpgradeResource)}` : 'Set upgrade cost'}
+                  </button>
+                </div>
+
+                <div className={styles.townhallUpgradeField}>
+                  <span className={styles.townhallUpgradeLabel}>Upgrade time</span>
+                  <button
+                    type="button"
+                    className={styles.townhallUpgradeTimeBtn}
+                    onClick={openTownhallTimeModal}
+                  >
+                    {townhallUpgradeTimeSeconds ? formatSecondsToTimeDisplay(townhallUpgradeTimeSeconds) : 'Set upgrade time'}
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  className={styles.townhallUpgradeSaveBtn}
+                  onClick={handleSaveTownhallUpgrade}
+                  disabled={savingTownhallUpgrade}
+                >
+                  {savingTownhallUpgrade ? 'Saving...' : 'Save town hall upgrade'}
+                </button>
+              </div>
+            </div>
+
+            {townhallCostModalOpen && (
+              <div className={styles.townhallModalOverlay} onClick={closeTownhallCostModal}>
+                <div className={styles.townhallModal} onClick={(event) => event.stopPropagation()}>
+                  <div className={styles.townhallModalHeader}>
+                    <h3 className={styles.townhallModalTitle}>Set Town Hall Upgrade Cost</h3>
+                    <button type="button" className={styles.townhallModalClose} onClick={closeTownhallCostModal}>✕</button>
+                  </div>
+
+                  <div className={styles.townhallModalGrid}>
+                    <label className={styles.townhallModalField}>
+                      <span>Cost</span>
+                      <input type="number" min="0" step="1" value={townhallCostModalValues.cost} onChange={(event) => handleTownhallCostChange('cost', event.target.value)} />
+                    </label>
+
+                    <label className={styles.townhallModalField}>
+                      <span>Resource</span>
+                      <select value={townhallCostModalValues.resource} onChange={(event) => handleTownhallCostChange('resource', event.target.value)}>
+                        <option value="gold">Gold</option>
+                        <option value="elixir">Elixir</option>
+                        <option value="dark_elixir">Dark Elixir</option>
+                      </select>
+                    </label>
+                  </div>
+
+                  <div className={styles.townhallModalTotal}>
+                    Total: {townhallCostModalValues.cost ? `${formatCost(townhallCostModalValues.cost)} ${formatTownhallResourceLabel(townhallCostModalValues.resource)}` : 'Not set'}
+                  </div>
+
+                  <div className={styles.townhallModalActions}>
+                    <button type="button" className={styles.townhallModalSave} onClick={saveTownhallCostModal}>Save</button>
+                    <button type="button" className={styles.townhallModalCancel} onClick={closeTownhallCostModal}>Cancel</button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className={styles.tabsContainer}>
               {['defenses', 'army', 'resources', 'troops', 'walls'].map((tab) => (
                 <button
@@ -261,6 +504,50 @@ export default function AdminPage({ username, onLogout }) {
             </div>
           </div>
         </div>
+
+        {townhallTimeModalOpen && (
+          <div className={styles.townhallModalOverlay} onClick={closeTownhallTimeModal}>
+            <div className={styles.townhallModal} onClick={(event) => event.stopPropagation()}>
+              <div className={styles.townhallModalHeader}>
+                <h3 className={styles.townhallModalTitle}>Set Town Hall Upgrade Time</h3>
+                <button type="button" className={styles.townhallModalClose} onClick={closeTownhallTimeModal}>✕</button>
+              </div>
+
+              <div className={styles.townhallModalGrid}>
+                <label className={styles.townhallModalField}>
+                  <span>Days</span>
+                  <input type="number" min="0" max="31" value={townhallTimeModalValues.days} onChange={(event) => handleTownhallTimeChange('days', event.target.value)} />
+                </label>
+                <label className={styles.townhallModalField}>
+                  <span>Hours</span>
+                  <input type="number" min="0" max="23" value={townhallTimeModalValues.hours} onChange={(event) => handleTownhallTimeChange('hours', event.target.value)} />
+                </label>
+                <label className={styles.townhallModalField}>
+                  <span>Minutes</span>
+                  <input type="number" min="0" max="59" value={townhallTimeModalValues.minutes} onChange={(event) => handleTownhallTimeChange('minutes', event.target.value)} />
+                </label>
+                <label className={styles.townhallModalField}>
+                  <span>Seconds</span>
+                  <input type="number" min="0" max="59" value={townhallTimeModalValues.seconds} onChange={(event) => handleTownhallTimeChange('seconds', event.target.value)} />
+                </label>
+              </div>
+
+              <div className={styles.townhallModalTotal}>
+                Total: {formatSecondsToTimeDisplay(
+                  townhallTimeModalValues.days * 86400 +
+                  townhallTimeModalValues.hours * 3600 +
+                  townhallTimeModalValues.minutes * 60 +
+                  townhallTimeModalValues.seconds
+                )}
+              </div>
+
+              <div className={styles.townhallModalActions}>
+                <button type="button" className={styles.townhallModalSave} onClick={saveTownhallTimeModal}>Save</button>
+                <button type="button" className={styles.townhallModalCancel} onClick={closeTownhallTimeModal}>Cancel</button>
+              </div>
+            </div>
+          </div>
+        )}
       </>
     )
   }

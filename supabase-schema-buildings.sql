@@ -19,6 +19,9 @@ CREATE TABLE IF NOT EXISTS public.townhall_buildings (
   resources JSONB DEFAULT '{}'::jsonb,
   troops JSONB DEFAULT '{}'::jsonb,
   walls JSONB DEFAULT '{}'::jsonb,
+  townhall_upgrade_cost BIGINT,
+  townhall_upgrade_resource TEXT,
+  townhall_upgrade_time_seconds BIGINT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW())
 );

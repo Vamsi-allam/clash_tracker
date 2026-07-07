@@ -123,6 +123,9 @@ CREATE TABLE IF NOT EXISTS public.townhall_buildings (
   resources JSONB DEFAULT '{}'::jsonb,
   troops JSONB DEFAULT '{}'::jsonb,
   walls JSONB DEFAULT '{}'::jsonb,
+  townhall_upgrade_cost BIGINT,
+  townhall_upgrade_resource TEXT,
+  townhall_upgrade_time_seconds BIGINT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW())
 );
@@ -166,4 +169,4 @@ CREATE INDEX IF NOT EXISTS idx_townhall_level ON public.townhall_buildings(townh
 -- Tables created:
 -- 1. user_villages - stores each user's saved villages
 -- 2. user_village_buildings - stores current levels for each building in a village
--- 3. townhall_buildings - reference data with costs, times, and max levels
+-- 3. townhall_buildings - reference data with building data plus townhall upgrade cost/time
