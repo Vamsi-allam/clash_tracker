@@ -1598,6 +1598,8 @@ export default function UserPage({ username, onLogout, userId }) {
           [buildingKey]: nextLevels,
         }
       })
+
+      void loadTownhallStructures(activeVillageRef.current.townhall_level, upgrade.villageId)
     }
 
     return true
