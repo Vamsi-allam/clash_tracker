@@ -2089,13 +2089,43 @@ export default function UserPage({ username, onLogout, userId }) {
   }, [activeTownhallUpgrade?.finishAt, activeVillage?.id, upgradeClock])
 
   const computeStructuresCompletion = () => {
-    const buildings = [...(structureCatalog.defences || []), ...visibleTrapBuildings, ...(structureCatalog.army || []), ...(structureCatalog.resources || []), ...(structureCatalog.troops || [])]
+    const buildings = [...(structureCatalog.defences || []), ...visibleTrapBuildings, ...(structureCatalog.army || []), ...(structureCatalog.resources || [])]
     if (!buildings || buildings.length === 0) return 0
     let totalRatio = 0
     let count = 0
 
     buildings.forEach((building) => {
       const maxLevel = Math.max(...(building.levels || []).map((l) => l.level), 0)
+      const rows = getStructureRowCount(building, structureLevels[building.id] || [])
+      const levelsArray = structureLevels[building.id] || Array.from({ length: rows }, () => getDefaultRowLevel(building, 0, true))
+
+      for (let i = 0; i < rows; i++) {
+        const cur = Number(levelsArray[i] || 0)
+        if (maxLevel > 0) totalRatio += (cur / maxLevel)
+        else totalRatio += 0
+        count += 1
+      }
+    })
+
+    if (count === 0) return 0
+    return Math.round((totalRatio / count) * 100)
+  }
+
+  const computeTroopsCompletion = () => {
+    const buildings = [...(structureCatalog.troops || [])]
+    if (!buildings || buildings.length === 0) return 0
+
+    let totalRatio = 0
+    let count = 0
+
+    buildings.forEach((building) => {
+      const maxLevel = Math.max(...(building.levels || []).map((l) => l.level), 0)
+      const troopRequirement = getTroopBarracksRequirement(building)
+      if (currentBarracksLevel < troopRequirement) {
+        count += 1
+        return
+      }
+
       const rows = getStructureRowCount(building, structureLevels[building.id] || [])
       const levelsArray = structureLevels[building.id] || Array.from({ length: rows }, () => getDefaultRowLevel(building, 0, true))
 
@@ -2990,6 +3020,7 @@ export default function UserPage({ username, onLogout, userId }) {
     troops: isTroopCategoryComplete(structureCatalog.troops || []),
     walls: isWallMaxComplete,
   }
+  const showTroopsProgress = currentTownHallLevel >= 3
   const townhallConstructionReady = (() => {
     const constructibleBuildings = [
       ...(structureCatalog.defences || []),
@@ -3194,6 +3225,16 @@ export default function UserPage({ username, onLogout, userId }) {
                             </div>
                             <div className={styles.progressName}>Structures</div>
                           </div>
+
+                          {showTroopsProgress && (
+                            <div className={styles.progressRow}>
+                              <div className={styles.progressBarWrap}>
+                                <div className={styles.progressBarInner} style={{width: `${Math.max(0, computeTroopsCompletion())}%`}} />
+                                <span className={styles.progressOverlayLabel}>{Math.max(0, computeTroopsCompletion())}%</span>
+                              </div>
+                              <div className={styles.progressName}>Troops</div>
+                            </div>
+                          )}
 
                         <div className={styles.progressRow}>
                           <div className={styles.progressBarWrap}>
