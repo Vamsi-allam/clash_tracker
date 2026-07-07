@@ -109,6 +109,7 @@ export const mergeTownhallSnapshot = (previousSnapshot = {}, nextSnapshot = {}) 
   ...previousSnapshot,
   ...nextSnapshot,
   defences: mergeArrayCategory(previousSnapshot.defences, nextSnapshot.defences),
+  traps: mergeArrayCategory(previousSnapshot.traps, nextSnapshot.traps),
   army: mergeArrayCategory(previousSnapshot.army, nextSnapshot.army),
   resources: mergeArrayCategory(previousSnapshot.resources, nextSnapshot.resources),
   troops: mergeArrayCategory(previousSnapshot.troops, nextSnapshot.troops),

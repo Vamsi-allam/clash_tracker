@@ -518,6 +518,11 @@
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
 }
 
+.trapBuildingItemImage {
+  width: 80px;
+  height: 80px;
+}
+
 .buildingItemInfo {
   flex: 1;
   display: flex;

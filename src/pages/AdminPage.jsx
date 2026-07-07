@@ -4,6 +4,7 @@ import styles from './AdminPage.module.css'
 import Header from '../components/Header'
 import { supabase } from '../supabaseClient'
 import { buildTownhallSnapshotFromRows } from '../utils/townhallSnapshot'
+import { ADMIN_BUILDINGS_BY_CATEGORY, getDefaultBuildingData } from '../data/buildings'
 
 const formatSecondsToTimeDisplay = (seconds) => {
   if (!seconds || seconds === 0) return '0sec'
@@ -89,58 +90,10 @@ const parseSecondsToDropdowns = (seconds) => {
   return { days, hours, minutes, seconds: remaining }
 }
 
-const getDefaultBuildingData = (townhallLevel) => {
-  if (parseInt(townhallLevel) === 2) {
-    return {
-      canon: { id: 'canon', image_path: '/src/assets/Defences/canon/18_', buildings_unlocked: 2, copy_unlocks: [true, false], levels: [{ level: 1, cost: 250, resource: 'gold', time: '5sec' }, { level: 2, cost: 1000, resource: 'gold', time: '30sec' }, { level: 3, cost: 4000, resource: 'gold', time: '2min' }] },
-      archer_tower: { id: 'archer_tower', image_path: '/src/assets/Defences/Archer_Tower/16_', buildings_unlocked: 1, copy_unlocks: [true], levels: [{ level: 1, cost: 1000, resource: 'gold', time: '15sec' }, { level: 2, cost: 2000, resource: 'gold', time: '2min' }] },
-      army_camp: { id: 'army_camp', image_path: '/src/assets/Army/Army_Camp/10_', buildings_unlocked: 1, copy_unlocks: [true], levels: [{ level: 1, cost: 200, resource: 'elixir', time: '1min' }, { level: 2, cost: 2000, resource: 'elixir', time: '5min' }] },
-      barracks: { id: 'barracks', image_path: '/src/assets/Army/Barracks/8_', buildings_unlocked: 1, copy_unlocks: [true], levels: [{ level: 1, cost: 100, resource: 'elixir', time: '10sec' }, { level: 2, cost: 500, resource: 'elixir', time: '15sec' }, { level: 3, cost: 2500, resource: 'elixir', time: '2min' }, { level: 4, cost: 5000, resource: 'elixir', time: '30min' }] },
-      clan_castle: { id: 'clan_castle', image_path: '/src/assets/Army/clan_castle/19_', buildings_unlocked: 1, copy_unlocks: [true], levels: [{ level: 1, cost: 10000, resource: 'elixir', time: '0sec' }] },
-      gold_mine: { id: 'gold_mine', image_path: '/src/assets/Resources/goldmine/2_', buildings_unlocked: 2, copy_unlocks: [true, false], levels: [{ level: 1, cost: 150, resource: 'elixir', time: '5sec' }, { level: 2, cost: 300, resource: 'elixir', time: '15sec' }, { level: 3, cost: 700, resource: 'elixir', time: '1min' }, { level: 4, cost: 1400, resource: 'elixir', time: '2min' }] },
-      elixir_collector: { id: 'elixir_collector', image_path: '/src/assets/Resources/elixir_collector/3_', buildings_unlocked: 2, copy_unlocks: [true, false], levels: [{ level: 1, cost: 150, resource: 'gold', time: '5sec' }, { level: 2, cost: 300, resource: 'gold', time: '15sec' }, { level: 3, cost: 700, resource: 'gold', time: '1min' }, { level: 4, cost: 1400, resource: 'gold', time: '2min' }] },
-      gold_storage: { id: 'gold_storage', image_path: '/src/assets/Resources/gold_storage/5_', buildings_unlocked: 1, copy_unlocks: [true], levels: [{ level: 1, cost: 300, resource: 'elixir', time: '10sec' }, { level: 2, cost: 750, resource: 'elixir', time: '2min' }, { level: 3, cost: 1500, resource: 'elixir', time: '5min' }] },
-      elixir_storage: { id: 'elixir_storage', image_path: '/src/assets/Resources/elixi_storage/6_', buildings_unlocked: 1, copy_unlocks: [true], levels: [{ level: 1, cost: 300, resource: 'gold', time: '10sec' }, { level: 2, cost: 750, resource: 'gold', time: '2min' }, { level: 3, cost: 1500, resource: 'gold', time: '5min' }] },
-      walls: { id: 'walls', image_path: '/src/assets/Walls/60_', buildings_unlocked: 25, copy_unlocks: Array.from({ length: 25 }, (_, index) => index === 0), levels: [{ level: 1, cost: 0, resource: 'gold', time: '0sec' }, { level: 2, cost: 1000, resource: 'gold', time: '0sec' }] },
-      barbarian: { id: 'barbarian', image_path: '/src/assets/Troops/Barbarian/31_', copy_unlocks: [true], barracks_level_unlocked: 1, levels: [{ level: 1, cost: 0, resource: 'elixir', time: '0sec' }, { level: 2, cost: 2000, resource: 'elixir', time: '1min' }] },
-      archer: { id: 'archer', image_path: '/src/assets/Troops/Archer/32_', copy_unlocks: [true], barracks_level_unlocked: 1, levels: [{ level: 1, cost: 0, resource: 'elixir', time: '0sec' }, { level: 2, cost: 300, resource: 'elixir', time: '1min' }] },
-      giant: { id: 'giant', image_path: '/src/assets/Troops/Giant/33_', copy_unlocks: [true], barracks_level_unlocked: 1, levels: [{ level: 1, cost: 0, resource: 'elixir', time: '0sec' }, { level: 2, cost: 2000, resource: 'elixir', time: '5min' }] },
-      goblin: { id: 'goblin', image_path: '/src/assets/Troops/Goblin/34_', copy_unlocks: [true], barracks_level_unlocked: 1, levels: [{ level: 1, cost: 0, resource: 'elixir', time: '0sec' }, { level: 2, cost: 1500, resource: 'elixir', time: '2min' }] },
-    }
-  }
-  return {}
-}
-
-const BUILDINGS_BY_CATEGORY = {
-  defenses: [
-    { id: 'canon', name: 'Canon', image: '/src/assets/Defences/canon' },
-    { id: 'archer_tower', name: 'Archer Tower', image: '/src/assets/Defences/Archer_Tower' },
-  ],
-  army: [
-    { id: 'army_camp', name: 'Army Camp', image: '/src/assets/Army/Army_Camp' },
-    { id: 'barracks', name: 'Barracks', image: '/src/assets/Army/Barracks' },
-    { id: 'clan_castle', name: 'Clan Castle', image: '/src/assets/Army/clan_castle' },
-  ],
-  resources: [
-    { id: 'gold_mine', name: 'Gold Mine', image: '/src/assets/Resources/goldmine' },
-    { id: 'elixir_collector', name: 'Elixir Collector', image: '/src/assets/Resources/elixir_collector' },
-    { id: 'gold_storage', name: 'Gold Storage', image: '/src/assets/Resources/gold_storage' },
-    { id: 'elixir_storage', name: 'Elixir Storage', image: '/src/assets/Resources/elixi_storage' },
-  ],
-  troops: [
-    { id: 'barbarian', name: 'Barbarian', image: '/src/assets/Troops/Barbarian' },
-    { id: 'archer', name: 'Archer', image: '/src/assets/Troops/Archer' },
-    { id: 'giant', name: 'Giant', image: '/src/assets/Troops/Giant' },
-    { id: 'goblin', name: 'Goblin', image: '/src/assets/Troops/Goblin' },
-  ],
-  walls: [
-    { id: 'walls', name: 'Walls', image: '/src/assets/Walls' },
-  ],
-}
-
 export default function AdminPage({ username, onLogout }) {
   const navigate = useNavigate()
   const { townhallLevel } = useParams()
+  const showTrapsTab = Number(townhallLevel) >= 3
   const townhalls = Array.from({ length: 17 }, (_, i) => i + 2) // Town halls 2-18
   const [activeTab, setActiveTab] = useState('defenses')
   const [dynamicData, setDynamicData] = useState({})
@@ -161,7 +114,7 @@ export default function AdminPage({ username, onLogout }) {
     const fetchDynamicData = async () => {
       try {
         const selectedTownhall = parseInt(townhallLevel)
-        const staticDefaults = getDefaultBuildingData(2)
+        const staticDefaults = getDefaultBuildingData(selectedTownhall)
         const { data: rows, error } = await supabase
           .from('townhall_buildings')
           .select('*')
@@ -174,7 +127,7 @@ export default function AdminPage({ username, onLogout }) {
         const inheritedSnapshot = buildTownhallSnapshotFromRows(rows || [], staticDefaults)
         const merged = {}
 
-        ;[...(inheritedSnapshot.defences || []), ...(inheritedSnapshot.army || []), ...(inheritedSnapshot.resources || []), ...(inheritedSnapshot.troops || [])].forEach((building) => {
+        ;[...(inheritedSnapshot.defences || []), ...(inheritedSnapshot.traps || []), ...(inheritedSnapshot.army || []), ...(inheritedSnapshot.resources || []), ...(inheritedSnapshot.troops || [])].forEach((building) => {
           merged[building.id] = building
         })
         if (inheritedSnapshot.walls) {
@@ -203,14 +156,18 @@ export default function AdminPage({ username, onLogout }) {
     fetchDynamicData()
   }, [townhallLevel])
 
+  useEffect(() => {
+    if (!showTrapsTab && activeTab === 'traps') {
+      setActiveTab('defenses')
+    }
+  }, [activeTab, showTrapsTab])
+
   const handleTownhallClick = (level) => {
     navigate(`/admin/${level}`)
   }
 
   const handleBackClick = () => {
     navigate('/admin')
-    const createCopyUnlocks = (count, unlockedCount = 1) =>
-      Array.from({ length: count }, (_, index) => index < unlockedCount)
   }
 
   const handleBuildingClick = (buildingId) => {
@@ -284,6 +241,7 @@ export default function AdminPage({ username, onLogout }) {
           resources: townhallRecord?.resources || {},
           troops: townhallRecord?.troops || {},
           walls: townhallRecord?.walls || {},
+          traps: townhallRecord?.traps || [],
           townhall_upgrade_cost: parsedCost,
           townhall_upgrade_resource: townhallUpgradeResource,
           townhall_upgrade_time_seconds: townhallUpgradeTimeSeconds,
@@ -404,7 +362,7 @@ export default function AdminPage({ username, onLogout }) {
             )}
 
             <div className={styles.tabsContainer}>
-              {['defenses', 'army', 'resources', 'troops', 'walls'].map((tab) => (
+              {['defenses', ...(showTrapsTab ? ['traps'] : []), 'army', 'resources', 'troops', 'walls'].map((tab) => (
                 <button
                   key={tab}
                   className={`${styles.tab} ${activeTab === tab ? styles.tabActive : ''}`}
@@ -416,7 +374,9 @@ export default function AdminPage({ username, onLogout }) {
             </div>
 
             <div className={styles.buildingsList}>
-              {BUILDINGS_BY_CATEGORY[activeTab].map((building) => {
+              {ADMIN_BUILDINGS_BY_CATEGORY[activeTab]
+                .filter((building) => dynamicData[building.id] || getDefaultBuildingData(townhallLevel)[building.id])
+                .map((building) => {
                 const staticDefaults = getDefaultBuildingData(townhallLevel)
                 const buildingData = dynamicData[building.id] || staticDefaults[building.id]
                 const levels = buildingData?.levels || []
@@ -426,6 +386,10 @@ export default function AdminPage({ username, onLogout }) {
                 const getImagePath = () => {
                   if (building.id === 'archer_tower') return `16_${maxLevel}`
                   if (building.id === 'canon') return `18_${maxLevel}`
+                  if (building.id === 'bomb') return `27_${maxLevel}`
+                  if (building.id === 'spring_trap') return `30_${maxLevel}`
+                  if (building.id === 'mortar') return `23_${maxLevel}`
+                  if (building.id === 'lab') return `13_${maxLevel}`
                   if (building.id === 'army_camp') return `10_${maxLevel}`
                   if (building.id === 'barracks') return `8_${maxLevel}`
                   if (building.id === 'clan_castle') return `19_${maxLevel}`
@@ -450,7 +414,7 @@ export default function AdminPage({ username, onLogout }) {
                     <img
                       src={`${building.image}/${getImagePath()}.png`}
                       alt={building.name}
-                      className={styles.buildingItemImage}
+                      className={`${styles.buildingItemImage} ${activeTab === 'traps' ? styles.trapBuildingItemImage : ''}`}
                     />
                     <div className={styles.buildingItemInfo}>
                       <div className={styles.buildingItemHeader}>

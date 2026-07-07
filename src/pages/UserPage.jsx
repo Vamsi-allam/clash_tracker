@@ -18,6 +18,7 @@ import Header from '../components/Header'
 import ToastNotification from '../components/ToastNotification'
 import { supabase } from '../supabaseClient'
 import { buildTownhallSnapshotFromRows } from '../utils/townhallSnapshot'
+import { BUILDING_SECTIONS, TROOP_BARRACKS_REQUIREMENTS, TROOP_BUILDING_IDS, getDefaultBuildingData } from '../data/buildings'
 
 // Convert API asset URL to proxied URL
 const getProxiedAssetUrl = (assetUrl) => {
@@ -123,14 +124,6 @@ const clampDurationPartsToMax = (parts, maxSeconds) => {
   return { days, hours, minutes, seconds }
 }
 
-const TROOP_BUILDING_IDS = new Set(['barbarian', 'archer', 'giant', 'goblin'])
-const TROOP_BARRACKS_REQUIREMENTS = {
-  barbarian: 1,
-  archer: 2,
-  giant: 3,
-  goblin: 4,
-}
-
 const getStructureRowCount = (building, currentLevels = []) => {
   if (TROOP_BUILDING_IDS.has(String(building?.id || ''))) return 1
 
@@ -199,10 +192,13 @@ const writeTownhallSnapshotCache = (villageId, townhallLevel, nextSnapshot) => {
 }
 
 const canonImages = import.meta.glob('../assets/Defences/canon/*.png', { eager: true, import: 'default' })
+const mortarImages = import.meta.glob('../assets/Defences/mortar/*.png', { eager: true, import: 'default' })
+const bombImages = import.meta.glob('../assets/Traps/Bomb/*.png', { eager: true, import: 'default' })
 const archerTowerImages = import.meta.glob('../assets/Defences/Archer_Tower/*.png', { eager: true, import: 'default' })
 const armyCampImages = import.meta.glob('../assets/Army/Army_Camp/*.png', { eager: true, import: 'default' })
 const barracksImages = import.meta.glob('../assets/Army/Barracks/*.png', { eager: true, import: 'default' })
 const clanCastleImages = import.meta.glob('../assets/Army/clan_castle/*.png', { eager: true, import: 'default' })
+const labImages = import.meta.glob('../assets/Army/Lab/*.png', { eager: true, import: 'default' })
 const goldMineImages = import.meta.glob('../assets/Resources/goldmine/*.png', { eager: true, import: 'default' })
 const elixirCollectorImages = import.meta.glob('../assets/Resources/elixir_collector/*.png', { eager: true, import: 'default' })
 const goldStorageImages = import.meta.glob('../assets/Resources/gold_storage/*.png', { eager: true, import: 'default' })
@@ -232,7 +228,7 @@ export default function UserPage({ username, onLogout, userId }) {
   const [wallConfig, setWallConfig] = useState(null)
   const [wallCounts, setWallCounts] = useState({})
   const [wallLoading, setWallLoading] = useState(false)
-  const [structureCatalog, setStructureCatalog] = useState({ defences: [], army: [], resources: [], troops: [] })
+  const [structureCatalog, setStructureCatalog] = useState({ defences: [], traps: [], army: [], resources: [], troops: [] })
   const [structureLevels, setStructureLevels] = useState({})
   const [structuresLoading, setStructuresLoading] = useState(false)
   const [refreshingVillage, setRefreshingVillage] = useState(false)
@@ -255,6 +251,8 @@ export default function UserPage({ username, onLogout, userId }) {
   const previousLoadedTabRef = useRef('defences')
   const suppressSnapshotRefreshRef = useRef(false)
   const currentBarracksLevel = getCurrentBarracksLevel(structureLevels)
+  const showTrapsTab = Number(activeVillage?.townhall_level || 0) >= 3
+  const displayedLoadedTab = !showTrapsTab && activeLoadedTab === 'traps' ? 'defences' : activeLoadedTab
 
   const setActiveVillagePersisted = async (villageId) => {
     if (!userId || !villageId) return
@@ -679,11 +677,20 @@ export default function UserPage({ username, onLogout, userId }) {
       return Array.from(dedupedById.values())
     }
 
-    const sortDefences = (structures) => {
-      const priority = {
-        canon: 0,
-        archer_tower: 1,
+    const normalizeWalls = (walls) => {
+      if (!walls || typeof walls !== 'object') return null
+
+      return {
+        ...walls,
+        levels: Array.isArray(walls.levels)
+          ? walls.levels.map((level) => ({ ...(level || {}) }))
+          : [],
+        copy_unlocks: Array.isArray(walls.copy_unlocks) ? [...walls.copy_unlocks] : [],
       }
+    }
+
+    const sortDefences = (structures) => {
+      const priority = Object.fromEntries(BUILDING_SECTIONS.defences.map((building, index) => [building.id, index]))
 
       return [...structures].sort((left, right) => {
         const leftPriority = priority[left.id] ?? 100
@@ -694,15 +701,18 @@ export default function UserPage({ username, onLogout, userId }) {
     }
 
     const normalizedDefences = sortDefences(normalizeStructures(data?.defences))
+    const normalizedTraps = normalizeStructures(data?.traps)
     const normalizedArmy = normalizeStructures(data?.army)
     const normalizedResources = normalizeStructures(data?.resources)
     const normalizedTroops = normalizeStructures(data?.troops)
 
     return {
       defences: normalizedDefences,
+      traps: normalizedTraps,
       army: normalizedArmy,
       resources: normalizedResources,
       troops: normalizedTroops,
+      walls: normalizeWalls(data?.walls),
     }
   }
 
@@ -738,6 +748,16 @@ export default function UserPage({ username, onLogout, userId }) {
 
     const selectedTownhallRow = (rows || []).find((row) => Number(row.townhall_level) === Number(townhallLevel)) || null
     const normalizedData = normalizeTownhallBuildings(buildTownhallSnapshotFromRows(rows || []))
+    const hasSavedTraps = (rows || []).some((row) => {
+      const traps = row?.traps
+      if (Array.isArray(traps)) return traps.some((entry) => Boolean(entry))
+      if (traps && typeof traps === 'object') return Object.keys(traps).length > 0
+      return false
+    })
+
+    if (!hasSavedTraps) {
+      normalizedData.traps = []
+    }
     const nextTownhallUpgradeInfo = {
       cost: Number(selectedTownhallRow?.townhall_upgrade_cost || 0),
       resource: String(selectedTownhallRow?.townhall_upgrade_resource || 'gold').trim().toLowerCase(),
@@ -765,7 +785,7 @@ export default function UserPage({ username, onLogout, userId }) {
       }
 
       const initialLevels = {}
-      ;[...normalizedData.defences, ...normalizedData.army, ...normalizedData.resources, ...normalizedData.troops].forEach((building) => {
+      ;[...normalizedData.defences, ...normalizedData.traps, ...normalizedData.army, ...normalizedData.resources, ...normalizedData.troops].forEach((building) => {
         const savedRowsForBuilding = savedStructureRows.filter((row) => row.building_id?.startsWith(`${building.id}-`))
         const rowCount = getStructureRowCount(building, savedRowsForBuilding)
         initialLevels[building.id] = Array.from({ length: rowCount }, (_, index) => {
@@ -881,14 +901,14 @@ export default function UserPage({ username, onLogout, userId }) {
         villageId,
       })
       if (!data) {
-        setStructureCatalog({ defences: [], army: [], resources: [], troops: [] })
+        setStructureCatalog({ defences: [], traps: [], army: [], resources: [], troops: [] })
         setStructureLevels({})
         setWallConfig(null)
         setWallCounts({})
       }
     } catch (fetchError) {
       console.error('Failed to load townhall structures:', fetchError)
-      setStructureCatalog({ defences: [], army: [], resources: [], troops: [] })
+      setStructureCatalog({ defences: [], traps: [], army: [], resources: [], troops: [] })
       setStructureLevels({})
       setWallConfig(null)
       setWallCounts({})
@@ -1333,6 +1353,10 @@ export default function UserPage({ username, onLogout, userId }) {
     archer_tower: 1,
   }
 
+  const trapSortPriority = {
+    bomb: 0,
+  }
+
   const visibleDefenseBuildings = [...(structureCatalog.defences || [])]
     .filter((building) => building?.id)
     .sort((left, right) => {
@@ -1341,6 +1365,20 @@ export default function UserPage({ username, onLogout, userId }) {
       if (leftPriority !== rightPriority) return leftPriority - rightPriority
       return (left.name || formatStructureName(left.id)).localeCompare(right.name || formatStructureName(right.id))
     })
+  const visibleTrapBuildings = showTrapsTab
+    ? [...(structureCatalog.traps || [])]
+      .filter((building) => building?.id)
+      .reduce((accumulator, building) => {
+        if (!accumulator.some((entry) => entry.id === building.id)) accumulator.push(building)
+        return accumulator
+      }, [])
+      .sort((left, right) => {
+        const leftPriority = trapSortPriority[left.id] ?? 2
+        const rightPriority = trapSortPriority[right.id] ?? 2
+        if (leftPriority !== rightPriority) return leftPriority - rightPriority
+        return (left.name || formatStructureName(left.id)).localeCompare(right.name || formatStructureName(right.id))
+      })
+    : []
   const visibleResourceBuildings = [...(structureCatalog.resources || [])].filter((building) => building?.id)
   const visibleArmyBuildings = [...(structureCatalog.army || [])].filter((building) => building?.id)
 
@@ -1352,6 +1390,7 @@ export default function UserPage({ username, onLogout, userId }) {
       if (leftPriority !== rightPriority) return leftPriority - rightPriority
       return (left.name || formatStructureName(left.id)).localeCompare(right.name || formatStructureName(right.id))
     })
+  const editTrapBuildings = [...visibleTrapBuildings]
   const editResourceBuildings = [...(structureCatalog.resources || [])]
     .filter((building) => ['gold_mine', 'elixir_collector', 'gold_storage', 'elixir_storage'].includes(building.id))
   const editArmyBuildings = [...(structureCatalog.army || [])]
@@ -1359,6 +1398,8 @@ export default function UserPage({ username, onLogout, userId }) {
 
   const activeLoadedTabBuildings = activeLoadedTab === 'defences'
     ? visibleDefenseBuildings
+    : activeLoadedTab === 'traps' && showTrapsTab
+      ? visibleTrapBuildings
     : activeLoadedTab === 'army'
       ? visibleArmyBuildings
       : activeLoadedTab === 'resources'
@@ -1382,6 +1423,7 @@ export default function UserPage({ username, onLogout, userId }) {
 
   const loadedTabUpgradeCounts = {
     defences: getPendingUpgradeCountForBuildings(visibleDefenseBuildings),
+    traps: showTrapsTab ? getPendingUpgradeCountForBuildings(visibleTrapBuildings) : 0,
     army: getPendingUpgradeCountForBuildings(visibleArmyBuildings),
     resources: getPendingUpgradeCountForBuildings(visibleResourceBuildings),
     troops: getPendingUpgradeCountForBuildings(structureCatalog.troops || []),
@@ -2042,7 +2084,7 @@ export default function UserPage({ username, onLogout, userId }) {
   }, [activeTownhallUpgrade?.finishAt, activeVillage?.id, upgradeClock])
 
   const computeStructuresCompletion = () => {
-    const buildings = [...structureCatalog.defences, ...structureCatalog.army, ...structureCatalog.resources, ...structureCatalog.troops]
+    const buildings = [...(structureCatalog.defences || []), ...visibleTrapBuildings, ...(structureCatalog.army || []), ...(structureCatalog.resources || []), ...(structureCatalog.troops || [])]
     if (!buildings || buildings.length === 0) return 0
     let totalRatio = 0
     let count = 0
@@ -2237,6 +2279,12 @@ export default function UserPage({ username, onLogout, userId }) {
     void loadWallsSnapshot()
   }, [activeLoadedTab, activeVillage?.id, activeVillage?.townhall_level])
 
+  useEffect(() => {
+    if (!showTrapsTab && activeLoadedTab === 'traps') {
+      setActiveLoadedTab('defences')
+    }
+  }, [activeLoadedTab, showTrapsTab])
+
   const getBuildingImagePath = (building, level) => {
     const requestedLevel = Math.max(0, Number(level) || 0)
     const fallbackLevel = requestedLevel === 0 ? 1 : requestedLevel
@@ -2244,10 +2292,13 @@ export default function UserPage({ username, onLogout, userId }) {
     const buildingId = building?.id
     const imageMap = {
       canon: (imageLevel) => canonImages[`../assets/Defences/canon/18_${imageLevel}.png`] || '',
+      mortar: (imageLevel) => mortarImages[`../assets/Defences/mortar/23_${imageLevel}.png`] || '',
+      bomb: (imageLevel) => bombImages[`../assets/Traps/Bomb/27_${imageLevel}.png`] || '',
       archer_tower: (imageLevel) => archerTowerImages[`../assets/Defences/Archer_Tower/16_${imageLevel}.png`] || '',
       army_camp: (imageLevel) => armyCampImages[`../assets/Army/Army_Camp/10_${imageLevel}.png`] || '',
       barracks: (imageLevel) => barracksImages[`../assets/Army/Barracks/8_${imageLevel}.png`] || '',
       clan_castle: (imageLevel) => clanCastleImages[`../assets/Army/clan_castle/19_${imageLevel}.png`] || '',
+      lab: (imageLevel) => labImages[`../assets/Army/Lab/13_${imageLevel}.png`] || '',
       gold_mine: (imageLevel) => goldMineImages[`../assets/Resources/goldmine/2_${imageLevel}.png`] || '',
       elixir_collector: (imageLevel) => elixirCollectorImages[`../assets/Resources/elixir_collector/3_${imageLevel}.png`] || '',
       gold_storage: (imageLevel) => goldStorageImages[`../assets/Resources/gold_storage/5_${imageLevel}.png`] || '',
@@ -2854,26 +2905,30 @@ export default function UserPage({ username, onLogout, userId }) {
     })
 
   const loadedTabPrimaryLabel =
-    activeLoadedTab === 'defences'
+    displayedLoadedTab === 'defences'
       ? 'Defense'
-      : activeLoadedTab === 'army'
+      : displayedLoadedTab === 'traps'
+        ? 'Trap'
+      : displayedLoadedTab === 'army'
         ? 'Army'
-        : activeLoadedTab === 'resources'
+        : displayedLoadedTab === 'resources'
           ? 'Resources'
-          : activeLoadedTab === 'troops'
+          : displayedLoadedTab === 'troops'
             ? 'Troop'
             : 'Walls'
 
   const loadedTabSecondaryLabel = activeLoadedTab === 'walls' ? 'Wall Quantity' : 'Level'
 
     const loadedTabSectionTitle =
-      activeLoadedTab === 'defences'
+      displayedLoadedTab === 'defences'
         ? 'Defenses'
-        : activeLoadedTab === 'army'
+        : displayedLoadedTab === 'traps'
+          ? 'Traps'
+        : displayedLoadedTab === 'army'
           ? 'Army'
-          : activeLoadedTab === 'resources'
+          : displayedLoadedTab === 'resources'
             ? 'Resources'
-            : activeLoadedTab === 'troops'
+            : displayedLoadedTab === 'troops'
               ? 'Troop'
               : 'Walls'
 
@@ -2883,6 +2938,7 @@ export default function UserPage({ username, onLogout, userId }) {
 
   const tabLabels = {
     defences: 'Defenses',
+    traps: 'Traps',
     army: 'Army',
     resources: 'Resources',
     troops: 'Troops',
@@ -2922,6 +2978,7 @@ export default function UserPage({ username, onLogout, userId }) {
 
   const loadedTabCompletion = {
     defences: isBuildingCategoryComplete(visibleDefenseBuildings),
+    traps: showTrapsTab ? isBuildingCategoryComplete(visibleTrapBuildings) : false,
     army: isBuildingCategoryComplete(visibleArmyBuildings),
     resources: isBuildingCategoryComplete(visibleResourceBuildings),
     troops: isTroopCategoryComplete(structureCatalog.troops || []),
@@ -3247,7 +3304,7 @@ export default function UserPage({ username, onLogout, userId }) {
 
                 <div className={styles.loadedTabShell}>
                   <div className={styles.loadedTabBar}>
-                    {['defences', 'army', 'resources', 'troops', 'walls'].map((tab) => (
+                    {['defences', ...(showTrapsTab ? ['traps'] : []), 'army', 'resources', 'troops', 'walls'].map((tab) => (
                       (() => {
                         const upgradeCount = loadedTabUpgradeCounts[tab] || 0
                         const isUpgrading = upgradeCount > 0
@@ -3256,7 +3313,7 @@ export default function UserPage({ username, onLogout, userId }) {
                       <button
                         type="button"
                         key={tab}
-                          className={`${styles.loadedTabBtn} ${activeLoadedTab === tab ? styles.loadedTabBtnActive : ''} ${isUpgrading ? styles.loadedTabBtnUpgrading : ''} ${loadedTabCompletion[tab] && !isUpgrading ? styles.loadedTabBtnComplete : ''}`}
+                          className={`${styles.loadedTabBtn} ${displayedLoadedTab === tab ? styles.loadedTabBtnActive : ''} ${isUpgrading ? styles.loadedTabBtnUpgrading : ''} ${loadedTabCompletion[tab] && !isUpgrading ? styles.loadedTabBtnComplete : ''}`}
                         onMouseDown={() => setActiveLoadedTab(tab)}
                         onTouchStart={() => setActiveLoadedTab(tab)}
                       >
@@ -3276,9 +3333,9 @@ export default function UserPage({ username, onLogout, userId }) {
                     ))}
                   </div>
 
-                  <div className={`${styles.loadedTabBody} ${activeLoadedTab === 'walls' ? styles.loadedTabBodyWalls : ''}`}>
+                    <div className={`${styles.loadedTabBody} ${displayedLoadedTab === 'walls' ? styles.loadedTabBodyWalls : ''}`}>
                     <div className={styles.loadedTabMain}>
-                      {activeLoadedTab === 'defences' && (
+                      {displayedLoadedTab === 'defences' && (
                         <div className={styles.loadedTabSection}>
                           <div className={styles.loadedTabSectionHeader}>
                             <div className={styles.loadedTabHeaderLeft}>
@@ -3308,7 +3365,37 @@ export default function UserPage({ username, onLogout, userId }) {
                         </div>
                       )}
 
-                      {activeLoadedTab === 'army' && (
+                      {displayedLoadedTab === 'traps' && showTrapsTab && (
+                        <div className={styles.loadedTabSection}>
+                          <div className={styles.loadedTabSectionHeader}>
+                            <div className={styles.loadedTabHeaderLeft}>
+                              <h3 className={styles.loadedTabSectionTitle}>{loadedTabSectionTitle}</h3>
+                              <SettingsIcon className={styles.loadedTabSettingsIcon} />
+                            </div>
+                            <button
+                              type="button"
+                              className={styles.loadedTabEditBtn}
+                              onClick={handleEditLevels}
+                              disabled={structuresLoading}
+                            >
+                              <EditOutlinedIcon className={styles.loadedTabEditBtnIcon} />
+                              {structuresLoading ? 'Loading...' : 'Edit Levels'}
+                            </button>
+                          </div>
+                          <div className={styles.loadedStructureFrame}>
+                            <div className={styles.loadedStructureHeader}>
+                              <span>{loadedTabPrimaryLabel}</span>
+                              <span>{loadedTabSecondaryLabel}</span>
+                              <span>Upgrades</span>
+                            </div>
+                            <div className={styles.readOnlyLoadedList}>
+                              {editTrapBuildings.map((building, index) => renderStructureCard(building, `tab-traps-${building.id}-${index}`, { readOnly: true }))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {displayedLoadedTab === 'army' && (
                         <div className={styles.loadedTabSection}>
                           <div className={styles.loadedTabSectionHeader}>
                             <div className={styles.loadedTabHeaderLeft}>
@@ -3338,7 +3425,7 @@ export default function UserPage({ username, onLogout, userId }) {
                         </div>
                       )}
 
-                      {activeLoadedTab === 'resources' && (
+                      {displayedLoadedTab === 'resources' && (
                         <div className={styles.loadedTabSection}>
                           <div className={styles.loadedTabSectionHeader}>
                             <div className={styles.loadedTabHeaderLeft}>
@@ -3368,7 +3455,7 @@ export default function UserPage({ username, onLogout, userId }) {
                         </div>
                       )}
 
-                      {activeLoadedTab === 'troops' && (
+                      {displayedLoadedTab === 'troops' && (
                         <div className={styles.loadedTabSection}>
                           <div className={styles.loadedTabSectionHeader}>
                             <div className={styles.loadedTabHeaderLeft}>
@@ -3389,7 +3476,7 @@ export default function UserPage({ username, onLogout, userId }) {
                         </div>
                       )}
 
-                      {activeLoadedTab === 'walls' && (
+                      {displayedLoadedTab === 'walls' && (
                         <div className={styles.loadedTabSection}>
                           <div className={styles.loadedTabSectionHeader}>
                             <div className={styles.loadedTabHeaderLeft}>

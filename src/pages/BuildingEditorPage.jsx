@@ -5,52 +5,7 @@ import { supabase } from '../supabaseClient'
 import Header from '../components/Header'
 import ToastNotification from '../components/ToastNotification'
 import { buildTownhallSnapshotFromRows } from '../utils/townhallSnapshot'
-
-const AVAILABLE_DEFENCES = [
-  { id: 'canon', name: 'Canon', image: '/src/assets/Defences/canon' },
-  { id: 'archer_tower', name: 'Archer Tower', image: '/src/assets/Defences/Archer_Tower' },
-  { id: 'mortar', name: 'Mortar', image: '/src/assets/Defences/mortar' },
-  { id: 'wizard_tower', name: 'Wizard Tower', image: '/src/assets/Defences/wizard_tower' },
-  { id: 'air_defense', name: 'Air Defense', image: '/src/assets/Defences/air_defense' },
-  { id: 'inferno_tower', name: 'Inferno Tower', image: '/src/assets/Defences/Inferno_tower' },
-  { id: 'x_bow', name: 'X-Bow', image: '/src/assets/Defences/x-bow' },
-  { id: 'eagle_artillery', name: 'Eagle Artillery', image: '/src/assets/Defences/Eagle_Artillery' },
-]
-
-const AVAILABLE_ARMY = [
-  { id: 'army_camp', name: 'Army Camp', image: '/src/assets/Army/Army_Camp' },
-  { id: 'barracks', name: 'Barracks', image: '/src/assets/Army/Barracks' },
-  { id: 'clan_castle', name: 'Clan Castle', image: '/src/assets/Army/clan_castle' },
-]
-
-const AVAILABLE_RESOURCES = [
-  { id: 'gold_mine', name: 'Gold Mine', image: '/src/assets/Resources/goldmine' },
-  { id: 'elixir_collector', name: 'Elixir Collector', image: '/src/assets/Resources/elixir_collector' },
-  { id: 'gold_storage', name: 'Gold Storage', image: '/src/assets/Resources/gold_storage' },
-  { id: 'elixir_storage', name: 'Elixir Storage', image: '/src/assets/Resources/elixi_storage' },
-]
-
-const AVAILABLE_TROOPS = [
-  { id: 'barbarian', name: 'Barbarian', image: '/src/assets/Troops/Barbarian' },
-  { id: 'archer', name: 'Archer', image: '/src/assets/Troops/Archer' },
-  { id: 'giant', name: 'Giant', image: '/src/assets/Troops/Giant' },
-  { id: 'goblin', name: 'Goblin', image: '/src/assets/Troops/Goblin' },
-]
-
-const AVAILABLE_WALLS = [
-  { id: 'walls', name: 'Walls', image: '/src/assets/Walls' },
-]
-
-const ALL_BUILDINGS = [...AVAILABLE_DEFENCES, ...AVAILABLE_ARMY, ...AVAILABLE_RESOURCES, ...AVAILABLE_TROOPS, ...AVAILABLE_WALLS]
-
-const getBuildingCategory = (buildingId) => {
-  if (AVAILABLE_DEFENCES.some((building) => building.id === buildingId)) return 'defences'
-  if (AVAILABLE_ARMY.some((building) => building.id === buildingId)) return 'army'
-  if (AVAILABLE_RESOURCES.some((building) => building.id === buildingId)) return 'resources'
-  if (AVAILABLE_TROOPS.some((building) => building.id === buildingId)) return 'troops'
-  if (AVAILABLE_WALLS.some((building) => building.id === buildingId)) return 'walls'
-  return 'defences'
-}
+import { ALL_BUILDINGS, BUILDING_SECTIONS, getBuildingCategory, getDefaultBuildingData } from '../data/buildings'
 
 const RESOURCE_ICONS = {
   gold: '/src/assets/magic-items/gold.png',
@@ -175,154 +130,12 @@ const normalizeTroopLevelCount = (levels = [], fallbackCount = 0) => {
   return Math.max(1, levelCount || Number(fallbackCount) || 1)
 }
 
-const getDefaultBuildingData = (townhallLevel) => {
-  if (townhallLevel === 2) {
-    return {
-      canon: {
-        buildings_unlocked: 2,
-        starts_unlocked: true,
-        copy_unlocks: createCopyUnlocks(2, 1),
-        levels: [
-          { level: 1, cost: 250, resource: 'gold', time: '5sec' },
-          { level: 2, cost: 1000, resource: 'gold', time: '30sec' },
-          { level: 3, cost: 4000, resource: 'gold', time: '2min' },
-        ],
-      },
-      archer_tower: {
-        buildings_unlocked: 1,
-        starts_unlocked: true,
-        copy_unlocks: createCopyUnlocks(1, 1),
-        levels: [
-          { level: 1, cost: 1000, resource: 'gold', time: '15sec' },
-          { level: 2, cost: 2000, resource: 'gold', time: '2min' },
-        ],
-      },
-      army_camp: {
-        buildings_unlocked: 1,
-        starts_unlocked: true,
-        copy_unlocks: createCopyUnlocks(1, 1),
-        levels: [
-          { level: 1, cost: 200, resource: 'elixir', time: '1min' },
-          { level: 2, cost: 2000, resource: 'elixir', time: '5min' },
-        ],
-      },
-      barracks: {
-        buildings_unlocked: 1,
-        starts_unlocked: true,
-        copy_unlocks: createCopyUnlocks(1, 1),
-        levels: [
-          { level: 1, cost: 100, resource: 'elixir', time: '10sec' },
-          { level: 2, cost: 500, resource: 'elixir', time: '15sec' },
-          { level: 3, cost: 2500, resource: 'elixir', time: '2min' },
-          { level: 4, cost: 5000, resource: 'elixir', time: '30min' },
-        ],
-      },
-      clan_castle: {
-        buildings_unlocked: 1,
-        starts_unlocked: true,
-        copy_unlocks: createCopyUnlocks(1, 1),
-        levels: [
-          { level: 1, cost: 10000, resource: 'elixir', time: '0sec' },
-        ],
-      },
-      gold_mine: {
-        buildings_unlocked: 2,
-        starts_unlocked: true,
-        copy_unlocks: createCopyUnlocks(2, 1),
-        levels: [
-          { level: 1, cost: 150, resource: 'elixir', time: '5sec' },
-          { level: 2, cost: 300, resource: 'elixir', time: '15sec' },
-          { level: 3, cost: 700, resource: 'elixir', time: '1min' },
-          { level: 4, cost: 1400, resource: 'elixir', time: '2min' },
-        ],
-      },
-      elixir_collector: {
-        buildings_unlocked: 2,
-        starts_unlocked: true,
-        copy_unlocks: createCopyUnlocks(2, 1),
-        levels: [
-          { level: 1, cost: 150, resource: 'gold', time: '5sec' },
-          { level: 2, cost: 300, resource: 'gold', time: '15sec' },
-          { level: 3, cost: 700, resource: 'gold', time: '1min' },
-          { level: 4, cost: 1400, resource: 'gold', time: '2min' },
-        ],
-      },
-      gold_storage: {
-        buildings_unlocked: 1,
-        starts_unlocked: true,
-        copy_unlocks: createCopyUnlocks(1, 1),
-        levels: [
-          { level: 1, cost: 300, resource: 'elixir', time: '10sec' },
-          { level: 2, cost: 750, resource: 'elixir', time: '2min' },
-          { level: 3, cost: 1500, resource: 'elixir', time: '5min' },
-        ],
-      },
-      elixir_storage: {
-        buildings_unlocked: 1,
-        starts_unlocked: true,
-        copy_unlocks: createCopyUnlocks(1, 1),
-        levels: [
-          { level: 1, cost: 300, resource: 'gold', time: '10sec' },
-          { level: 2, cost: 750, resource: 'gold', time: '2min' },
-          { level: 3, cost: 1500, resource: 'gold', time: '5min' },
-        ],
-      },
-      walls: {
-        buildings_unlocked: 25,
-        starts_unlocked: true,
-        copy_unlocks: createCopyUnlocks(25, 1),
-        levels: [
-          { level: 1, cost: 0, resource: 'gold', time: '0sec' },
-          { level: 2, cost: 1000, resource: 'gold', time: '0sec' },
-        ],
-      },
-      barbarian: {
-        buildings_unlocked: 1,
-        starts_unlocked: true,
-        copy_unlocks: createCopyUnlocks(1, 1),
-        barracks_level_unlocked: 1,
-        levels: [
-          { level: 1, cost: 0, resource: 'elixir', time: '0sec' },
-        ],
-      },
-      archer: {
-        buildings_unlocked: 1,
-        starts_unlocked: true,
-        copy_unlocks: createCopyUnlocks(1, 1),
-        barracks_level_unlocked: 2,
-        levels: [
-          { level: 1, cost: 0, resource: 'elixir', time: '0sec' },
-        ],
-      },
-      giant: {
-        buildings_unlocked: 1,
-        starts_unlocked: true,
-        copy_unlocks: createCopyUnlocks(1, 1),
-        barracks_level_unlocked: 3,
-        levels: [
-          { level: 1, cost: 0, resource: 'elixir', time: '0sec' },
-        ],
-      },
-      goblin: {
-        buildings_unlocked: 1,
-        starts_unlocked: true,
-        copy_unlocks: createCopyUnlocks(1, 1),
-        barracks_level_unlocked: 4,
-        levels: [
-          { level: 1, cost: 0, resource: 'elixir', time: '0sec' },
-        ],
-      },
-    }
-  }
-  return {}
-}
-
 export default function BuildingEditorPage({ username, onLogout }) {
   const { townhallLevel, buildingId } = useParams()
   const navigate = useNavigate()
   const isEditingRef = useRef(false)
   const isWallBuilding = buildingId === 'walls'
-  const isTroopBuilding = AVAILABLE_TROOPS.some((building) => building.id === buildingId)
+  const isTroopBuilding = BUILDING_SECTIONS.troops.some((building) => building.id === buildingId)
 
   const [staticData, setStaticData] = useState({})
   const [dynamicData, setDynamicData] = useState({})
@@ -363,11 +176,10 @@ export default function BuildingEditorPage({ username, onLogout }) {
       setLoading(true)
       try {
         const categoryField = getBuildingCategory(buildingId)
-        // Load static data
-        const defaultData = getDefaultBuildingData(2)
-
         // Fetch dynamic data from database
         const selectedTownhall = parseInt(townhallLevel)
+        // Load static data
+        const defaultData = getDefaultBuildingData(selectedTownhall)
         const { data: rows, error } = await supabase
           .from('townhall_buildings')
           .select('*')
@@ -585,7 +397,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
 
       if (fetchError) throw fetchError
 
-      const inheritedTownhallData = buildTownhallSnapshotFromRows(rows || [], getDefaultBuildingData(2))
+      const inheritedTownhallData = buildTownhallSnapshotFromRows(rows || [], getDefaultBuildingData(selectedTownhall))
 
       const categoryField = getBuildingCategory(buildingId)
       const normalizedLevels = isTroopBuilding ? normalizeTroopLevels(editingBuildingCount, editingLevels) : normalizeBuildingLevels(editingLevelCount, editingLevels)
@@ -602,6 +414,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
       const recordToSave = {
         townhall_level: selectedTownhall,
         defences: inheritedTownhallData.defences || [],
+        traps: inheritedTownhallData.traps || [],
         army: inheritedTownhallData.army || [],
         resources: inheritedTownhallData.resources || [],
         troops: inheritedTownhallData.troops || [],
@@ -747,6 +560,10 @@ export default function BuildingEditorPage({ username, onLogout }) {
               const getImagePath = () => {
                 if (defence.id === 'archer_tower') return `16_${maxLevel}`
                 if (defence.id === 'canon') return `18_${maxLevel}`
+                if (defence.id === 'bomb') return `27_${maxLevel}`
+                if (defence.id === 'spring_trap') return `30_${maxLevel}`
+                if (defence.id === 'mortar') return `23_${maxLevel}`
+                if (defence.id === 'lab') return `13_${maxLevel}`
                 if (defence.id === 'army_camp') return `10_${maxLevel}`
                 if (defence.id === 'barracks') return `8_${maxLevel}`
                 if (defence.id === 'clan_castle') return `19_${maxLevel}`

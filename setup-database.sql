@@ -135,6 +135,7 @@ CREATE TABLE IF NOT EXISTS public.townhall_buildings (
   id BIGSERIAL PRIMARY KEY,
   townhall_level INTEGER NOT NULL UNIQUE,
   defences JSONB DEFAULT '{}'::jsonb,
+  traps JSONB DEFAULT '{}'::jsonb,
   army JSONB DEFAULT '{}'::jsonb,
   resources JSONB DEFAULT '{}'::jsonb,
   troops JSONB DEFAULT '{}'::jsonb,
