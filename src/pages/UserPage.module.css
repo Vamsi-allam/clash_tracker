@@ -1111,8 +1111,26 @@
 }
 .nextThActionRow { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; margin-top: 10px; grid-column: 1 / -1 }
 .startUpgradeBtn { padding:6px 8px; background: linear-gradient(180deg,#4d88db,#3f79c8); color:#fff; border:1px solid rgba(198,225,255,0.5); border-radius:2px; cursor:pointer; font-weight:400; font-size: 0.85rem; white-space: nowrap }
+.startUpgradeBtn:disabled { opacity: 0.65; cursor: not-allowed }
 .nextThHelp { color: rgba(233,245,255,0.92); font-size: 1.05rem; line-height: 1; font-weight: 600 }
 .nextThMaxMessage { height: 100%; min-height: 210px; display: flex; align-items: center; justify-content: center; text-align: center; color: rgba(233,245,255,0.95); font-size: 1.18rem; font-weight: 500; padding: 20px }
+
+.nextThUpgradePreview { display: flex; flex-direction: column; gap: 14px; padding-top: 8px }
+.nextThUpgradeTopRow { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px }
+.nextThUpgradeActionIcons { display: flex; align-items: center; gap: 8px; padding-top: 12px }
+.nextThUpgradeIconBtn { width: 32px; height: 32px; border: 1px solid rgba(198,225,255,0.5); border-radius: 3px; background: linear-gradient(180deg,#f0a72a,#e59508); color: #ffffff; display: inline-flex; align-items: center; justify-content: center; padding: 0 }
+.nextThUpgradeIconBtn:last-child { background: linear-gradient(180deg,#6bbf4a,#4ea231) }
+.nextThUpgradeIcon { font-size: 1.05rem }
+.nextThProgressWrap { display: flex; flex-direction: column; gap: 8px; width: 100% }
+.nextThProgressBar { position: relative; width: 100%; height: 26px; border-radius: 3px; overflow: hidden; background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.2) }
+.nextThProgressFill { position: absolute; inset: 0 auto 0 0; background: linear-gradient(90deg,#4f85cf,#3f79c8); width: 0; }
+.nextThProgressLabel { position: relative; z-index: 1; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; color: rgba(255,255,255,0.95); font-size: 0.9rem; font-weight: 700 }
+.nextThCompleteText { color: rgba(233,245,255,0.95); font-size: 0.98rem; font-weight: 700; text-align: center }
+.nextThUpgradeCostLine { display: inline-flex; align-items: center; justify-content: center; gap: 8px; color: #72b33a; font-size: 0.9rem; font-weight: 800 }
+.nextThUpgradeCostIcon { width: 18px; height: 18px; object-fit: contain }
+
+.nextThCostValueInner { display: inline-flex; align-items: center; gap: 6px }
+.nextThCostIcon { width: 18px; height: 18px; object-fit: contain; flex-shrink: 0 }
 
 .rightPanel { padding:18px; background: rgba(10,20,38,0.0); border-radius:8px; display:flex; flex-direction:column; gap:14px; border: none; position: relative }
 .massUpdateBox { border: 1px solid rgba(233,245,255,0.75); padding: 20px 16px 16px; border-radius: 0; background: transparent; position: relative; margin-top: -14px }

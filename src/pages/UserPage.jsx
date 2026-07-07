@@ -37,6 +37,17 @@ const formatPlayerTag = (value = '') => {
   return cleanTag ? `#${cleanTag}` : ''
 }
 
+const formatCost = (value) => {
+  const numberValue = Number(value || 0)
+  if (numberValue >= 1000000) {
+    return `${Number((numberValue / 1000000).toFixed(2)).toString().replace(/\.0+$/, '')}M`
+  }
+  if (numberValue >= 1000) {
+    return `${Number((numberValue / 1000).toFixed(2)).toString().replace(/\.0+$/, '')}K`
+  }
+  return `${numberValue}`
+}
+
 const formatUpgradeClock = (remainingSeconds) => {
   const safeSeconds = Math.max(0, Math.ceil(Number(remainingSeconds || 0)))
   const hours = Math.floor(safeSeconds / 3600)
@@ -179,17 +190,20 @@ export default function UserPage({ username, onLogout, userId }) {
   const [refreshingVillage, setRefreshingVillage] = useState(false)
   const [activeLoadedTab, setActiveLoadedTab] = useState('defences')
   const [pendingUpgrades, setPendingUpgrades] = useState([])
+  const [townhallUpgradeInfo, setTownhallUpgradeInfo] = useState(null)
   const [upgradeClock, setUpgradeClock] = useState(Date.now())
   const [openActionRowKey, setOpenActionRowKey] = useState('')
   const [actionPopup, setActionPopup] = useState({ open: false, title: '', action: '', rowKey: '' })
   const [completeUpgradePopup, setCompleteUpgradePopup] = useState({ open: false, rowKey: '', upgrade: null, magicItem: 'none', saving: false })
   const [modifyUpgradePopup, setModifyUpgradePopup] = useState({ open: false, rowKey: '', upgrade: null, durationParts: { days: 0, hours: 0, minutes: 0, seconds: 0 }, saving: false })
   const [wallUpgradePopup, setWallUpgradePopup] = useState({ open: false, sourceLevel: 0, targetLevel: 0, amount: 1 })
+  const [townhallUpgradePopup, setTownhallUpgradePopup] = useState({ open: false, mode: 'complete', durationParts: { days: 0, hours: 0, minutes: 0, seconds: 0 }, magicItem: 'none', saving: false })
   const [toast, setToast] = useState({ open: false, message: '', severity: 'success' })
   const activeVillageRef = useRef(null)
   const viewModeRef = useRef('search')
   const builderCountRef = useRef(2)
   const upgradingRowsRef = useRef(false)
+  const townhallUpgradingRef = useRef(false)
   const previousLoadedTabRef = useRef('defences')
   const suppressSnapshotRefreshRef = useRef(false)
 
@@ -573,6 +587,29 @@ export default function UserPage({ username, onLogout, userId }) {
   const maxTownHallLevel = 18
   const hasReachedMaxTownHall = currentTownHallLevel >= maxTownHallLevel
   const nextTownHallLevel = Math.min(currentTownHallLevel + 1, maxTownHallLevel)
+  const activeTownhallUpgrade = activeVillage?.townhall_upgrade_started_at && activeVillage?.townhall_upgrade_finish_at
+    ? {
+        villageId: activeVillage.id,
+        fromLevel: Number(activeVillage.townhall_upgrade_from_level || activeVillage.townhall_level || currentTownHallLevel),
+        toLevel: Number(activeVillage.townhall_upgrade_to_level || currentTownHallLevel + 1),
+        startedAt: new Date(activeVillage.townhall_upgrade_started_at).getTime(),
+        finishAt: new Date(activeVillage.townhall_upgrade_finish_at).getTime(),
+      }
+    : null
+
+  const activeTownhallUpgradeRemainingSeconds = activeTownhallUpgrade
+    ? Math.max(0, Math.ceil((Number(activeTownhallUpgrade.finishAt || 0) - upgradeClock) / 1000))
+    : 0
+
+  const activeTownhallUpgradeTotalSeconds = activeTownhallUpgrade
+    ? Math.max(1, Math.ceil((Number(activeTownhallUpgrade.finishAt || 0) - Number(activeTownhallUpgrade.startedAt || 0)) / 1000))
+    : Math.max(0, Math.floor(Number(townhallUpgradeInfo?.timeSeconds || 0)))
+
+  const activeTownhallUpgradeProgress = activeTownhallUpgrade
+    ? Math.max(0, Math.min(100, Math.round(((activeTownhallUpgradeTotalSeconds - activeTownhallUpgradeRemainingSeconds) / activeTownhallUpgradeTotalSeconds) * 100)))
+    : 0
+
+  const townhallUpgradeTargetLevel = Number(activeTownhallUpgrade?.toLevel || nextTownHallLevel)
 
   const normalizeTownhallBuildings = (data) => {
     const normalizeStructures = (structures) => {
@@ -634,6 +671,10 @@ export default function UserPage({ username, onLogout, userId }) {
         setPendingUpgrades(cachedSnapshot.pendingUpgrades || [])
       }
 
+      if (cachedSnapshot.townhallUpgradeInfo) {
+        setTownhallUpgradeInfo(cachedSnapshot.townhallUpgradeInfo)
+      }
+
       if (loadWalls && cachedSnapshot.wallConfig) {
         setWallConfig(cachedSnapshot.wallConfig)
         setWallCounts(cachedSnapshot.wallCounts || {})
@@ -647,6 +688,12 @@ export default function UserPage({ username, onLogout, userId }) {
       .single()
 
     const normalizedData = normalizeTownhallBuildings(data)
+    const nextTownhallUpgradeInfo = {
+      cost: Number(data?.townhall_upgrade_cost || 0),
+      resource: String(data?.townhall_upgrade_resource || 'gold').trim().toLowerCase(),
+      timeSeconds: Number(data?.townhall_upgrade_time_seconds || parseTimeStringToSeconds(data?.townhall_upgrade_time || '')),
+    }
+    setTownhallUpgradeInfo(nextTownhallUpgradeInfo)
 
     if (loadStructures) {
       setStructureCatalog(normalizedData)
@@ -709,6 +756,8 @@ export default function UserPage({ username, onLogout, userId }) {
       nextSnapshotCache.structureLevels = initialLevels
       nextSnapshotCache.pendingUpgrades = restoredPendingUpgrades
     }
+
+    nextSnapshotCache.townhallUpgradeInfo = nextTownhallUpgradeInfo
 
     if (loadWalls) {
       const initialCounts = {}
@@ -1528,6 +1577,34 @@ export default function UserPage({ username, onLogout, userId }) {
     return true
   }
 
+  const completeTownhallUpgrade = async (upgrade) => {
+    if (!upgrade?.villageId) return false
+
+    const { data: updatedVillage, error: updateError } = await supabase
+      .from('user_villages')
+      .update({
+        townhall_level: Number(upgrade.toLevel || currentTownHallLevel),
+        townhall_upgrade_started_at: null,
+        townhall_upgrade_finish_at: null,
+        townhall_upgrade_from_level: null,
+        townhall_upgrade_to_level: null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', upgrade.villageId)
+      .select()
+      .single()
+
+    if (updateError) throw updateError
+
+    if (updatedVillage) {
+      setActiveVillage(updatedVillage)
+      setVillages((current) => current.map((village) => (village.id === updatedVillage.id ? updatedVillage : village)))
+      await loadTownhallStructures(updatedVillage.townhall_level, updatedVillage.id)
+    }
+
+    return true
+  }
+
   const cancelPendingUpgrade = async (upgrade) => {
     if (!upgrade?.id || !upgrade?.villageId || !upgrade?.buildingId) return false
 
@@ -1632,6 +1709,193 @@ export default function UserPage({ username, onLogout, userId }) {
     }
   }
 
+  const handleStartTownhallUpgrade = async () => {
+    if (!activeVillage?.id || hasReachedMaxTownHall) return
+    if (activeTownhallUpgrade) return
+
+    const durationSeconds = Math.max(0, Math.floor(Number(townhallUpgradeInfo?.timeSeconds) || 0))
+    if (durationSeconds <= 0) {
+      setError('Town Hall upgrade time is not configured yet.')
+      return
+    }
+
+    const startedAt = Date.now()
+    const finishAt = startedAt + (durationSeconds * 1000)
+
+    const { data: updatedVillage, error } = await supabase
+      .from('user_villages')
+      .update({
+        townhall_upgrade_started_at: new Date(startedAt).toISOString(),
+        townhall_upgrade_finish_at: new Date(finishAt).toISOString(),
+        townhall_upgrade_from_level: Number(currentTownHallLevel),
+        townhall_upgrade_to_level: Number(nextTownHallLevel),
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', activeVillage.id)
+      .select()
+      .single()
+
+    if (error) {
+      setError(error.message || 'Failed to start town hall upgrade')
+      return
+    }
+
+    if (updatedVillage) {
+      setActiveVillage(updatedVillage)
+      setVillages((current) => current.map((village) => (village.id === updatedVillage.id ? updatedVillage : village)))
+    }
+  }
+
+  const openTownhallModifyPopup = () => {
+    if (!activeTownhallUpgrade) return
+
+    setTownhallUpgradePopup({
+      open: true,
+      mode: 'modify',
+      durationParts: clampDurationPartsToMax(
+        splitDurationSeconds(activeTownhallUpgradeRemainingSeconds),
+        activeTownhallUpgradeRemainingSeconds,
+      ),
+      saving: false,
+    })
+  }
+
+  const openTownhallCompletePopup = () => {
+    if (!activeTownhallUpgrade) return
+
+    setTownhallUpgradePopup({
+      open: true,
+      mode: 'complete',
+      durationParts: { days: 0, hours: 0, minutes: 0, seconds: 0 },
+      magicItem: 'none',
+      saving: false,
+    })
+  }
+
+  const closeTownhallUpgradePopup = () => {
+    setTownhallUpgradePopup({ open: false, mode: 'complete', durationParts: { days: 0, hours: 0, minutes: 0, seconds: 0 }, magicItem: 'none', saving: false })
+  }
+
+  const updateTownhallUpgradeMagicItem = (value) => {
+    setTownhallUpgradePopup((current) => ({
+      ...current,
+      magicItem: value,
+    }))
+  }
+
+  const updateTownhallUpgradeDurationPart = (part, value) => {
+    setTownhallUpgradePopup((current) => ({
+      ...current,
+      durationParts: clampDurationPartsToMax({
+        ...current.durationParts,
+        [part]: Math.max(0, Math.floor(Number(value) || 0)),
+      }, activeTownhallUpgradeRemainingSeconds),
+    }))
+  }
+
+  const saveTownhallUpgradeTime = async () => {
+    if (!activeTownhallUpgrade?.villageId || !activeVillage?.id) return
+
+    const maxAllowedRemainingSeconds = activeTownhallUpgradeRemainingSeconds
+    const remainingSeconds = Math.max(0, Math.floor(
+      (Number(townhallUpgradePopup.durationParts.days) || 0) * 86400
+      + (Number(townhallUpgradePopup.durationParts.hours) || 0) * 3600
+      + (Number(townhallUpgradePopup.durationParts.minutes) || 0) * 60
+      + (Number(townhallUpgradePopup.durationParts.seconds) || 0),
+    ))
+
+    if (remainingSeconds > maxAllowedRemainingSeconds) {
+      setError(`Upgrade time cannot exceed ${formatUpgradeClock(maxAllowedRemainingSeconds)}`)
+      return
+    }
+
+    const newFinishAt = Date.now() + (remainingSeconds * 1000)
+
+    setTownhallUpgradePopup((current) => ({
+      ...current,
+      saving: true,
+    }))
+
+    try {
+      const { data: updatedVillage, error: updateError } = await supabase
+        .from('user_villages')
+        .update({
+          townhall_upgrade_finish_at: new Date(newFinishAt).toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', activeVillage.id)
+        .select()
+        .single()
+
+      if (updateError) throw updateError
+
+      if (updatedVillage) {
+        setActiveVillage(updatedVillage)
+        setVillages((current) => current.map((village) => (village.id === updatedVillage.id ? updatedVillage : village)))
+      }
+
+      closeTownhallUpgradePopup()
+    } catch (saveError) {
+      setTownhallUpgradePopup((current) => ({
+        ...current,
+        saving: false,
+      }))
+      setError(saveError.message || 'Failed to update town hall upgrade time')
+    }
+  }
+
+  const confirmTownhallUpgradeCompletion = async () => {
+    if (!activeTownhallUpgrade) return
+
+    setTownhallUpgradePopup((current) => ({
+      ...current,
+      saving: true,
+    }))
+
+    try {
+      await completeTownhallUpgrade(activeTownhallUpgrade)
+      closeTownhallUpgradePopup()
+    } catch (completeError) {
+      setTownhallUpgradePopup((current) => ({
+        ...current,
+        saving: false,
+      }))
+      setError(completeError.message || 'Failed to complete town hall upgrade')
+    }
+  }
+
+  const cancelTownhallUpgrade = async () => {
+    if (!activeTownhallUpgrade?.villageId) return
+
+    try {
+      const { data: updatedVillage, error: updateError } = await supabase
+        .from('user_villages')
+        .update({
+          townhall_level: Number(activeTownhallUpgrade.fromLevel || currentTownHallLevel),
+          townhall_upgrade_started_at: null,
+          townhall_upgrade_finish_at: null,
+          townhall_upgrade_from_level: null,
+          townhall_upgrade_to_level: null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', activeTownhallUpgrade.villageId)
+        .select()
+        .single()
+
+      if (updateError) throw updateError
+
+      if (updatedVillage) {
+        setActiveVillage(updatedVillage)
+        setVillages((current) => current.map((village) => (village.id === updatedVillage.id ? updatedVillage : village)))
+        await loadTownhallStructures(updatedVillage.townhall_level, updatedVillage.id)
+      }
+
+      closeTownhallUpgradePopup()
+    } catch (cancelError) {
+      setError(cancelError.message || 'Failed to cancel town hall upgrade')
+    }
+  }
+
   const startStructureUpgrade = async (building, rowState) => {
     if (!activeVillage?.id || !building?.id || rowState == null) return
 
@@ -1688,7 +1952,6 @@ export default function UserPage({ username, onLogout, userId }) {
 
     const dueUpgrades = pendingUpgrades.filter((upgrade) => Number(upgrade.finishAt) <= upgradeClock)
     if (dueUpgrades.length === 0) return
-
     upgradingRowsRef.current = true
 
     const flushCompletedUpgrades = async () => {
@@ -1705,6 +1968,26 @@ export default function UserPage({ username, onLogout, userId }) {
 
     void flushCompletedUpgrades()
   }, [pendingUpgrades, upgradeClock])
+
+  useEffect(() => {
+    if (townhallUpgradingRef.current) return
+    if (!activeTownhallUpgrade) return
+    if (Number(activeTownhallUpgrade.finishAt) > upgradeClock) return
+
+    townhallUpgradingRef.current = true
+
+    const flushTownhallUpgrade = async () => {
+      try {
+        await completeTownhallUpgrade(activeTownhallUpgrade)
+      } catch (upgradeError) {
+        setError(upgradeError.message || 'Failed to complete town hall upgrade')
+      } finally {
+        townhallUpgradingRef.current = false
+      }
+    }
+
+    void flushTownhallUpgrade()
+  }, [activeTownhallUpgrade?.finishAt, activeVillage?.id, upgradeClock])
 
   const computeStructuresCompletion = () => {
     const buildings = [...structureCatalog.defences, ...structureCatalog.army, ...structureCatalog.resources, ...structureCatalog.troops]
@@ -2706,6 +2989,33 @@ export default function UserPage({ username, onLogout, userId }) {
 
                     {hasReachedMaxTownHall ? (
                       <div className={styles.nextThMaxMessage}>Your Town Hall is fully upgraded.</div>
+                    ) : activeTownhallUpgrade ? (
+                      <div className={styles.nextThUpgradePreview}>
+                        <div className={styles.nextThUpgradeTopRow}>
+                          <div className={styles.nextThImageWrap}>
+                            <img src={`/src/assets/townhall/1_${townhallUpgradeTargetLevel}.png`} alt={`TH ${townhallUpgradeTargetLevel}`} className={styles.nextThImage} />
+                            <div className={styles.nextThLevel}>TH {townhallUpgradeTargetLevel}</div>
+                          </div>
+
+                          <div className={styles.nextThUpgradeActionIcons}>
+                            <button type="button" className={styles.nextThUpgradeIconBtn} aria-label="Modify town hall upgrade" title="Modify town hall upgrade" onClick={openTownhallModifyPopup}>
+                              <HandymanOutlinedIcon className={styles.nextThUpgradeIcon} />
+                            </button>
+                            <button type="button" className={styles.nextThUpgradeIconBtn} aria-label="Complete town hall upgrade" title="Complete town hall upgrade" onClick={openTownhallCompletePopup}>
+                              <CheckIcon className={styles.nextThUpgradeIcon} />
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className={styles.nextThProgressWrap}>
+                          <div className={styles.nextThProgressBar}>
+                            <div className={styles.nextThProgressFill} style={{ width: `${activeTownhallUpgradeProgress}%` }} />
+                            <span className={styles.nextThProgressLabel}>{activeTownhallUpgradeProgress}%</span>
+                          </div>
+
+                          <div className={styles.nextThCompleteText}>Complete: {formatUpgradeClock(activeTownhallUpgradeRemainingSeconds)}</div>
+                        </div>
+                      </div>
                     ) : (
                       <div className={styles.nextThPreview}>
                         <div className={styles.nextThImageWrap}>
@@ -2717,18 +3027,31 @@ export default function UserPage({ username, onLogout, userId }) {
                           <div className={styles.nextThStatsCard}>
                             <div className={styles.nextThStatRow}>
                               <span className={styles.nextThStatLabel}>Cost:</span>
-                              <span className={`${styles.nextThStatValue} ${currentTownHallLevel === 2 ? styles.nextThCostValue : ''}`}>
-                                {currentTownHallLevel === 2 ? '4K' : '—'}
+                              <span className={`${styles.nextThStatValue} ${townhallUpgradeInfo?.cost ? styles.nextThCostValue : ''}`}>
+                                {townhallUpgradeInfo?.cost != null ? (
+                                  <span className={styles.nextThCostValueInner}>
+                                    {upgradeResourceIcons[String(townhallUpgradeInfo.resource || '').trim().toLowerCase()] ? (
+                                      <img
+                                        src={upgradeResourceIcons[String(townhallUpgradeInfo.resource || '').trim().toLowerCase()]}
+                                        alt={townhallUpgradeInfo.resource}
+                                        className={styles.nextThCostIcon}
+                                      />
+                                    ) : null}
+                                    {formatCost(townhallUpgradeInfo.cost)}
+                                  </span>
+                                ) : '—'}
                               </span>
                             </div>
                             <div className={styles.nextThStatRow}>
                               <span className={styles.nextThStatLabel}>Duration:</span>
-                              <span className={styles.nextThStatValue}>{currentTownHallLevel === 2 ? '30m' : '—'}</span>
+                              <span className={styles.nextThStatValue}>{townhallUpgradeInfo?.timeSeconds ? formatSeconds(townhallUpgradeInfo.timeSeconds) : '—'}</span>
                             </div>
                           </div>
 
                           <div className={styles.nextThActionRow}>
-                            <button className={styles.startUpgradeBtn}>Start TH Upgrade</button>
+                            <button className={styles.startUpgradeBtn} onClick={handleStartTownhallUpgrade} disabled={!townhallUpgradeInfo?.timeSeconds || !townhallUpgradeInfo?.cost || activeTownhallUpgrade}>
+                              Start TH Upgrade
+                            </button>
                             <span className={styles.nextThHelp}>?</span>
                           </div>
                         </div>
@@ -3057,6 +3380,157 @@ export default function UserPage({ username, onLogout, userId }) {
 
                           {typeof document !== 'undefined' ? createPortal(wallUpgradePopupMarkup, document.body) : wallUpgradePopupMarkup}
                         </div>
+                      )}
+
+                      {townhallUpgradePopup.open && activeTownhallUpgrade && (
+                        typeof document !== 'undefined' ? createPortal(
+                          townhallUpgradePopup.mode === 'modify' ? (
+                            <div className={styles.modifyUpgradeOverlay} onClick={closeTownhallUpgradePopup}>
+                              <div className={styles.modifyUpgradePopup} onClick={(event) => event.stopPropagation()}>
+                                <button type="button" className={styles.modifyUpgradeCloseBtn} onClick={closeTownhallUpgradePopup} aria-label="Close town hall upgrade popup">
+                                  ×
+                                </button>
+
+                                <h3 className={styles.modifyUpgradeTitle}>Modify Upgrade</h3>
+
+                                <div className={styles.modifyUpgradeImagesRow}>
+                                  <div className={styles.modifyUpgradeImageBlock}>
+                                    <img
+                                      src={`/src/assets/townhall/1_${Number(activeTownhallUpgrade.fromLevel || currentTownHallLevel)}.png`}
+                                      alt={`TH ${Number(activeTownhallUpgrade.fromLevel || currentTownHallLevel)}`}
+                                      className={styles.modifyUpgradeImage}
+                                    />
+                                  </div>
+                                  <div className={styles.modifyUpgradeArrow}>→</div>
+                                  <div className={styles.modifyUpgradeImageBlock}>
+                                    <img
+                                      src={`/src/assets/townhall/1_${townhallUpgradeTargetLevel}.png`}
+                                      alt={`TH ${townhallUpgradeTargetLevel}`}
+                                      className={styles.modifyUpgradeImage}
+                                    />
+                                  </div>
+                                </div>
+
+                                <p className={styles.modifyUpgradePrompt}>
+                                  Update the upgrade time of Town Hall from level {Number(activeTownhallUpgrade.fromLevel || currentTownHallLevel)} to level {townhallUpgradeTargetLevel}:
+                                </p>
+
+                                <div className={styles.modifyUpgradeRemainingBlock}>
+                                  <div className={styles.modifyUpgradeRemainingLabel}>Remaining Time:</div>
+                                  <div className={styles.modifyUpgradeRemainingHint}>Maximum: {formatUpgradeClock(activeTownhallUpgradeRemainingSeconds)}</div>
+                                  <div className={styles.modifyUpgradeTimeGrid}>
+                                    {[
+                                      ['days', 'Days'],
+                                      ['hours', 'Hours'],
+                                      ['minutes', 'Minutes'],
+                                      ['seconds', 'Seconds'],
+                                    ].map(([key, label]) => (
+                                      <label key={key} className={styles.modifyUpgradeTimeCell}>
+                                        <span className={styles.modifyUpgradeTimeLabel}>{label}</span>
+                                        <select
+                                          className={styles.modifyUpgradeTimeSelect}
+                                          value={townhallUpgradePopup.durationParts[key]}
+                                          onChange={(event) => updateTownhallUpgradeDurationPart(key, event.target.value)}
+                                          aria-label={label}
+                                        >
+                                          {Array.from({ length: (() => {
+                                            const maxAllowed = activeTownhallUpgradeRemainingSeconds
+                                            const parts = townhallUpgradePopup.durationParts
+                                            const daysMax = Math.floor(maxAllowed / 86400)
+                                            const currentDayLimit = Math.max(0, Math.min(daysMax, 366))
+                                            if (key === 'days') return currentDayLimit + 1
+
+                                            const remainingAfterDays = Math.max(0, maxAllowed - (Math.min(parts.days, currentDayLimit) * 86400))
+                                            if (key === 'hours') return Math.max(1, Math.min(23, Math.floor(remainingAfterDays / 3600)) + 1)
+
+                                            const remainingAfterHours = Math.max(0, remainingAfterDays - (Math.min(parts.hours, Math.max(0, Math.floor(remainingAfterDays / 3600))) * 3600))
+                                            if (key === 'minutes') return Math.max(1, Math.min(59, Math.floor(remainingAfterHours / 60)) + 1)
+
+                                            return Math.max(1, Math.min(59, remainingAfterHours) + 1)
+                                          })() }, (_, index) => index).map((value) => (
+                                            <option key={value} value={value}>{value}</option>
+                                          ))}
+                                        </select>
+                                      </label>
+                                    ))}
+                                  </div>
+                                </div>
+
+                                <div className={styles.modifyUpgradeActions}>
+                                  <button type="button" className={styles.modifyUpgradeBackBtn} onClick={closeTownhallUpgradePopup}>← Back</button>
+                                  <button type="button" className={styles.modifyUpgradeSaveBtn} onClick={() => { void saveTownhallUpgradeTime() }} disabled={townhallUpgradePopup.saving}>
+                                    {townhallUpgradePopup.saving ? 'Saving...' : '✓ Update Time'}
+                                  </button>
+                                  <button type="button" className={styles.modifyUpgradeCancelBtn} onClick={() => { void cancelTownhallUpgrade() }}>
+                                    ✕ Cancel Upgrade
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className={styles.completeUpgradeOverlay} onClick={closeTownhallUpgradePopup}>
+                              <div className={styles.completeUpgradePopup} onClick={(event) => event.stopPropagation()}>
+                                <button type="button" className={styles.completeUpgradeCloseBtn} onClick={closeTownhallUpgradePopup} aria-label="Close town hall complete popup">
+                                  ×
+                                </button>
+
+                                <h3 className={styles.completeUpgradeTitle}>Complete Upgrade</h3>
+
+                                <div className={styles.completeUpgradeImagesRow}>
+                                  <div className={styles.completeUpgradeImageBlock}>
+                                    <img
+                                      src={`/src/assets/townhall/1_${Number(activeTownhallUpgrade.fromLevel || currentTownHallLevel)}.png`}
+                                      alt={`TH ${Number(activeTownhallUpgrade.fromLevel || currentTownHallLevel)}`}
+                                      className={styles.completeUpgradeImage}
+                                    />
+                                  </div>
+                                  <div className={styles.completeUpgradeArrow}>→</div>
+                                  <div className={styles.completeUpgradeImageBlock}>
+                                    <img
+                                      src={`/src/assets/townhall/1_${townhallUpgradeTargetLevel}.png`}
+                                      alt={`TH ${townhallUpgradeTargetLevel}`}
+                                      className={styles.completeUpgradeImage}
+                                    />
+                                  </div>
+                                </div>
+
+                                <p className={styles.completeUpgradePrompt}>
+                                  Do you wish to complete Town Hall upgrading from level {Number(activeTownhallUpgrade.fromLevel || currentTownHallLevel)} to level {townhallUpgradeTargetLevel}?
+                                </p>
+
+                                <div className={styles.completeUpgradeChoiceTitle}>Use Magic Item?</div>
+                                <div className={styles.completeUpgradeChoiceNote}>This will be used for historical upgrade records.</div>
+
+                                <div className={styles.completeUpgradeChoices} role="radiogroup" aria-label="Use magic item">
+                                  {[
+                                    ['none', 'None'],
+                                    ['book', 'Book'],
+                                    ['hammer', 'Hammer'],
+                                  ].map(([value, label]) => (
+                                    <label key={value} className={styles.completeUpgradeChoiceOption}>
+                                      <span className={styles.completeUpgradeChoiceLabel}>{label}</span>
+                                      <input
+                                        type="radio"
+                                        name="townhall-complete-upgrade"
+                                        value={value}
+                                        checked={townhallUpgradePopup.magicItem === value}
+                                        onChange={() => updateTownhallUpgradeMagicItem(value)}
+                                      />
+                                    </label>
+                                  ))}
+                                </div>
+
+                                <div className={styles.completeUpgradeActions}>
+                                  <button type="button" className={styles.completeUpgradeBackBtn} onClick={closeTownhallUpgradePopup}>← Back</button>
+                                  <button type="button" className={styles.completeUpgradeConfirmBtn} onClick={() => { void confirmTownhallUpgradeCompletion() }} disabled={townhallUpgradePopup.saving}>
+                                    {townhallUpgradePopup.saving ? 'Completing...' : '✓ Complete'}
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          ),
+                          document.body,
+                        ) : null
                       )}
 
                     </div>

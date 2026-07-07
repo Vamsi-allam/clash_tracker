@@ -128,7 +128,12 @@ export default function App() {
 	}
 
 	const handleLogout = async () => {
-		await supabase.auth.signOut()
+		try {
+			await supabase.auth.signOut()
+		} catch (error) {
+			console.warn('Global sign-out failed, clearing local session instead.', error)
+			await supabase.auth.signOut({ scope: 'local' })
+		}
 		setSession(null)
 		setProfile(null)
 		setView(authView)

@@ -17,6 +17,10 @@ CREATE TABLE IF NOT EXISTS public.user_villages (
   clan_name TEXT,
   clan_badge_url TEXT,
   clan_level INTEGER,
+  townhall_upgrade_started_at TIMESTAMP WITH TIME ZONE,
+  townhall_upgrade_finish_at TIMESTAMP WITH TIME ZONE,
+  townhall_upgrade_from_level INTEGER,
+  townhall_upgrade_to_level INTEGER,
   is_active BOOLEAN DEFAULT false,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()),
@@ -26,6 +30,18 @@ CREATE TABLE IF NOT EXISTS public.user_villages (
 -- Ensure existing databases have the builder_count column
 ALTER TABLE IF EXISTS public.user_villages
   ADD COLUMN IF NOT EXISTS builder_count INTEGER;
+
+ALTER TABLE IF EXISTS public.user_villages
+  ADD COLUMN IF NOT EXISTS townhall_upgrade_started_at TIMESTAMP WITH TIME ZONE;
+
+ALTER TABLE IF EXISTS public.user_villages
+  ADD COLUMN IF NOT EXISTS townhall_upgrade_finish_at TIMESTAMP WITH TIME ZONE;
+
+ALTER TABLE IF EXISTS public.user_villages
+  ADD COLUMN IF NOT EXISTS townhall_upgrade_from_level INTEGER;
+
+ALTER TABLE IF EXISTS public.user_villages
+  ADD COLUMN IF NOT EXISTS townhall_upgrade_to_level INTEGER;
 
 ALTER TABLE IF EXISTS public.user_villages
   ALTER COLUMN builder_count DROP DEFAULT;

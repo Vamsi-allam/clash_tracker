@@ -17,6 +17,18 @@ alter table if exists public.user_villages
   add column if not exists builder_count integer;
 
 alter table if exists public.user_villages
+  add column if not exists townhall_upgrade_started_at timestamptz;
+
+alter table if exists public.user_villages
+  add column if not exists townhall_upgrade_finish_at timestamptz;
+
+alter table if exists public.user_villages
+  add column if not exists townhall_upgrade_from_level integer;
+
+alter table if exists public.user_villages
+  add column if not exists townhall_upgrade_to_level integer;
+
+alter table if exists public.user_villages
   alter column builder_count drop default;
 
 alter table if exists public.user_village_buildings
