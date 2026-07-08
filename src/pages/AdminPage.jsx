@@ -94,6 +94,7 @@ export default function AdminPage({ username, onLogout }) {
   const navigate = useNavigate()
   const { townhallLevel } = useParams()
   const showTrapsTab = Number(townhallLevel) >= 3
+  const showSpellsTab = Number(townhallLevel) >= 5
   const showHeroesTab = Number(townhallLevel) >= 4
   const townhalls = Array.from({ length: 17 }, (_, i) => i + 2) // Town halls 2-18
   const [activeTab, setActiveTab] = useState('defenses')
@@ -128,7 +129,7 @@ export default function AdminPage({ username, onLogout }) {
         const inheritedSnapshot = getTownhallSnapshotForLevel(rows || [], selectedTownhall, staticDefaults)
         const merged = {}
 
-        ;[...(inheritedSnapshot.defences || []), ...(inheritedSnapshot.traps || []), ...(inheritedSnapshot.army || []), ...(inheritedSnapshot.resources || []), ...(inheritedSnapshot.troops || []), ...(inheritedSnapshot.heroes || [])].forEach((building) => {
+        ;[...(inheritedSnapshot.defences || []), ...(inheritedSnapshot.traps || []), ...(inheritedSnapshot.army || []), ...(inheritedSnapshot.resources || []), ...(inheritedSnapshot.troops || []), ...(inheritedSnapshot.spells || []), ...(inheritedSnapshot.heroes || [])].forEach((building) => {
           merged[building.id] = building
         })
         if (inheritedSnapshot.walls) {
@@ -168,6 +169,12 @@ export default function AdminPage({ username, onLogout }) {
       setActiveTab('defenses')
     }
   }, [activeTab, showHeroesTab])
+
+  useEffect(() => {
+    if (!showSpellsTab && activeTab === 'spells') {
+      setActiveTab('defenses')
+    }
+  }, [activeTab, showSpellsTab])
 
   const handleTownhallClick = (level) => {
     navigate(`/admin/${level}`)
@@ -247,6 +254,7 @@ export default function AdminPage({ username, onLogout }) {
           army: townhallRecord?.army || {},
           resources: townhallRecord?.resources || {},
           troops: townhallRecord?.troops || {},
+          spells: townhallRecord?.spells || {},
           heroes: townhallRecord?.heroes || {},
           walls: townhallRecord?.walls || {},
           traps: townhallRecord?.traps || [],
@@ -370,7 +378,7 @@ export default function AdminPage({ username, onLogout }) {
             )}
 
             <div className={styles.tabsContainer}>
-              {['defenses', ...(showTrapsTab ? ['traps'] : []), 'army', 'resources', 'troops', ...(showHeroesTab ? ['heroes'] : []), 'walls'].map((tab) => (
+              {['defenses', ...(showTrapsTab ? ['traps'] : []), 'army', 'resources', 'troops', ...(showSpellsTab ? ['spells'] : []), ...(showHeroesTab ? ['heroes'] : []), 'walls'].map((tab) => (
                 <button
                   key={tab}
                   className={`${styles.tab} ${activeTab === tab ? styles.tabActive : ''}`}
@@ -390,18 +398,22 @@ export default function AdminPage({ username, onLogout }) {
                 const levels = buildingData?.levels || []
                 const maxLevel = levels.length > 0 ? Math.max(...levels.map(l => l.level)) : 3
                 const barracksLevelNeeded = Number(buildingData?.barracks_level_unlocked ?? staticDefaults[building.id]?.barracks_level_unlocked ?? 1) || 1
+                const spellFactoryLevelNeeded = Number(buildingData?.spell_factory_level_unlocked ?? staticDefaults[building.id]?.spell_factory_level_unlocked ?? 1) || 1
                 const heroHallLevelNeeded = Number(buildingData?.hero_hall_level_unlocked ?? staticDefaults[building.id]?.hero_hall_level_unlocked ?? 1) || 1
                 
                 const getImagePath = () => {
                   if (building.id === 'archer_tower') return `16_${maxLevel}`
                   if (building.id === 'canon') return `18_${maxLevel}`
                   if (building.id === 'bomb') return `27_${maxLevel}`
+                  if (building.id === 'air_bomb') return `26_${maxLevel}`
                   if (building.id === 'spring_trap') return `30_${maxLevel}`
                   if (building.id === 'mortar') return `23_${maxLevel}`
+                  if (building.id === 'wizard_tower') return `24_${maxLevel}`
                   if (building.id === 'air_defense') return `14_${maxLevel}`
                   if (building.id === 'lab') return `13_${maxLevel}`
                   if (building.id === 'hero_hall') return `202_${maxLevel}`
                   if (building.id === 'army_camp') return `10_${maxLevel}`
+                  if (building.id === 'spell_factory') return `11_${maxLevel}`
                   if (building.id === 'barracks') return `8_${maxLevel}`
                   if (building.id === 'clan_castle') return `19_${maxLevel}`
                   if (building.id === 'walls') return `60_${maxLevel}`
@@ -415,6 +427,7 @@ export default function AdminPage({ username, onLogout }) {
                   if (building.id === 'goblin') return `34_${maxLevel}`
                   if (building.id === 'wall_breaker') return `35_${maxLevel}`
                   if (building.id === 'balloon') return `36_${maxLevel}`
+                  if (building.id === 'lightning_spell') return '43'
                   if (building.id === 'barbarian_king') return '61'
                   if (building.id === 'archer_queen') return '62'
                   if (building.id === 'grand_warden') return '63'
@@ -438,9 +451,9 @@ export default function AdminPage({ username, onLogout }) {
                     <div className={styles.buildingItemInfo}>
                       <div className={styles.buildingItemHeader}>
                         <p className={styles.buildingItemName}>{building.name}</p>
-                        {buildingData?.buildings_unlocked != null && (
+                        {buildingData?.buildings_unlocked != null && activeTab !== 'spells' && activeTab !== 'heroes' && (
                           <p className={styles.buildingItemCount}>
-                            Count: {buildingData.buildings_unlocked}
+                            {activeTab === 'troops' ? 'Level Count' : 'Count'}: {buildingData.buildings_unlocked}
                           </p>
                         )}
                         {activeTab !== 'troops' && (
@@ -452,6 +465,13 @@ export default function AdminPage({ username, onLogout }) {
                           <>
                             <p className={styles.buildingItemCount}>
                               Barracks level needed: {barracksLevelNeeded}
+                            </p>
+                          </>
+                        )}
+                        {activeTab === 'spells' && (
+                          <>
+                            <p className={styles.buildingItemCount}>
+                              Spell Factory level needed: {spellFactoryLevelNeeded}
                             </p>
                           </>
                         )}
@@ -483,6 +503,11 @@ export default function AdminPage({ username, onLogout }) {
                                 <span className={styles.levelCost}>{formatCost(level.cost)}</span>
                                 <span className={styles.levelTime}>{timeDisplay}</span>
                                 {activeTab === 'troops' && (
+                                  <span className={styles.levelNumber}>
+                                    Lab Lvl: {Number(level.lab_level_unlocked ?? 0)}
+                                  </span>
+                                )}
+                                {activeTab === 'spells' && (
                                   <span className={styles.levelNumber}>
                                     Lab Lvl: {Number(level.lab_level_unlocked ?? 0)}
                                   </span>

@@ -14,6 +14,9 @@ create table if not exists public.profiles (
 );
 
 alter table if exists public.townhall_buildings
+  add column if not exists spells jsonb default '{}'::jsonb;
+
+alter table if exists public.townhall_buildings
   add column if not exists heroes jsonb default '{}'::jsonb;
 
 alter table if exists public.user_villages

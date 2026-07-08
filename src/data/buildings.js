@@ -14,12 +14,14 @@ export const BUILDING_SECTIONS = {
   ],
   traps: [
     { id: 'bomb', name: 'Bomb', image: '/src/assets/Traps/Bomb' },
+    { id: 'air_bomb', name: 'Air Bomb', image: '/src/assets/Traps/Air_Bomb' },
     { id: 'spring_trap', name: 'Spring Trap', image: '/src/assets/Traps/Spring_Trap' },
   ],
   army: [
     { id: 'army_camp', name: 'Army Camp', image: '/src/assets/Army/Army_Camp' },
     { id: 'barracks', name: 'Barracks', image: '/src/assets/Army/Barracks' },
     { id: 'clan_castle', name: 'Clan Castle', image: '/src/assets/Army/clan_castle' },
+    { id: 'spell_factory', name: 'Spell Factory', image: '/src/assets/Army/Spell_Factory' },
     { id: 'lab', name: 'Lab', image: '/src/assets/Army/Lab' },
     { id: 'hero_hall', name: 'Hero Hall', image: '/src/assets/Army/Hero_Hall' },
   ],
@@ -36,6 +38,9 @@ export const BUILDING_SECTIONS = {
     { id: 'goblin', name: 'Goblin', image: '/src/assets/Troops/Goblin' },
     { id: 'wall_breaker', name: 'Wall Breaker', image: '/src/assets/Troops/Wall_breaker' },
     { id: 'balloon', name: 'Balloon', image: '/src/assets/Troops/Ballon' },
+  ],
+  spells: [
+    { id: 'lightning_spell', name: 'Lightning Spell', image: '/src/assets/spells/Lightning_Spell' },
   ],
   heroes: [
     { id: 'barbarian_king', name: 'Barbarian King', image: '/src/assets/Heros/Barbarian_King' },
@@ -56,6 +61,7 @@ export const ADMIN_BUILDINGS_BY_CATEGORY = {
   army: BUILDING_SECTIONS.army,
   resources: BUILDING_SECTIONS.resources,
   troops: BUILDING_SECTIONS.troops,
+  spells: BUILDING_SECTIONS.spells,
   heroes: BUILDING_SECTIONS.heroes,
   walls: BUILDING_SECTIONS.walls,
 }
@@ -66,15 +72,21 @@ export const ALL_BUILDINGS = [
   ...BUILDING_SECTIONS.army,
   ...BUILDING_SECTIONS.resources,
   ...BUILDING_SECTIONS.troops,
+  ...BUILDING_SECTIONS.spells,
   ...BUILDING_SECTIONS.heroes,
   ...BUILDING_SECTIONS.walls,
 ]
 
 export const TROOP_BUILDING_IDS = new Set(BUILDING_SECTIONS.troops.map((building) => building.id))
+export const SPELL_BUILDING_IDS = new Set(BUILDING_SECTIONS.spells.map((building) => building.id))
 export const HERO_BUILDING_IDS = new Set(BUILDING_SECTIONS.heroes.map((building) => building.id))
 
 export const TROOP_BARRACKS_REQUIREMENTS = Object.fromEntries(
   BUILDING_SECTIONS.troops.map((building, index) => [building.id, index + 1]),
+)
+
+export const SPELL_FACTORY_REQUIREMENTS = Object.fromEntries(
+  BUILDING_SECTIONS.spells.map((building, index) => [building.id, index + 1]),
 )
 
 export const getBuildingCategory = (buildingId) => {
@@ -83,6 +95,7 @@ export const getBuildingCategory = (buildingId) => {
   if (BUILDING_SECTIONS.army.some((building) => building.id === buildingId)) return 'army'
   if (BUILDING_SECTIONS.resources.some((building) => building.id === buildingId)) return 'resources'
   if (BUILDING_SECTIONS.troops.some((building) => building.id === buildingId)) return 'troops'
+  if (BUILDING_SECTIONS.spells.some((building) => building.id === buildingId)) return 'spells'
   if (BUILDING_SECTIONS.heroes.some((building) => building.id === buildingId)) return 'heroes'
   if (BUILDING_SECTIONS.walls.some((building) => building.id === buildingId)) return 'walls'
   return 'defences'
@@ -176,6 +189,48 @@ export const getDefaultBuildingData = (townhallLevel) => {
         hero_hall_level_unlocked: 1,
         levels: [
           { level: 1, cost: 0, resource: 'dark_elixir', time: '0sec', hero_hall_level_unlocked: 1 },
+        ],
+      },
+    }
+  }
+
+  if (Number(townhallLevel) === 5) {
+    return {
+      lightning_spell: {
+        id: 'lightning_spell',
+        image_path: '/src/assets/spells/Lightning_Spell/43_',
+        buildings_unlocked: 1,
+        copy_unlocks: createCopyUnlocks(1, 1),
+        spell_factory_level_unlocked: 1,
+        levels: [
+          { level: 1, cost: 0, resource: 'elixir', time: '0sec', lab_level_unlocked: 1 },
+        ],
+      },
+      spell_factory: {
+        id: 'spell_factory',
+        image_path: '/src/assets/Army/Spell_Factory/11_',
+        buildings_unlocked: 1,
+        copy_unlocks: createCopyUnlocks(1, 1),
+        levels: [
+          { level: 1, cost: 0, resource: 'elixir', time: '0sec' },
+        ],
+      },
+      air_bomb: {
+        id: 'air_bomb',
+        image_path: '/src/assets/Traps/Air_Bomb/26_',
+        buildings_unlocked: 1,
+        copy_unlocks: createCopyUnlocks(1, 1),
+        levels: [
+          { level: 1, cost: 0, resource: 'gold', time: '0sec' },
+        ],
+      },
+      wizard_tower: {
+        id: 'wizard_tower',
+        image_path: '/src/assets/Defences/wizard_tower/24_',
+        buildings_unlocked: 1,
+        copy_unlocks: createCopyUnlocks(1, 1),
+        levels: [
+          { level: 1, cost: 0, resource: 'gold', time: '0sec' },
         ],
       },
     }
