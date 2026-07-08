@@ -8,6 +8,7 @@ export const BUILDING_SECTIONS = {
     { id: 'mortar', name: 'Mortar', image: '/src/assets/Defences/mortar' },
     { id: 'wizard_tower', name: 'Wizard Tower', image: '/src/assets/Defences/wizard_tower' },
     { id: 'air_defense', name: 'Air Defense', image: '/src/assets/Defences/air_defense' },
+    { id: 'air_sweeper', name: 'Air Sweeper', image: '/src/assets/Defences/air_sweeper' },
     { id: 'inferno_tower', name: 'Inferno Tower', image: '/src/assets/Defences/Inferno_tower' },
     { id: 'x_bow', name: 'X-Bow', image: '/src/assets/Defences/x-bow' },
     { id: 'eagle_artillery', name: 'Eagle Artillery', image: '/src/assets/Defences/Eagle_Artillery' },
@@ -241,6 +242,26 @@ export const getDefaultBuildingData = (townhallLevel) => {
         barracks_level_unlocked: 7,
         levels: [
           { level: 1, cost: 0, resource: 'elixir', time: '0sec', lab_level_unlocked: 1 },
+        ],
+      },
+    }
+  }
+
+  if (Number(townhallLevel) === 6) {
+    return {
+      air_sweeper: {
+        id: 'air_sweeper',
+        image_path: '/src/assets/Defences/air_sweeper/15_',
+        buildings_unlocked: 1,
+        copy_unlocks: createCopyUnlocks(1, 1),
+        levels: [
+          { level: 1, cost: 0, resource: 'gold', time: '0sec' },
+          { level: 2, cost: 5000, resource: 'gold', time: '30min' },
+          { level: 3, cost: 25000, resource: 'gold', time: '2hr' },
+          { level: 4, cost: 50000, resource: 'gold', time: '4hr' },
+          { level: 5, cost: 100000, resource: 'gold', time: '6hr' },
+          { level: 6, cost: 200000, resource: 'gold', time: '8hr' },
+          { level: 7, cost: 400000, resource: 'gold', time: '12hr' },
         ],
       },
     }

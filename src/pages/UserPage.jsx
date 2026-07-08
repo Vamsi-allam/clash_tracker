@@ -311,6 +311,7 @@ const clearTownhallSnapshotCache = (villageId) => {
 const canonImages = import.meta.glob('../assets/Defences/canon/*.png', { eager: true, import: 'default' })
 const mortarImages = import.meta.glob('../assets/Defences/mortar/*.png', { eager: true, import: 'default' })
 const airDefenseImages = import.meta.glob('../assets/Defences/air_defense/*.png', { eager: true, import: 'default' })
+const airSweeperImages = import.meta.glob('../assets/Defences/air_sweeper/*.png', { eager: true, import: 'default' })
 const wizardTowerImages = import.meta.glob('../assets/Defences/wizard_tower/*.png', { eager: true, import: 'default' })
 const bombImages = import.meta.glob('../assets/Traps/Bomb/*.png', { eager: true, import: 'default' })
 const airBombImages = import.meta.glob('../assets/Traps/Air_Bomb/*.png', { eager: true, import: 'default' })
@@ -1500,11 +1501,6 @@ export default function UserPage({ username, onLogout, userId }) {
 
     return Math.max(wallPieces - otherWalls, 0)
   }
-  const defenseSortPriority = {
-    canon: 0,
-    archer_tower: 1,
-  }
-
   const trapSortPriority = {
     bomb: 0,
     spring_trap: 1,
@@ -1523,9 +1519,6 @@ export default function UserPage({ username, onLogout, userId }) {
   const visibleDefenseBuildings = [...(structureCatalog.defences || [])]
     .filter((building) => building?.id)
     .sort((left, right) => {
-      const leftPriority = defenseSortPriority[left.id] ?? 2
-      const rightPriority = defenseSortPriority[right.id] ?? 2
-      if (leftPriority !== rightPriority) return leftPriority - rightPriority
       return (left.name || formatStructureName(left.id)).localeCompare(right.name || formatStructureName(right.id))
     })
   const visibleTrapBuildings = showTrapsTab
@@ -1555,9 +1548,6 @@ export default function UserPage({ username, onLogout, userId }) {
   const editDefenseBuildings = [...(structureCatalog.defences || [])]
     .filter((building) => building?.id)
     .sort((left, right) => {
-      const leftPriority = defenseSortPriority[left.id] ?? 2
-      const rightPriority = defenseSortPriority[right.id] ?? 2
-      if (leftPriority !== rightPriority) return leftPriority - rightPriority
       return (left.name || formatStructureName(left.id)).localeCompare(right.name || formatStructureName(right.id))
     })
   const editTrapBuildings = [...visibleTrapBuildings]
@@ -2641,6 +2631,7 @@ export default function UserPage({ username, onLogout, userId }) {
       canon: (imageLevel) => canonImages[`../assets/Defences/canon/18_${imageLevel}.png`] || '',
       mortar: (imageLevel) => mortarImages[`../assets/Defences/mortar/23_${imageLevel}.png`] || '',
       air_defense: (imageLevel) => airDefenseImages[`../assets/Defences/air_defense/14_${imageLevel}.png`] || '',
+      air_sweeper: (imageLevel) => airSweeperImages[`../assets/Defences/air_sweeper/15_${imageLevel}.png`] || '',
       bomb: (imageLevel) => bombImages[`../assets/Traps/Bomb/27_${imageLevel}.png`] || '',
       air_bomb: (imageLevel) => airBombImages[`../assets/Traps/Air_Bomb/26_${imageLevel}.png`] || '',
       spring_trap: (imageLevel) => springTrapImages[`../assets/Traps/Spring_Trap/30_${imageLevel}.png`] || '',
