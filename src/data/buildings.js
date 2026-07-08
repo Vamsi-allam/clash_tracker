@@ -22,6 +22,7 @@ export const BUILDING_SECTIONS = {
   army: [
     { id: 'army_camp', name: 'Army Camp', image: '/src/assets/Army/Army_Camp' },
     { id: 'barracks', name: 'Barracks', image: '/src/assets/Army/Barracks' },
+    { id: 'dark_barracks', name: 'Dark Barracks', image: '/src/assets/Army/Dark_Barracks' },
     { id: 'clan_castle', name: 'Clan Castle', image: '/src/assets/Army/clan_castle' },
     { id: 'spell_factory', name: 'Spell Factory', image: '/src/assets/Army/Spell_Factory' },
     { id: 'lab', name: 'Lab', image: '/src/assets/Army/Lab' },
@@ -47,6 +48,9 @@ export const BUILDING_SECTIONS = {
     { id: 'lightning_spell', name: 'Lightning Spell', image: '/src/assets/spells/Lightning_Spell' },
     { id: 'healing_spell', name: 'Healing Spell', image: '/src/assets/spells/Healing_Spell' },
   ],
+  dark_troops: [
+    { id: 'minion', name: 'Minion', image: '/src/assets/Dark_Troops/Minion' },
+  ],
   heroes: [
     { id: 'barbarian_king', name: 'Barbarian King', image: '/src/assets/Heros/Barbarian_King' },
     { id: 'archer_queen', name: 'Archer Queen', image: '/src/assets/Heros/Archer_Queen' },
@@ -67,6 +71,7 @@ export const ADMIN_BUILDINGS_BY_CATEGORY = {
   resources: BUILDING_SECTIONS.resources,
   troops: BUILDING_SECTIONS.troops,
   spells: BUILDING_SECTIONS.spells,
+  dark_troops: BUILDING_SECTIONS.dark_troops,
   heroes: BUILDING_SECTIONS.heroes,
   walls: BUILDING_SECTIONS.walls,
 }
@@ -78,16 +83,22 @@ export const ALL_BUILDINGS = [
   ...BUILDING_SECTIONS.resources,
   ...BUILDING_SECTIONS.troops,
   ...BUILDING_SECTIONS.spells,
+  ...BUILDING_SECTIONS.dark_troops,
   ...BUILDING_SECTIONS.heroes,
   ...BUILDING_SECTIONS.walls,
 ]
 
 export const TROOP_BUILDING_IDS = new Set(BUILDING_SECTIONS.troops.map((building) => building.id))
+export const DARK_TROOP_BUILDING_IDS = new Set(BUILDING_SECTIONS.dark_troops.map((building) => building.id))
 export const SPELL_BUILDING_IDS = new Set(BUILDING_SECTIONS.spells.map((building) => building.id))
 export const HERO_BUILDING_IDS = new Set(BUILDING_SECTIONS.heroes.map((building) => building.id))
 
 export const TROOP_BARRACKS_REQUIREMENTS = Object.fromEntries(
   BUILDING_SECTIONS.troops.map((building, index) => [building.id, index + 1]),
+)
+
+export const DARK_TROOP_BARRACKS_REQUIREMENTS = Object.fromEntries(
+  BUILDING_SECTIONS.dark_troops.map((building, index) => [building.id, index + 1]),
 )
 
 export const SPELL_FACTORY_REQUIREMENTS = Object.fromEntries(
@@ -101,6 +112,7 @@ export const getBuildingCategory = (buildingId) => {
   if (BUILDING_SECTIONS.resources.some((building) => building.id === buildingId)) return 'resources'
   if (BUILDING_SECTIONS.troops.some((building) => building.id === buildingId)) return 'troops'
   if (BUILDING_SECTIONS.spells.some((building) => building.id === buildingId)) return 'spells'
+  if (BUILDING_SECTIONS.dark_troops.some((building) => building.id === buildingId)) return 'dark_troops'
   if (BUILDING_SECTIONS.heroes.some((building) => building.id === buildingId)) return 'heroes'
   if (BUILDING_SECTIONS.walls.some((building) => building.id === buildingId)) return 'walls'
   return 'defences'
@@ -299,6 +311,36 @@ export const getDefaultBuildingData = (townhallLevel) => {
         spell_factory_level_unlocked: 2,
         levels: [
           { level: 1, cost: 0, resource: 'elixir', time: '0sec', lab_level_unlocked: 1 },
+        ],
+      },
+    }
+  }
+
+  if (Number(townhallLevel) === 7) {
+    return {
+      dark_barracks: {
+        id: 'dark_barracks',
+        image_path: '/src/assets/Army/Dark_Barracks/9_',
+        buildings_unlocked: 1,
+        copy_unlocks: createCopyUnlocks(1, 1),
+        levels: [
+          { level: 1, cost: 0, resource: 'elixir', time: '0sec' },
+          { level: 2, cost: 25000, resource: 'elixir', time: '2hr' },
+          { level: 3, cost: 60000, resource: 'elixir', time: '4hr' },
+          { level: 4, cost: 120000, resource: 'elixir', time: '6hr' },
+          { level: 5, cost: 250000, resource: 'elixir', time: '8hr' },
+          { level: 6, cost: 500000, resource: 'elixir', time: '12hr' },
+          { level: 7, cost: 900000, resource: 'elixir', time: '16hr' },
+        ],
+      },
+      minion: {
+        id: 'minion',
+        image_path: '/src/assets/Dark_Troops/Minion/53_',
+        buildings_unlocked: 1,
+        copy_unlocks: [true],
+        dark_barracks_level_unlocked: 1,
+        levels: [
+          { level: 1, cost: 0, resource: 'dark_elixir', time: '0sec', lab_level_unlocked: 1 },
         ],
       },
     }
