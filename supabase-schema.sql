@@ -13,6 +13,9 @@ create table if not exists public.profiles (
   updated_at timestamptz not null default timezone('utc', now())
 );
 
+alter table if exists public.townhall_buildings
+  add column if not exists heroes jsonb default '{}'::jsonb;
+
 alter table if exists public.user_villages
   add column if not exists builder_count integer;
 

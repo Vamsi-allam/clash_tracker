@@ -18,7 +18,7 @@ import Header from '../components/Header'
 import ToastNotification from '../components/ToastNotification'
 import { supabase } from '../supabaseClient'
 import { getTownhallSnapshotForLevel } from '../utils/townhallSnapshot'
-import { BUILDING_SECTIONS, TROOP_BARRACKS_REQUIREMENTS, TROOP_BUILDING_IDS, getDefaultBuildingData } from '../data/buildings'
+import { BUILDING_SECTIONS, TROOP_BARRACKS_REQUIREMENTS, TROOP_BUILDING_IDS, HERO_BUILDING_IDS, getDefaultBuildingData } from '../data/buildings'
 
 // Convert API asset URL to proxied URL
 const getProxiedAssetUrl = (assetUrl) => {
@@ -137,6 +137,10 @@ const getTroopBarracksRequirement = (building) => {
   return Math.max(fallbackRequirement, Number(building?.barracks_level_unlocked) || 0)
 }
 
+const getHeroHallUnlockRequirement = (building) => {
+  return Math.max(1, Number(building?.hero_hall_level_unlocked) || 0)
+}
+
 const getCurrentBarracksLevel = (structureLevels = {}) => {
   const barracksLevels = Array.isArray(structureLevels?.barracks) ? structureLevels.barracks : []
   return barracksLevels.reduce((highest, value) => Math.max(highest, Number(value) || 0), 0)
@@ -147,10 +151,15 @@ const getCurrentLabLevel = (structureLevels = {}) => {
   return labLevels.reduce((highest, value) => Math.max(highest, Number(value) || 0), 0)
 }
 
+const getCurrentHeroHallLevel = (structureLevels = {}) => {
+  const heroHallLevels = Array.isArray(structureLevels?.hero_hall) ? structureLevels.hero_hall : []
+  return heroHallLevels.reduce((highest, value) => Math.max(highest, Number(value) || 0), 0)
+}
+
 const getAllowedBuildingRowIdsForSnapshot = (snapshot = {}) => {
   const rowIds = new Set()
 
-  ;['defences', 'traps', 'army', 'resources', 'troops'].forEach((categoryKey) => {
+  ;['defences', 'traps', 'army', 'resources', 'troops', 'heroes'].forEach((categoryKey) => {
     const category = Array.isArray(snapshot?.[categoryKey]) ? snapshot[categoryKey] : []
 
     category.forEach((building) => {
@@ -310,6 +319,12 @@ const giantTroopImages = import.meta.glob('../assets/Troops/Giant/*.png', { eage
 const goblinTroopImages = import.meta.glob('../assets/Troops/Goblin/*.png', { eager: true, import: 'default' })
 const wallBreakerImages = import.meta.glob('../assets/Troops/Wall_breaker/*.png', { eager: true, import: 'default' })
 const balloonTroopImages = import.meta.glob('../assets/Troops/Ballon/*.png', { eager: true, import: 'default' })
+const barbarianKingImages = import.meta.glob('../assets/Heros/Barbarian_King/*.png', { eager: true, import: 'default' })
+const archerQueenImages = import.meta.glob('../assets/Heros/Archer_Queen/*.png', { eager: true, import: 'default' })
+const grandWardenImages = import.meta.glob('../assets/Heros/Grand_Warden/*.png', { eager: true, import: 'default' })
+const royalChampionImages = import.meta.glob('../assets/Heros/Royal_Champion/*.png', { eager: true, import: 'default' })
+const minionPrinceImages = import.meta.glob('../assets/Heros/Minion_Prince/*.png', { eager: true, import: 'default' })
+const dragonDukeImages = import.meta.glob('../assets/Heros/Dragon_Duke/*.png', { eager: true, import: 'default' })
 const upgradeResourceIcons = {
   gold: '/src/assets/magic-items/gold.png',
   elixir: '/src/assets/magic-items/elixir.png',
@@ -331,7 +346,7 @@ export default function UserPage({ username, onLogout, userId }) {
   const [wallConfig, setWallConfig] = useState(null)
   const [wallCounts, setWallCounts] = useState({})
   const [wallLoading, setWallLoading] = useState(false)
-  const [structureCatalog, setStructureCatalog] = useState({ defences: [], traps: [], army: [], resources: [], troops: [] })
+  const [structureCatalog, setStructureCatalog] = useState({ defences: [], traps: [], army: [], resources: [], troops: [], heroes: [] })
   const [structureLevels, setStructureLevels] = useState({})
   const [structuresLoading, setStructuresLoading] = useState(false)
   const [refreshingVillage, setRefreshingVillage] = useState(false)
@@ -355,6 +370,7 @@ export default function UserPage({ username, onLogout, userId }) {
   const suppressSnapshotRefreshRef = useRef(false)
   const currentBarracksLevel = getCurrentBarracksLevel(structureLevels)
   const currentLabLevel = getCurrentLabLevel(structureLevels)
+  const currentHeroHallLevel = getCurrentHeroHallLevel(structureLevels)
   const showTrapsTab = Number(activeVillage?.townhall_level || 0) >= 3
   const showHeroesTab = Number(activeVillage?.townhall_level || 0) >= 4
   const displayedLoadedTab = !showTrapsTab && activeLoadedTab === 'traps'
@@ -818,6 +834,7 @@ export default function UserPage({ username, onLogout, userId }) {
     const normalizedArmy = normalizeStructures(data?.army)
     const normalizedResources = normalizeStructures(data?.resources)
     const normalizedTroops = normalizeStructures(data?.troops)
+    const normalizedHeroes = normalizeStructures(data?.heroes)
 
     return {
       defences: normalizedDefences,
@@ -825,6 +842,7 @@ export default function UserPage({ username, onLogout, userId }) {
       army: normalizedArmy,
       resources: normalizedResources,
       troops: normalizedTroops,
+      heroes: normalizedHeroes,
       walls: normalizeWalls(data?.walls),
     }
   }
@@ -898,7 +916,7 @@ export default function UserPage({ username, onLogout, userId }) {
       }
 
       const initialLevels = {}
-      ;[...normalizedData.defences, ...normalizedData.traps, ...normalizedData.army, ...normalizedData.resources, ...normalizedData.troops].forEach((building) => {
+      ;[...normalizedData.defences, ...normalizedData.traps, ...normalizedData.army, ...normalizedData.resources, ...normalizedData.troops, ...normalizedData.heroes].forEach((building) => {
         const savedRowsForBuilding = savedStructureRows.filter((row) => row.building_id?.startsWith(`${building.id}-`))
         const rowCount = getStructureRowCount(building, savedRowsForBuilding)
         initialLevels[building.id] = Array.from({ length: rowCount }, (_, index) => {
@@ -1014,14 +1032,14 @@ export default function UserPage({ username, onLogout, userId }) {
         villageId,
       })
       if (!data) {
-        setStructureCatalog({ defences: [], traps: [], army: [], resources: [], troops: [] })
+        setStructureCatalog({ defences: [], traps: [], army: [], resources: [], troops: [], heroes: [] })
         setStructureLevels({})
         setWallConfig(null)
         setWallCounts({})
       }
     } catch (fetchError) {
       console.error('Failed to load townhall structures:', fetchError)
-      setStructureCatalog({ defences: [], traps: [], army: [], resources: [], troops: [] })
+      setStructureCatalog({ defences: [], traps: [], army: [], resources: [], troops: [], heroes: [] })
       setStructureLevels({})
       setWallConfig(null)
       setWallCounts({})
@@ -1520,7 +1538,7 @@ export default function UserPage({ username, onLogout, userId }) {
         : activeLoadedTab === 'troops'
           ? (structureCatalog.troops || [])
           : activeLoadedTab === 'heroes'
-            ? []
+            ? (structureCatalog.heroes || [])
           : []
 
   const isWallsTabActive = activeLoadedTab === 'walls'
@@ -1542,6 +1560,7 @@ export default function UserPage({ username, onLogout, userId }) {
     army: getPendingUpgradeCountForBuildings(visibleArmyBuildings),
     resources: getPendingUpgradeCountForBuildings(visibleResourceBuildings),
     troops: getPendingUpgradeCountForBuildings(structureCatalog.troops || []),
+    heroes: getPendingUpgradeCountForBuildings(structureCatalog.heroes || []),
     walls: 0,
   }
 
@@ -1638,11 +1657,13 @@ export default function UserPage({ username, onLogout, userId }) {
     return styles.readOnlyResourceCostGold
   }
 
-  const getUpgradeSummary = (building, currentLevel, labLevel = 0) => {
+  const getUpgradeSummary = (building, currentLevel, labLevel = 0, heroHallLevel = 0) => {
     const allNextLevels = getNextUpgradeLevels(building, currentLevel)
     const nextLevels = TROOP_BUILDING_IDS.has(String(building?.id || ''))
       ? allNextLevels.filter((level) => Number(level.lab_level_unlocked ?? 0) <= Number(labLevel || 0))
-      : allNextLevels
+      : HERO_BUILDING_IDS.has(String(building?.id || ''))
+        ? allNextLevels.filter((level) => Number(level.hero_hall_level_unlocked ?? 0) <= Number(heroHallLevel || 0))
+        : allNextLevels
     const totalCost = nextLevels.reduce((total, level) => total + Number(level.cost || 0), 0)
     const totalSeconds = nextLevels.reduce((total, level) => total + getTimeSeconds(level.time), 0)
 
@@ -2133,7 +2154,12 @@ export default function UserPage({ username, onLogout, userId }) {
       return
     }
 
-    const nextLevel = getNextUpgradeLevels(building, rowState.rowLevel)[0]
+    if (HERO_BUILDING_IDS.has(String(building.id || '')) && rowState.labRequirementLevel != null && rowState.visibleNextLevels.length === 0) {
+      showToast(`Hero Hall level ${rowState.labRequirementLevel} is required to upgrade this hero.`, 'error')
+      return
+    }
+
+    const nextLevel = rowState.visibleNextLevels?.[0] || getNextUpgradeLevels(building, rowState.rowLevel)[0]
     if (!nextLevel) return
 
     const durationSeconds = Math.max(0, getTimeSeconds(nextLevel.time))
@@ -2272,24 +2298,42 @@ export default function UserPage({ username, onLogout, userId }) {
   }
 
   const computeHeroesCompletion = () => {
-    const heroHall = (structureCatalog.army || []).find((building) => building?.id === 'hero_hall')
-    if (!heroHall) return 0
-
-    const maxLevel = Math.max(...(heroHall.levels || []).map((level) => Number(level.level || 0)), 0)
-    if (maxLevel <= 0) return 0
-
-    const rows = getStructureRowCount(heroHall, structureLevels[heroHall.id] || [])
-    if (!rows) return 0
-
-    const levelsArray = structureLevels[heroHall.id] || Array.from({ length: rows }, (_, index) => getDefaultRowLevel(heroHall, index, isCopyUnlocked(heroHall, index)))
+    const buildings = [...(structureCatalog.heroes || [])]
+    if (!buildings || buildings.length === 0) return 0
 
     let totalRatio = 0
-    for (let index = 0; index < rows; index += 1) {
-      const currentLevel = Number(levelsArray[index] || 0)
-      totalRatio += currentLevel / maxLevel
-    }
+    let count = 0
 
-    return Math.round((totalRatio / rows) * 100)
+    buildings.forEach((building) => {
+      const heroRequirement = getHeroHallUnlockRequirement(building)
+      if (currentHeroHallLevel < heroRequirement) {
+        count += 1
+        return
+      }
+
+      const levels = (building.levels || []).map((level) => ({
+        ...level,
+        hero_hall_level_unlocked: Number(level?.hero_hall_level_unlocked ?? 0),
+      }))
+      const availableLevels = levels.filter((level) => level.hero_hall_level_unlocked <= Number(currentHeroHallLevel || 0))
+      const maxLevel = Math.max(...availableLevels.map((level) => Number(level.level || 0)), 0)
+      if (maxLevel <= 0) {
+        count += 1
+        return
+      }
+
+      const rows = getStructureRowCount(building, structureLevels[building.id] || [])
+      const levelsArray = structureLevels[building.id] || Array.from({ length: rows }, () => 0)
+
+      for (let i = 0; i < rows; i += 1) {
+        const currentLevel = Number(levelsArray[i] || 0)
+        totalRatio += Math.min(currentLevel, maxLevel) / maxLevel
+        count += 1
+      }
+    })
+
+    if (count === 0) return 0
+    return Math.round((totalRatio / count) * 100)
   }
 
   useEffect(() => {
@@ -2404,6 +2448,10 @@ export default function UserPage({ username, onLogout, userId }) {
           : Array.from({ length: rowCount }, (_, index) => getDefaultRowLevel(building, index, isCopyUnlocked(building, index)))
 
         for (let rowIndex = 0; rowIndex < rowCount; rowIndex += 1) {
+          if (HERO_BUILDING_IDS.has(String(building?.id || '')) && Number(currentHeroHallLevel || 0) < getHeroHallUnlockRequirement(building)) {
+            continue
+          }
+
           const rowBuildingId = `${building.id}-${rowIndex + 1}`
           const pendingUpgrade = getPendingUpgradeForRow(activeVillage?.id, rowBuildingId, rowIndex)
           const rowLevel = pendingUpgrade
@@ -2411,7 +2459,9 @@ export default function UserPage({ username, onLogout, userId }) {
             : Number(levelsArray[rowIndex] ?? getDefaultRowLevel(building, rowIndex, isCopyUnlocked(building, rowIndex)))
           const nextLevels = TROOP_BUILDING_IDS.has(String(building?.id || ''))
             ? getNextUpgradeLevels(building, rowLevel).filter((levelInfo) => Number(levelInfo.lab_level_unlocked ?? 0) <= Number(currentLabLevel || 0))
-            : getNextUpgradeLevels(building, rowLevel)
+            : HERO_BUILDING_IDS.has(String(building?.id || ''))
+              ? getNextUpgradeLevels(building, rowLevel).filter((levelInfo) => Number(levelInfo.hero_hall_level_unlocked ?? 0) <= Number(currentHeroHallLevel || 0))
+              : getNextUpgradeLevels(building, rowLevel)
           remainingBetaTotalUpgrades += nextLevels.length
 
           nextLevels.forEach((levelInfo) => {
@@ -2481,7 +2531,6 @@ export default function UserPage({ username, onLogout, userId }) {
 
   const getBuildingImagePath = (building, level) => {
     const requestedLevel = Math.max(0, Number(level) || 0)
-    const fallbackLevel = requestedLevel === 0 ? 1 : requestedLevel
 
     const buildingId = building?.id
     const imageMap = {
@@ -2506,6 +2555,12 @@ export default function UserPage({ username, onLogout, userId }) {
       goblin: (imageLevel) => goblinTroopImages[`../assets/Troops/Goblin/34_${imageLevel}.png`] || '',
       wall_breaker: (imageLevel) => wallBreakerImages[`../assets/Troops/Wall_breaker/35_${imageLevel}.png`] || '',
       balloon: (imageLevel) => balloonTroopImages[`../assets/Troops/Ballon/36_${imageLevel}.png`] || '',
+      barbarian_king: (imageLevel) => imageLevel === 0 ? (barbarianKingImages['../assets/Heros/Barbarian_King/61_0.png'] || '') : (barbarianKingImages['../assets/Heros/Barbarian_King/61.png'] || ''),
+      archer_queen: (imageLevel) => imageLevel === 0 ? (archerQueenImages['../assets/Heros/Archer_Queen/62_0.png'] || '') : (archerQueenImages['../assets/Heros/Archer_Queen/62.png'] || ''),
+      grand_warden: (imageLevel) => imageLevel === 0 ? (grandWardenImages['../assets/Heros/Grand_Warden/63_0.png'] || '') : (grandWardenImages['../assets/Heros/Grand_Warden/63.png'] || ''),
+      royal_champion: (imageLevel) => imageLevel === 0 ? (royalChampionImages['../assets/Heros/Royal_Champion/122_0.png'] || '') : (royalChampionImages['../assets/Heros/Royal_Champion/122.png'] || ''),
+      minion_prince: (imageLevel) => imageLevel === 0 ? (minionPrinceImages['../assets/Heros/Minion_Prince/208_0.png'] || '') : (minionPrinceImages['../assets/Heros/Minion_Prince/208.png'] || ''),
+      dragon_duke: (imageLevel) => imageLevel === 0 ? (dragonDukeImages['../assets/Heros/Dragon_Duke/260_0.png'] || '') : (dragonDukeImages['../assets/Heros/Dragon_Duke/260.png'] || ''),
     }
 
     const prefix = imageMap[buildingId]
@@ -2513,14 +2568,11 @@ export default function UserPage({ username, onLogout, userId }) {
     if (prefix) {
       const requestedImage = prefix(requestedLevel)
       if (requestedImage) return requestedImage
-      return requestedLevel === 0 ? prefix(fallbackLevel) : ''
+      return ''
     }
 
     if (building?.image_path) {
-      if (requestedLevel > 0) {
-        return `${building.image_path}${requestedLevel}.png`
-      }
-      return `${building.image_path}${fallbackLevel}.png`
+      return `${building.image_path}${requestedLevel}.png`
     }
 
     return ''
@@ -2544,7 +2596,7 @@ export default function UserPage({ username, onLogout, userId }) {
     const rowCount = getStructureRowCount(building, currentLevels)
     const maxLevel = Math.max(...(building.levels || []).map((level) => level.level), 0)
     const troopBarracksRequirement = getTroopBarracksRequirement(building)
-    const troopLocked = activeLoadedTab === 'troops' && currentBarracksLevel < troopBarracksRequirement
+    const heroHallRequirement = getHeroHallUnlockRequirement(building)
     const getMinimumLevel = (rowIndex) => getDefaultRowLevel(building, rowIndex, isCopyUnlocked(building, rowIndex))
     const clampLevel = (value, rowIndex) => Math.min(Math.max(Number(value || 0), getMinimumLevel(rowIndex)), maxLevel)
     const buttonLevels = Array.from({ length: maxLevel }, (_, index) => index + 1)
@@ -2553,7 +2605,7 @@ export default function UserPage({ username, onLogout, userId }) {
       const defaultLevel = getDefaultRowLevel(building, rowIndex, isCopyUnlocked(building, rowIndex))
       const rowLevel = clampLevel(currentLevels[rowIndex] ?? defaultLevel, rowIndex)
       const minimumLevel = getMinimumLevel(rowIndex)
-      const upgradeSummary = getUpgradeSummary(building, rowLevel, currentLabLevel)
+      const upgradeSummary = getUpgradeSummary(building, rowLevel, currentLabLevel, currentHeroHallLevel)
       const pendingUpgrade = getPendingUpgradeForRow(activeVillage?.id, `${building.id}-${rowIndex + 1}`, rowIndex)
       const pendingRemainingSeconds = pendingUpgrade ? Math.max(0, Math.ceil((Number(pendingUpgrade.finishAt) - upgradeClock) / 1000)) : 0
       const pendingDurationSeconds = pendingUpgrade ? Math.max(0, Number(pendingUpgrade.durationSeconds || 0)) : 0
@@ -2565,10 +2617,13 @@ export default function UserPage({ username, onLogout, userId }) {
         : upgradeSummary.nextLevels
       const labLockedNextLevels = TROOP_BUILDING_IDS.has(String(building?.id || ''))
         ? upgradeSummary.allNextLevels.filter((levelInfo) => Number(levelInfo.lab_level_unlocked ?? 0) > Number(currentLabLevel || 0))
-        : []
+        : HERO_BUILDING_IDS.has(String(building?.id || ''))
+          ? upgradeSummary.allNextLevels.filter((levelInfo) => Number(levelInfo.hero_hall_level_unlocked ?? 0) > Number(currentHeroHallLevel || 0))
+          : []
       const labRequirementLevel = labLockedNextLevels.length > 0
-        ? Math.min(...labLockedNextLevels.map((levelInfo) => Number(levelInfo.lab_level_unlocked || 0) || 0))
+        ? Math.min(...labLockedNextLevels.map((levelInfo) => TROOP_BUILDING_IDS.has(String(building?.id || '')) ? Number(levelInfo.lab_level_unlocked || 0) || 0 : Number(levelInfo.hero_hall_level_unlocked || 0) || 0))
         : null
+      const labRequirementLabel = TROOP_BUILDING_IDS.has(String(building?.id || '')) ? 'Lab' : HERO_BUILDING_IDS.has(String(building?.id || '')) ? 'Hero Hall' : 'Requirement'
       const pendingLevelInfo = pendingUpgrade ? visibleNextLevels[0] || null : null
       const visibleTotalCost = visibleNextLevels.reduce((total, level) => total + Number(level.cost || 0), 0)
       const visibleTotalSeconds = visibleNextLevels.reduce((total, level) => total + getTimeSeconds(level.time), 0)
@@ -2590,6 +2645,7 @@ export default function UserPage({ username, onLogout, userId }) {
         visibleNextLevels,
         labLockedNextLevels,
         labRequirementLevel,
+        labRequirementLabel,
         visibleTotalCost,
         visibleTotalSeconds,
         labLockedTotalCost,
@@ -2666,6 +2722,61 @@ export default function UserPage({ username, onLogout, userId }) {
                 )
               }
 
+            }
+            if (activeLoadedTab === 'heroes' && HERO_BUILDING_IDS.has(String(building?.id || ''))) {
+              const heroRowState = rowStates[0] || null
+              const heroUnlocked = currentHeroHallLevel >= heroHallRequirement
+              const heroRowLevel = heroUnlocked ? Number(heroRowState?.rowLevel || 0) : 0
+              const heroRowImageLevel = heroRowLevel
+
+              if (!heroUnlocked) {
+                return (
+                  <section key={cardKey} className={`${styles.defenceCard} ${styles.readOnlyBuildingBlock}`}>
+                    <div className={styles.readOnlyCardGrid} style={tableRowStyle}>
+                      <div className={styles.readOnlySummaryPanel} style={{ gridRow: `1 / span ${rowCount}` }}>
+                        {getBuildingImagePath(building, heroRowImageLevel) ? (
+                          <img
+                            src={getBuildingImagePath(building, heroRowImageLevel)}
+                            alt={displayName}
+                            className={styles.readOnlySummaryImage}
+                          />
+                        ) : (
+                          <div className={styles.readOnlySummaryImagePlaceholder} />
+                        )}
+
+                        <div className={styles.readOnlySummaryName}>{displayName}</div>
+                      </div>
+
+                      <div className={styles.readOnlyRowsColumn} style={rowsColumnStyle}>
+                        <div className={styles.readOnlyRow}>
+                          <div className={styles.readOnlyTroopLevelCell}>
+                            {getBuildingImagePath(building, heroRowImageLevel) ? (
+                              <img
+                                src={getBuildingImagePath(building, heroRowImageLevel)}
+                                alt={displayName}
+                                className={styles.readOnlyRowImage}
+                              />
+                            ) : (
+                              <div className={styles.defenceIconPlaceholder} />
+                            )}
+
+                            <div className={styles.readOnlyTroopLevelMeta}>
+                              <div className={styles.readOnlyLevelValue}>{heroRowLevel}/{maxLevel}</div>
+                              <LockOutlinedIcon className={`${styles.readOnlyActionIcon} ${styles.readOnlyTroopStateIconLocked}`} />
+                            </div>
+                          </div>
+
+                          <div className={styles.readOnlyTroopDetails}>
+                            <div className={`${styles.readOnlyUpgradeSummary} ${styles.readOnlyTroopLockedSummary}`}>
+                              <span>Requires Hero Hall level {heroHallRequirement} to unlock</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+                )
+              }
             }
       const totalRemainingUpgrades = rowStates.reduce((total, rowState) => total + (rowState.pendingUpgrade ? rowState.visibleNextLevels.length : rowState.upgradeSummary.nextLevels.length), 0)
       const totalCost = rowStates.reduce((total, rowState) => {
@@ -3028,7 +3139,7 @@ export default function UserPage({ username, onLogout, userId }) {
                             </div>
                             <div className={`${styles.readOnlyUpgradeSummary} ${styles.readOnlyTroopLockedSummary}`}>
                               <span>
-                                Requires Lab level {rowState.labRequirementLevel} to unlock upgrades
+                                Requires {rowState.labRequirementLabel} level {rowState.labRequirementLevel} to unlock upgrades
                               </span>
                             </div>
                           </>
@@ -3090,7 +3201,7 @@ export default function UserPage({ username, onLogout, userId }) {
                         </div>
                         <div className={`${styles.readOnlyUpgradeSummary} ${styles.readOnlyTroopLockedSummary}`}>
                           <span>
-                            Requires Lab level {rowState.labRequirementLevel} to unlock upgrades
+                            Requires {rowState.labRequirementLabel} level {rowState.labRequirementLevel} to unlock upgrades
                           </span>
                         </div>
                       </>
@@ -3217,6 +3328,10 @@ export default function UserPage({ username, onLogout, userId }) {
 
   const visibleTroopBuildings = activeLoadedTab === 'troops'
     ? (structureCatalog.troops || [])
+    : []
+
+  const visibleHeroBuildings = activeLoadedTab === 'heroes'
+    ? (structureCatalog.heroes || [])
     : []
 
   const tabLabels = {
@@ -3737,8 +3852,13 @@ export default function UserPage({ username, onLogout, userId }) {
                             </div>
                           </div>
                           <div className={styles.loadedStructureFrame}>
+                            <div className={styles.loadedStructureHeader}>
+                              <span>{loadedTabPrimaryLabel}</span>
+                              <span>{loadedTabSecondaryLabel}</span>
+                              <span>Upgrades</span>
+                            </div>
                             <div className={styles.readOnlyLoadedList}>
-                              <p>Heroes will be added here.</p>
+                              {visibleHeroBuildings.map((building, index) => renderStructureCard(building, `tab-heroes-${building.id}-${index}`, { readOnly: true }))}
                             </div>
                           </div>
                         </div>

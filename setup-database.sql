@@ -139,6 +139,7 @@ CREATE TABLE IF NOT EXISTS public.townhall_buildings (
   army JSONB DEFAULT '{}'::jsonb,
   resources JSONB DEFAULT '{}'::jsonb,
   troops JSONB DEFAULT '{}'::jsonb,
+  heroes JSONB DEFAULT '{}'::jsonb,
   walls JSONB DEFAULT '{}'::jsonb,
   townhall_upgrade_cost BIGINT,
   townhall_upgrade_resource TEXT,
@@ -146,6 +147,9 @@ CREATE TABLE IF NOT EXISTS public.townhall_buildings (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW())
 );
+
+ALTER TABLE IF EXISTS public.townhall_buildings
+  ADD COLUMN IF NOT EXISTS heroes JSONB DEFAULT '{}'::jsonb;
 
 -- Enable RLS
 ALTER TABLE public.townhall_buildings ENABLE ROW LEVEL SECURITY;
