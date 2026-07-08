@@ -69,7 +69,10 @@ export const BUILDING_SECTIONS = {
     { id: 'minion_prince', name: 'Minion Prince', image: '/src/assets/Heros/Minion_Prince' },
     { id: 'dragon_duke', name: 'Dragon Duke', image: '/src/assets/Heros/Dragon_Duke' },
   ],
-  equipment: [{ id: 'barbarian_puppet', name: 'Barbarian Puppet', hero: 'Barbarian King', image: '/src/assets/Equipment/Barbarian_King/Barbarian_puppet/157.png', levelCount: 4, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1 }],
+  equipment: [
+    { id: 'barbarian_puppet', name: 'Barbarian Puppet', hero: 'Barbarian King', image: '/src/assets/Equipment/Barbarian_King/Barbarian_puppet/157.png', levelCount: 4, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1 },
+    { id: 'rage_vial', name: 'Rage Vial', hero: 'Barbarian King', image: '/src/assets/Equipment/Barbarian_King/Rage_Vial/158.png', levelCount: 1, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1 },
+  ],
   walls: [
     { id: 'walls', name: 'Walls', image: '/src/assets/Walls' },
   ],
@@ -456,6 +459,18 @@ export const getDefaultBuildingData = (townhallLevel) => {
           { level: 2, cost: 1800, resource: 'shiny_ore', resource_options: ['shiny_ore'], resource_costs: createEquipmentResourceCosts(['shiny_ore', 1800]), time: '0sec' },
           { level: 3, cost: 2300, resource: 'shiny_ore', resource_options: ['glowy_ore', 'shiny_ore'], resource_costs: createEquipmentResourceCosts(['shiny_ore', 2200], ['glowy_ore', 100]), time: '0sec' },
           { level: 4, cost: 5000, resource: 'starry_ore', resource_options: ['starry_ore'], resource_costs: createEquipmentResourceCosts(['starry_ore', 5000]), time: '0sec' },
+        ],
+      },
+      rage_vial: {
+        id: 'rage_vial',
+        image_path: '/src/assets/Equipment/Barbarian_King/Rage_Vial/158.png',
+        hero: 'Barbarian King',
+        buildings_unlocked: 1,
+        copy_unlocks: [true],
+        unlock_source: 'blacksmith',
+        blacksmith_level_unlocked: 1,
+        levels: [
+          { level: 1, cost: 0, resource: 'glowy_ore', resource_options: ['glowy_ore'], resource_costs: createEquipmentResourceCosts(['glowy_ore', 0]), time: '0sec' },
         ],
       },
     }

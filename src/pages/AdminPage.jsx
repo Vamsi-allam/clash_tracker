@@ -432,7 +432,7 @@ export default function AdminPage({ username, onLogout }) {
                 const spellFactoryLevelNeeded = Number(buildingData?.spell_factory_level_unlocked ?? staticDefaults[building.id]?.spell_factory_level_unlocked ?? 1) || 1
                 const heroHallLevelNeeded = Number(buildingData?.hero_hall_level_unlocked ?? staticDefaults[building.id]?.hero_hall_level_unlocked ?? 1) || 1
                 const equipmentUnlockSource = String(buildingData?.unlock_source || staticDefaults[building.id]?.unlock_source || 'blacksmith').trim().toLowerCase()
-                const equipmentUnlockLevel = Number(buildingData?.blacksmith_level_unlocked ?? staticDefaults[building.id]?.blacksmith_level_unlocked ?? 1) || 1
+                const equipmentUnlockLevel = Number(buildingData?.blacksmith_level_unlocked ?? staticDefaults[building.id]?.blacksmith_level_unlocked ?? 0) || 0
                 const equipmentUnlockLabel = equipmentUnlockSource === 'blacksmith'
                   ? `Blacksmith Lvl: ${equipmentUnlockLevel}`
                   : 'Gems'

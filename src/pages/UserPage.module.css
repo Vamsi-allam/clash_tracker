@@ -621,6 +621,27 @@
   white-space: nowrap;
 }
 
+.equipmentCostBreakdown {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+}
+.equipmentCostItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text);
+  font-weight: 700;
+}
+.equipmentCostIcon {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+}
+.equipmentCostValue {
+  color: #f6d76a;
+}
+
 .loadedTabShell {
   margin-top: 18px;
   display: flex;

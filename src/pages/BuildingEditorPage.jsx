@@ -252,17 +252,23 @@ const updateEquipmentResourceCosts = (levelInfo, resourceKey, amountValue) => {
 }
 
 const normalizeEquipmentLevels = (count, sourceLevels = []) =>
-  Array.from({ length: Math.max(0, count) }, (_, index) => createEquipmentLevelDraft(index + 1, sourceLevels[index] || [
-    { cost: 0, resource: 'glowy_ore', resource_costs: [{ resource: 'glowy_ore', cost: 0 }], blacksmith_level_unlocked: 1 },
-    { cost: 1800, resource: 'shiny_ore', resource_costs: [{ resource: 'shiny_ore', cost: 1800 }], blacksmith_level_unlocked: 2 },
-    { cost: 2300, resource: 'shiny_ore', resource_options: ['glowy_ore', 'shiny_ore'], resource_costs: [{ resource: 'shiny_ore', cost: 2200 }, { resource: 'glowy_ore', cost: 100 }], blacksmith_level_unlocked: 3 },
-    { cost: 5000, resource: 'starry_ore', resource_costs: [{ resource: 'starry_ore', cost: 5000 }], blacksmith_level_unlocked: 4 },
-  ][index] || {
-    cost: 5000,
-    resource: 'starry_ore',
-    resource_costs: [{ resource: 'starry_ore', cost: 5000 }],
-    blacksmith_level_unlocked: index + 1,
-  }))
+  Array.from({ length: Math.max(0, count) }, (_, index) => {
+    const source = sourceLevels[index]
+    // Preserve explicit level numbers from source (allow level 0). If not provided, default to index+1.
+    const levelNumber = (source && typeof source.level === 'number') ? source.level : (index + 1)
+    const fallback = [
+      { cost: 0, resource: 'glowy_ore', resource_costs: [{ resource: 'glowy_ore', cost: 0 }], blacksmith_level_unlocked: 1 },
+      { cost: 1800, resource: 'shiny_ore', resource_costs: [{ resource: 'shiny_ore', cost: 1800 }], blacksmith_level_unlocked: 2 },
+      { cost: 2300, resource: 'shiny_ore', resource_options: ['glowy_ore', 'shiny_ore'], resource_costs: [{ resource: 'shiny_ore', cost: 2200 }, { resource: 'glowy_ore', cost: 100 }], blacksmith_level_unlocked: 3 },
+      { cost: 5000, resource: 'starry_ore', resource_costs: [{ resource: 'starry_ore', cost: 5000 }], blacksmith_level_unlocked: 4 },
+    ][index] || {
+      cost: 5000,
+      resource: 'starry_ore',
+      resource_costs: [{ resource: 'starry_ore', cost: 5000 }],
+      blacksmith_level_unlocked: index + 1,
+    }
+    return createEquipmentLevelDraft(levelNumber, source || fallback)
+  })
 
 const getDefaultEquipmentData = (buildingId) => {
   const equipment = EQUIPMENT_BUILDINGS[buildingId]
@@ -424,7 +430,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
           : Number(buildingData?.barracks_level_unlocked ?? staticBuildingData.barracks_level_unlocked ?? 1) || 1
         const initialSpellFactoryLevelUnlocked = Number(buildingData?.spell_factory_level_unlocked ?? staticBuildingData.spell_factory_level_unlocked ?? 1) || 1
         const initialHeroHallLevelUnlocked = Number(buildingData?.hero_hall_level_unlocked ?? staticBuildingData.hero_hall_level_unlocked ?? 1) || 1
-        const initialBlacksmithLevelUnlocked = Number(buildingData?.blacksmith_level_unlocked ?? staticBuildingData.blacksmith_level_unlocked ?? 1) || 1
+        const initialBlacksmithLevelUnlocked = Number(buildingData?.blacksmith_level_unlocked ?? staticBuildingData.blacksmith_level_unlocked ?? 0) || 0
         const initialEquipmentUnlockSource = String(buildingData?.unlock_source ?? staticBuildingData.unlock_source ?? 'blacksmith').trim().toLowerCase() || 'blacksmith'
         const initialEquipmentHero = String(buildingData?.hero ?? staticBuildingData.hero ?? equipmentMeta?.hero ?? '').trim()
         if (buildingData) {
@@ -605,7 +611,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
   }
 
   const handleEditingBlacksmithLevelUnlockedChange = (value) => {
-    setEditingBlacksmithLevelUnlocked(Math.max(1, parseInt(value) || 1))
+    setEditingBlacksmithLevelUnlocked(Math.max(0, parseInt(value) || 0))
   }
 
   const handleEditingEquipmentUnlockSourceChange = (value) => {
@@ -683,7 +689,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
           : isEquipmentBuilding
             ? normalizeEquipmentLevels(editingLevelCount, editingLevels)
             : normalizeBuildingLevels(editingLevelCount, editingLevels)
-      const normalizedLevelsWithWallResources = isWallBuilding
+      let normalizedLevelsWithWallResources = isWallBuilding
         ? normalizedLevels.map((levelInfo) => Number(levelInfo.level || 0) >= 5
           ? {
             ...levelInfo,
@@ -707,6 +713,13 @@ export default function BuildingEditorPage({ username, onLogout }) {
             resource_options: Array.isArray(levelInfo.resource_options) ? [...levelInfo.resource_options] : [],
           })
         : normalizedLevels
+      // If equipment is unlocked via gems, ensure blacksmith unlocks are saved as 0 so UI won't filter by Blacksmith level
+      if (isEquipmentBuilding && String(editingEquipmentUnlockSource || '').trim().toLowerCase() === 'gems') {
+        normalizedLevelsWithWallResources = normalizedLevelsWithWallResources.map((level) => ({
+          ...level,
+          blacksmith_level_unlocked: 0,
+        }))
+      }
       const troopLevelCount = isTroopLikeBuilding
         ? normalizedLevelsWithWallResources.length
         : isHeroBuilding || isEquipmentBuilding
@@ -727,7 +740,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
         ...(isEquipmentBuilding ? {
           hero: editingEquipmentHero || staticData.hero || equipmentMeta?.hero || '',
           unlock_source: editingEquipmentUnlockSource,
-          blacksmith_level_unlocked: editingBlacksmithLevelUnlocked,
+          blacksmith_level_unlocked: String(editingEquipmentUnlockSource || '').trim().toLowerCase() === 'gems' ? 0 : editingBlacksmithLevelUnlocked,
         } : {}),
       }
 
@@ -1068,14 +1081,14 @@ export default function BuildingEditorPage({ username, onLogout }) {
                     <option value="blacksmith">Blacksmith</option>
                     <option value="gems">Gems</option>
                   </select>
-                  {editingEquipmentUnlockSource === 'blacksmith' && (
+                    {editingEquipmentUnlockSource === 'blacksmith' && (
                     <>
                       <span style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>Blacksmith level:</span>
                       <input
                         type="number"
                         value={editingBlacksmithLevelUnlocked}
                         onChange={(e) => handleEditingBlacksmithLevelUnlockedChange(e.target.value)}
-                        min="1"
+                        min="0"
                         className={styles.headingCountInput}
                       />
                     </>
@@ -1115,7 +1128,17 @@ export default function BuildingEditorPage({ username, onLogout }) {
                         })()}
                       </div>
                     )}
-                    <div className={styles.levelLabel}>Lvl {level.level}:</div>
+                    <div className={styles.levelLabel}>
+                      Lvl {(() => {
+                        if (!isEquipmentBuilding) return level.level
+                        const levelBs = Number(level.blacksmith_level_unlocked ?? level.level ?? 0)
+                        const buildingBs = Number(dynamicData.blacksmith_level_unlocked ?? staticData.blacksmith_level_unlocked ?? editingBlacksmithLevelUnlocked ?? 0)
+                        if (levelBs === 0 || buildingBs === 0) {
+                          if (Number(level.level) === 1) return 0
+                        }
+                        return level.level
+                      })()}:
+                    </div>
                     {isEquipmentBuilding ? (
                       <div className={styles.equipmentCostBreakdown}>
                         {getEquipmentCostBreakdown(level).map(({ resource, cost }) => (
@@ -1293,7 +1316,17 @@ export default function BuildingEditorPage({ username, onLogout }) {
                             })()}
                           </div>
                         )}
-                        <div className={styles.levelLabel}>Lvl {level.level}:</div>
+                        <div className={styles.levelLabel}>
+                          Lvl {(() => {
+                            if (!isEquipmentBuilding) return level.level
+                            const levelBs = Number(level.blacksmith_level_unlocked ?? level.level ?? 0)
+                            const buildingBs = Number(dynamicData.blacksmith_level_unlocked ?? staticData.blacksmith_level_unlocked ?? editingBlacksmithLevelUnlocked ?? 0)
+                            if (levelBs === 0 || buildingBs === 0) {
+                              if (Number(level.level) === 1) return 0
+                            }
+                            return level.level
+                          })()}:
+                        </div>
                         {isEquipmentBuilding ? (
                           <div className={styles.equipmentCostBreakdown}>
                             {getEquipmentCostBreakdown(level).map(({ resource, cost }) => (
@@ -1361,7 +1394,15 @@ export default function BuildingEditorPage({ username, onLogout }) {
                           })()}
                         </div>
                       )}
-                      <span className={styles.levelLabel}>Lvl {level.level}:</span>
+                      <span className={styles.levelLabel}>Lvl {(() => {
+                        if (!isEquipmentBuilding) return level.level
+                        const levelBs = Number(level.blacksmith_level_unlocked ?? level.level ?? 0)
+                        const buildingBs = Number(dynamicData.blacksmith_level_unlocked ?? staticData.blacksmith_level_unlocked ?? editingBlacksmithLevelUnlocked ?? 0)
+                        if (levelBs === 0 || buildingBs === 0) {
+                          if (Number(level.level) === 1) return 0
+                        }
+                        return level.level
+                      })()}:</span>
                       {!isEquipmentBuilding && (
                         <div className={styles.costInputGroup}>
                           <input
