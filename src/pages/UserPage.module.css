@@ -529,12 +529,12 @@
   font-family: 'Trebuchet MS', 'Segoe UI', Arial, sans-serif;
 }
 
-.progressBars { display: flex; flex-direction: column; gap: 10px }
-.progressRow { display: flex; align-items: center; gap: 10px; margin-bottom: 0 }
-.progressName { width: 86px; color: rgba(255,255,255,0.9); font-weight:400; text-align: left; font-family: 'Trebuchet MS', 'Segoe UI', Arial, sans-serif }
-.progressBarWrap { flex: 0 0 11ch; width: 11ch; height: 18px; background: rgba(255,255,255,0.2); border-radius: 4px; overflow: hidden; position: relative }
+.progressBars { display: flex; flex-direction: column; gap: 8px }
+.progressRow { display: flex; align-items: center; gap: 8px; margin-bottom: 0 }
+.progressName { width: 76px; color: rgba(255,255,255,0.9); font-weight:400; text-align: left; font-family: 'Trebuchet MS', 'Segoe UI', Arial, sans-serif; font-size: 0.82rem }
+.progressBarWrap { flex: 0 0 9.5ch; width: 9.5ch; height: 15px; background: rgba(255,255,255,0.2); border-radius: 4px; overflow: hidden; position: relative }
 .progressBarInner { height: 100%; background: linear-gradient(90deg,#4f85cf,#3f79c8); }
-.progressOverlayLabel { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 0.82rem; color: #ffffff; font-weight: 400; font-family: 'Trebuchet MS', 'Segoe UI', Arial, sans-serif; text-shadow: 0 1px 0 rgba(0,0,0,0.45); pointer-events: none }
+.progressOverlayLabel { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 0.74rem; color: #ffffff; font-weight: 400; font-family: 'Trebuchet MS', 'Segoe UI', Arial, sans-serif; text-shadow: 0 1px 0 rgba(0,0,0,0.45); pointer-events: none }
 
 .thButtonsRow { display:flex; gap:8px; margin-top:6px; justify-content:center }
 .apiSmallBtn, .uploadSmallBtn { width:56px; height:28px; border-radius:6px; border:none; font-weight:400; cursor:pointer; font-size:0.85rem }

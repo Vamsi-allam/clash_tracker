@@ -38,6 +38,7 @@ export const BUILDING_SECTIONS = {
     { id: 'goblin', name: 'Goblin', image: '/src/assets/Troops/Goblin' },
     { id: 'wall_breaker', name: 'Wall Breaker', image: '/src/assets/Troops/Wall_breaker' },
     { id: 'balloon', name: 'Balloon', image: '/src/assets/Troops/Ballon' },
+    { id: 'wizard', name: 'Wizard', image: '/src/assets/Troops/wizard' },
   ],
   spells: [
     { id: 'lightning_spell', name: 'Lightning Spell', image: '/src/assets/spells/Lightning_Spell' },
@@ -231,6 +232,15 @@ export const getDefaultBuildingData = (townhallLevel) => {
         copy_unlocks: createCopyUnlocks(1, 1),
         levels: [
           { level: 1, cost: 0, resource: 'gold', time: '0sec' },
+        ],
+      },
+      wizard: {
+        id: 'wizard',
+        image_path: '/src/assets/Troops/wizard/37_',
+        copy_unlocks: [true],
+        barracks_level_unlocked: 7,
+        levels: [
+          { level: 1, cost: 0, resource: 'elixir', time: '0sec', lab_level_unlocked: 1 },
         ],
       },
     }

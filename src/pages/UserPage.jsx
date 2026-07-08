@@ -332,6 +332,7 @@ const giantTroopImages = import.meta.glob('../assets/Troops/Giant/*.png', { eage
 const goblinTroopImages = import.meta.glob('../assets/Troops/Goblin/*.png', { eager: true, import: 'default' })
 const wallBreakerImages = import.meta.glob('../assets/Troops/Wall_breaker/*.png', { eager: true, import: 'default' })
 const balloonTroopImages = import.meta.glob('../assets/Troops/Ballon/*.png', { eager: true, import: 'default' })
+const wizardTroopImages = import.meta.glob('../assets/Troops/wizard/*.png', { eager: true, import: 'default' })
 const lightningSpellImages = import.meta.glob('../assets/spells/Lightning_Spell/*.png', { eager: true, import: 'default' })
 const barbarianKingImages = import.meta.glob('../assets/Heros/Barbarian_King/*.png', { eager: true, import: 'default' })
 const archerQueenImages = import.meta.glob('../assets/Heros/Archer_Queen/*.png', { eager: true, import: 'default' })
@@ -2645,6 +2646,7 @@ export default function UserPage({ username, onLogout, userId }) {
       goblin: (imageLevel) => goblinTroopImages[`../assets/Troops/Goblin/34_${imageLevel}.png`] || '',
       wall_breaker: (imageLevel) => wallBreakerImages[`../assets/Troops/Wall_breaker/35_${imageLevel}.png`] || '',
       balloon: (imageLevel) => balloonTroopImages[`../assets/Troops/Ballon/36_${imageLevel}.png`] || '',
+      wizard: (imageLevel) => wizardTroopImages[`../assets/Troops/wizard/37_${imageLevel}.png`] || '',
       lightning_spell: (imageLevel) => imageLevel === 0 ? (lightningSpellImages['../assets/spells/Lightning_Spell/43_0.png'] || '') : (lightningSpellImages['../assets/spells/Lightning_Spell/43.png'] || ''),
       barbarian_king: (imageLevel) => imageLevel === 0 ? (barbarianKingImages['../assets/Heros/Barbarian_King/61_0.png'] || '') : (barbarianKingImages['../assets/Heros/Barbarian_King/61.png'] || ''),
       archer_queen: (imageLevel) => imageLevel === 0 ? (archerQueenImages['../assets/Heros/Archer_Queen/62_0.png'] || '') : (archerQueenImages['../assets/Heros/Archer_Queen/62.png'] || ''),
