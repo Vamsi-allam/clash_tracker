@@ -15,6 +15,7 @@ export const BUILDING_SECTIONS = {
   ],
   traps: [
     { id: 'bomb', name: 'Bomb', image: '/src/assets/Traps/Bomb' },
+    { id: 'giant_bomb', name: 'Giant Bomb', image: '/src/assets/Traps/Gaint_Bomb' },
     { id: 'air_bomb', name: 'Air Bomb', image: '/src/assets/Traps/Air_Bomb' },
     { id: 'spring_trap', name: 'Spring Trap', image: '/src/assets/Traps/Spring_Trap' },
   ],
@@ -40,9 +41,11 @@ export const BUILDING_SECTIONS = {
     { id: 'wall_breaker', name: 'Wall Breaker', image: '/src/assets/Troops/Wall_breaker' },
     { id: 'balloon', name: 'Balloon', image: '/src/assets/Troops/Ballon' },
     { id: 'wizard', name: 'Wizard', image: '/src/assets/Troops/wizard' },
+    { id: 'healer', name: 'Healer', image: '/src/assets/Troops/Healer' },
   ],
   spells: [
     { id: 'lightning_spell', name: 'Lightning Spell', image: '/src/assets/spells/Lightning_Spell' },
+    { id: 'healing_spell', name: 'Healing Spell', image: '/src/assets/spells/Healing_Spell' },
   ],
   heroes: [
     { id: 'barbarian_king', name: 'Barbarian King', image: '/src/assets/Heros/Barbarian_King' },
@@ -262,6 +265,40 @@ export const getDefaultBuildingData = (townhallLevel) => {
           { level: 5, cost: 100000, resource: 'gold', time: '6hr' },
           { level: 6, cost: 200000, resource: 'gold', time: '8hr' },
           { level: 7, cost: 400000, resource: 'gold', time: '12hr' },
+        ],
+      },
+      giant_bomb: {
+        id: 'giant_bomb',
+        image_path: '/src/assets/Traps/Gaint_Bomb/28_',
+        buildings_unlocked: 1,
+        copy_unlocks: createCopyUnlocks(1, 1),
+        levels: [
+          { level: 1, cost: 5000, resource: 'gold', time: '1hr' },
+          { level: 2, cost: 10000, resource: 'gold', time: '2hr' },
+          { level: 3, cost: 20000, resource: 'gold', time: '4hr' },
+          { level: 4, cost: 40000, resource: 'gold', time: '6hr' },
+          { level: 5, cost: 80000, resource: 'gold', time: '8hr' },
+          { level: 6, cost: 160000, resource: 'gold', time: '10hr' },
+          { level: 7, cost: 320000, resource: 'gold', time: '12hr' },
+        ],
+      },
+      healer: {
+        id: 'healer',
+        image_path: '/src/assets/Troops/Healer/38_',
+        copy_unlocks: [true],
+        barracks_level_unlocked: 8,
+        levels: [
+          { level: 1, cost: 0, resource: 'elixir', time: '0sec', lab_level_unlocked: 1 },
+        ],
+      },
+      healing_spell: {
+        id: 'healing_spell',
+        image_path: '/src/assets/spells/Healing_Spell/44_',
+        buildings_unlocked: 1,
+        copy_unlocks: createCopyUnlocks(1, 1),
+        spell_factory_level_unlocked: 2,
+        levels: [
+          { level: 1, cost: 0, resource: 'elixir', time: '0sec', lab_level_unlocked: 1 },
         ],
       },
     }

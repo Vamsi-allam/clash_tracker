@@ -314,6 +314,7 @@ const airDefenseImages = import.meta.glob('../assets/Defences/air_defense/*.png'
 const airSweeperImages = import.meta.glob('../assets/Defences/air_sweeper/*.png', { eager: true, import: 'default' })
 const wizardTowerImages = import.meta.glob('../assets/Defences/wizard_tower/*.png', { eager: true, import: 'default' })
 const bombImages = import.meta.glob('../assets/Traps/Bomb/*.png', { eager: true, import: 'default' })
+const giantBombImages = import.meta.glob('../assets/Traps/Gaint_Bomb/*.png', { eager: true, import: 'default' })
 const airBombImages = import.meta.glob('../assets/Traps/Air_Bomb/*.png', { eager: true, import: 'default' })
 const springTrapImages = import.meta.glob('../assets/Traps/Spring_Trap/*.png', { eager: true, import: 'default' })
 const archerTowerImages = import.meta.glob('../assets/Defences/Archer_Tower/*.png', { eager: true, import: 'default' })
@@ -334,7 +335,9 @@ const goblinTroopImages = import.meta.glob('../assets/Troops/Goblin/*.png', { ea
 const wallBreakerImages = import.meta.glob('../assets/Troops/Wall_breaker/*.png', { eager: true, import: 'default' })
 const balloonTroopImages = import.meta.glob('../assets/Troops/Ballon/*.png', { eager: true, import: 'default' })
 const wizardTroopImages = import.meta.glob('../assets/Troops/wizard/*.png', { eager: true, import: 'default' })
+const healerTroopImages = import.meta.glob('../assets/Troops/Healer/*.png', { eager: true, import: 'default' })
 const lightningSpellImages = import.meta.glob('../assets/spells/Lightning_Spell/*.png', { eager: true, import: 'default' })
+const healingSpellImages = import.meta.glob('../assets/spells/Healing_Spell/*.png', { eager: true, import: 'default' })
 const barbarianKingImages = import.meta.glob('../assets/Heros/Barbarian_King/*.png', { eager: true, import: 'default' })
 const archerQueenImages = import.meta.glob('../assets/Heros/Archer_Queen/*.png', { eager: true, import: 'default' })
 const grandWardenImages = import.meta.glob('../assets/Heros/Grand_Warden/*.png', { eager: true, import: 'default' })
@@ -1503,8 +1506,9 @@ export default function UserPage({ username, onLogout, userId }) {
   }
   const trapSortPriority = {
     bomb: 0,
-    spring_trap: 1,
-    air_bomb: 2,
+    giant_bomb: 1,
+    spring_trap: 2,
+    air_bomb: 3,
   }
 
   const armySortPriority = {
@@ -2633,6 +2637,7 @@ export default function UserPage({ username, onLogout, userId }) {
       air_defense: (imageLevel) => airDefenseImages[`../assets/Defences/air_defense/14_${imageLevel}.png`] || '',
       air_sweeper: (imageLevel) => airSweeperImages[`../assets/Defences/air_sweeper/15_${imageLevel}.png`] || '',
       bomb: (imageLevel) => bombImages[`../assets/Traps/Bomb/27_${imageLevel}.png`] || '',
+      giant_bomb: (imageLevel) => giantBombImages[`../assets/Traps/Gaint_Bomb/28_${imageLevel}.png`] || '',
       air_bomb: (imageLevel) => airBombImages[`../assets/Traps/Air_Bomb/26_${imageLevel}.png`] || '',
       spring_trap: (imageLevel) => springTrapImages[`../assets/Traps/Spring_Trap/30_${imageLevel}.png`] || '',
       archer_tower: (imageLevel) => archerTowerImages[`../assets/Defences/Archer_Tower/16_${imageLevel}.png`] || '',
@@ -2654,7 +2659,9 @@ export default function UserPage({ username, onLogout, userId }) {
       wall_breaker: (imageLevel) => wallBreakerImages[`../assets/Troops/Wall_breaker/35_${imageLevel}.png`] || '',
       balloon: (imageLevel) => balloonTroopImages[`../assets/Troops/Ballon/36_${imageLevel}.png`] || '',
       wizard: (imageLevel) => wizardTroopImages[`../assets/Troops/wizard/37_${imageLevel}.png`] || '',
+      healer: (imageLevel) => healerTroopImages[`../assets/Troops/Healer/38_${imageLevel}.png`] || '',
       lightning_spell: (imageLevel) => imageLevel === 0 ? (lightningSpellImages['../assets/spells/Lightning_Spell/43_0.png'] || '') : (lightningSpellImages['../assets/spells/Lightning_Spell/43.png'] || ''),
+      healing_spell: (imageLevel) => imageLevel === 0 ? (healingSpellImages['../assets/spells/Healing_Spell/44_0.png'] || '') : (healingSpellImages['../assets/spells/Healing_Spell/44.png'] || ''),
       barbarian_king: (imageLevel) => imageLevel === 0 ? (barbarianKingImages['../assets/Heros/Barbarian_King/61_0.png'] || '') : (barbarianKingImages['../assets/Heros/Barbarian_King/61.png'] || ''),
       archer_queen: (imageLevel) => imageLevel === 0 ? (archerQueenImages['../assets/Heros/Archer_Queen/62_0.png'] || '') : (archerQueenImages['../assets/Heros/Archer_Queen/62.png'] || ''),
       grand_warden: (imageLevel) => imageLevel === 0 ? (grandWardenImages['../assets/Heros/Grand_Warden/63_0.png'] || '') : (grandWardenImages['../assets/Heros/Grand_Warden/63.png'] || ''),

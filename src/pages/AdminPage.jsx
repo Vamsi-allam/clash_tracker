@@ -421,6 +421,7 @@ export default function AdminPage({ username, onLogout }) {
                   if (building.id === 'archer_tower') return `16_${maxLevel}`
                   if (building.id === 'canon') return `18_${maxLevel}`
                   if (building.id === 'bomb') return `27_${maxLevel}`
+                  if (building.id === 'giant_bomb') return `28_${maxLevel}`
                   if (building.id === 'air_bomb') return `26_${maxLevel}`
                   if (building.id === 'spring_trap') return `30_${maxLevel}`
                   if (building.id === 'mortar') return `23_${maxLevel}`
@@ -445,7 +446,9 @@ export default function AdminPage({ username, onLogout }) {
                   if (building.id === 'wall_breaker') return `35_${maxLevel}`
                   if (building.id === 'balloon') return `36_${maxLevel}`
                   if (building.id === 'wizard') return `37_${maxLevel}`
+                  if (building.id === 'healer') return `38_${maxLevel}`
                   if (building.id === 'lightning_spell') return '43'
+                  if (building.id === 'healing_spell') return '44'
                   if (building.id === 'barbarian_king') return '61'
                   if (building.id === 'archer_queen') return '62'
                   if (building.id === 'grand_warden') return '63'

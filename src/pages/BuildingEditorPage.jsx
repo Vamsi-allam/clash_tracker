@@ -696,6 +696,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
                 if (defence.id === 'archer_tower') return `16_${maxLevel}`
                 if (defence.id === 'canon') return `18_${maxLevel}`
                 if (defence.id === 'bomb') return `27_${maxLevel}`
+                if (defence.id === 'giant_bomb') return `28_${maxLevel}`
                 if (defence.id === 'air_bomb') return `26_${maxLevel}`
                 if (defence.id === 'spring_trap') return `30_${maxLevel}`
                 if (defence.id === 'mortar') return `23_${maxLevel}`
@@ -720,7 +721,9 @@ export default function BuildingEditorPage({ username, onLogout }) {
                 if (defence.id === 'wall_breaker') return `35_${maxLevel}`
                 if (defence.id === 'balloon') return `36_${maxLevel}`
                 if (defence.id === 'wizard') return `37_${maxLevel}`
+                if (defence.id === 'healer') return `38_${maxLevel}`
                 if (defence.id === 'lightning_spell') return '43'
+                if (defence.id === 'healing_spell') return '44'
                 if (defence.id === 'barbarian_king') return '61'
                 if (defence.id === 'archer_queen') return '62'
                 if (defence.id === 'grand_warden') return '63'
