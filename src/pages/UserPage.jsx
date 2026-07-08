@@ -309,6 +309,7 @@ const archerTroopImages = import.meta.glob('../assets/Troops/Archer/*.png', { ea
 const giantTroopImages = import.meta.glob('../assets/Troops/Giant/*.png', { eager: true, import: 'default' })
 const goblinTroopImages = import.meta.glob('../assets/Troops/Goblin/*.png', { eager: true, import: 'default' })
 const wallBreakerImages = import.meta.glob('../assets/Troops/Wall_breaker/*.png', { eager: true, import: 'default' })
+const balloonTroopImages = import.meta.glob('../assets/Troops/Ballon/*.png', { eager: true, import: 'default' })
 const upgradeResourceIcons = {
   gold: '/src/assets/magic-items/gold.png',
   elixir: '/src/assets/magic-items/elixir.png',
@@ -2504,6 +2505,7 @@ export default function UserPage({ username, onLogout, userId }) {
       giant: (imageLevel) => giantTroopImages[`../assets/Troops/Giant/33_${imageLevel}.png`] || '',
       goblin: (imageLevel) => goblinTroopImages[`../assets/Troops/Goblin/34_${imageLevel}.png`] || '',
       wall_breaker: (imageLevel) => wallBreakerImages[`../assets/Troops/Wall_breaker/35_${imageLevel}.png`] || '',
+      balloon: (imageLevel) => balloonTroopImages[`../assets/Troops/Ballon/36_${imageLevel}.png`] || '',
     }
 
     const prefix = imageMap[buildingId]
