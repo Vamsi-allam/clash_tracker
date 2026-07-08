@@ -14,6 +14,7 @@ export const BUILDING_SECTIONS = {
   ],
   traps: [
     { id: 'bomb', name: 'Bomb', image: '/src/assets/Traps/Bomb' },
+    { id: 'spring_trap', name: 'Spring Trap', image: '/src/assets/Traps/Spring_Trap' },
   ],
   army: [
     { id: 'army_camp', name: 'Army Camp', image: '/src/assets/Army/Army_Camp' },
@@ -34,6 +35,7 @@ export const BUILDING_SECTIONS = {
     { id: 'giant', name: 'Giant', image: '/src/assets/Troops/Giant' },
     { id: 'goblin', name: 'Goblin', image: '/src/assets/Troops/Goblin' },
     { id: 'wall_breaker', name: 'Wall Breaker', image: '/src/assets/Troops/Wall_breaker' },
+    { id: 'balloon', name: 'Balloon', image: '/src/assets/Troops/Ballon' },
   ],
   heroes: [],
   walls: [
@@ -139,6 +141,24 @@ export const getDefaultBuildingData = (townhallLevel) => {
         copy_unlocks: createCopyUnlocks(1, 1),
         levels: [
           { level: 1, cost: 0, resource: 'elixir', time: '0sec' },
+        ],
+      },
+      spring_trap: {
+        id: 'spring_trap',
+        image_path: '/src/assets/Traps/Spring_Trap/30_',
+        buildings_unlocked: 1,
+        copy_unlocks: createCopyUnlocks(1, 1),
+        levels: [
+          { level: 1, cost: 2000, resource: 'gold', time: '1min' },
+        ],
+      },
+      balloon: {
+        id: 'balloon',
+        image_path: '/src/assets/Troops/Ballon/36_',
+        copy_unlocks: [true],
+        barracks_level_unlocked: 6,
+        levels: [
+          { level: 1, cost: 0, resource: 'elixir', time: '0sec', lab_level_unlocked: 1 },
         ],
       },
     }

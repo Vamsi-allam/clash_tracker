@@ -581,6 +581,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
                 if (defence.id === 'giant') return `33_${maxLevel}`
                 if (defence.id === 'goblin') return `34_${maxLevel}`
                 if (defence.id === 'wall_breaker') return `35_${maxLevel}`
+                if (defence.id === 'balloon') return `36_${maxLevel}`
                 return '18_3'
               }
               

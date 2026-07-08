@@ -293,6 +293,7 @@ const canonImages = import.meta.glob('../assets/Defences/canon/*.png', { eager: 
 const mortarImages = import.meta.glob('../assets/Defences/mortar/*.png', { eager: true, import: 'default' })
 const airDefenseImages = import.meta.glob('../assets/Defences/air_defense/*.png', { eager: true, import: 'default' })
 const bombImages = import.meta.glob('../assets/Traps/Bomb/*.png', { eager: true, import: 'default' })
+const springTrapImages = import.meta.glob('../assets/Traps/Spring_Trap/*.png', { eager: true, import: 'default' })
 const archerTowerImages = import.meta.glob('../assets/Defences/Archer_Tower/*.png', { eager: true, import: 'default' })
 const armyCampImages = import.meta.glob('../assets/Army/Army_Camp/*.png', { eager: true, import: 'default' })
 const barracksImages = import.meta.glob('../assets/Army/Barracks/*.png', { eager: true, import: 'default' })
@@ -2269,6 +2270,27 @@ export default function UserPage({ username, onLogout, userId }) {
     return Math.round((totalRatio / count) * 100)
   }
 
+  const computeHeroesCompletion = () => {
+    const heroHall = (structureCatalog.army || []).find((building) => building?.id === 'hero_hall')
+    if (!heroHall) return 0
+
+    const maxLevel = Math.max(...(heroHall.levels || []).map((level) => Number(level.level || 0)), 0)
+    if (maxLevel <= 0) return 0
+
+    const rows = getStructureRowCount(heroHall, structureLevels[heroHall.id] || [])
+    if (!rows) return 0
+
+    const levelsArray = structureLevels[heroHall.id] || Array.from({ length: rows }, (_, index) => getDefaultRowLevel(heroHall, index, isCopyUnlocked(heroHall, index)))
+
+    let totalRatio = 0
+    for (let index = 0; index < rows; index += 1) {
+      const currentLevel = Number(levelsArray[index] || 0)
+      totalRatio += currentLevel / maxLevel
+    }
+
+    return Math.round((totalRatio / rows) * 100)
+  }
+
   useEffect(() => {
     const townhallLevel = activeVillage?.townhall_level
     const currentVillageId = activeVillage?.id
@@ -2466,6 +2488,7 @@ export default function UserPage({ username, onLogout, userId }) {
       mortar: (imageLevel) => mortarImages[`../assets/Defences/mortar/23_${imageLevel}.png`] || '',
       air_defense: (imageLevel) => airDefenseImages[`../assets/Defences/air_defense/14_${imageLevel}.png`] || '',
       bomb: (imageLevel) => bombImages[`../assets/Traps/Bomb/27_${imageLevel}.png`] || '',
+      spring_trap: (imageLevel) => springTrapImages[`../assets/Traps/Spring_Trap/30_${imageLevel}.png`] || '',
       archer_tower: (imageLevel) => archerTowerImages[`../assets/Defences/Archer_Tower/16_${imageLevel}.png`] || '',
       army_camp: (imageLevel) => armyCampImages[`../assets/Army/Army_Camp/10_${imageLevel}.png`] || '',
       barracks: (imageLevel) => barracksImages[`../assets/Army/Barracks/8_${imageLevel}.png`] || '',
@@ -3241,10 +3264,11 @@ export default function UserPage({ username, onLogout, userId }) {
     army: isBuildingCategoryComplete(visibleArmyBuildings),
     resources: isBuildingCategoryComplete(visibleResourceBuildings),
     troops: isTroopCategoryComplete(structureCatalog.troops || []),
-    heroes: false,
+    heroes: showHeroesTab ? computeHeroesCompletion() >= 100 : false,
     walls: isWallMaxComplete,
   }
   const showTroopsProgress = currentTownHallLevel >= 3
+  const showHeroesProgress = currentTownHallLevel >= 4
   const townhallConstructionReady = (() => {
     const constructibleBuildings = [
       ...(structureCatalog.defences || []),
@@ -3456,6 +3480,16 @@ export default function UserPage({ username, onLogout, userId }) {
                                 <span className={styles.progressOverlayLabel}>{Math.max(0, computeTroopsCompletion())}%</span>
                               </div>
                               <div className={styles.progressName}>Troops</div>
+                            </div>
+                          )}
+
+                          {showHeroesProgress && (
+                            <div className={styles.progressRow}>
+                              <div className={styles.progressBarWrap}>
+                                <div className={styles.progressBarInner} style={{width: `${Math.max(0, computeHeroesCompletion())}%`}} />
+                                <span className={styles.progressOverlayLabel}>{Math.max(0, computeHeroesCompletion())}%</span>
+                              </div>
+                              <div className={styles.progressName}>Heroes</div>
                             </div>
                           )}
 

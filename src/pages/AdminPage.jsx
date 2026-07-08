@@ -412,6 +412,7 @@ export default function AdminPage({ username, onLogout }) {
                   if (building.id === 'giant') return `33_${maxLevel}`
                   if (building.id === 'goblin') return `34_${maxLevel}`
                   if (building.id === 'wall_breaker') return `35_${maxLevel}`
+                  if (building.id === 'balloon') return `36_${maxLevel}`
                   return '18_3'
                 }
 
