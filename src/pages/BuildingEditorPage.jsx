@@ -256,7 +256,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
                 : isSpellBuilding
                   ? normalizeSpellLevels(initialLevelCount, resolvedLevels)
                 : isHeroBuilding
-                  ? normalizeHeroLevels(initialLevelCount, resolvedLevels)
+                  ? normalizeHeroLevels(initialBuildingLevelCount, resolvedLevels)
                   : normalizeBuildingLevels(initialBuildingLevelCount, resolvedLevels)
             )
             setEditingBuildingCount(initialLevelCount)
@@ -304,7 +304,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
                 : isSpellBuilding
                   ? normalizeSpellLevels(draftCount, draftLevels)
                   : isHeroBuilding
-                    ? normalizeHeroLevels(draftCount, draftLevels)
+                    ? normalizeHeroLevels(draftLevelCount, draftLevels)
                     : normalizeBuildingLevels(draftLevelCount, draftLevels),
               ...(isTroopBuilding ? { barracks_level_unlocked: Number(staticBuildingData.barracks_level_unlocked ?? 1) || 1 } : {}),
               ...(isSpellBuilding ? { spell_factory_level_unlocked: Number(staticBuildingData.spell_factory_level_unlocked ?? 1) || 1 } : {}),
@@ -316,7 +316,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
                 : isSpellBuilding
                   ? normalizeSpellLevels(draftCount, draftLevels)
                   : isHeroBuilding
-                    ? normalizeHeroLevels(draftCount, draftLevels)
+                    ? normalizeHeroLevels(draftLevelCount, draftLevels)
                     : normalizeBuildingLevels(draftLevelCount, draftLevels)
             )
             setEditingBuildingCount(draftCount)
