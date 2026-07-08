@@ -724,11 +724,13 @@ export default function BuildingEditorPage({ username, onLogout }) {
                 if (defence.id === 'bomb') return `27_${maxLevel}`
                 if (defence.id === 'giant_bomb') return `28_${maxLevel}`
                 if (defence.id === 'air_bomb') return `26_${maxLevel}`
+                if (defence.id === 'seeking_air_mine') return `29_${maxLevel}`
                 if (defence.id === 'spring_trap') return `30_${maxLevel}`
                 if (defence.id === 'mortar') return `23_${maxLevel}`
                 if (defence.id === 'wizard_tower') return `24_${maxLevel}`
                 if (defence.id === 'air_defense') return `14_${maxLevel}`
                 if (defence.id === 'air_sweeper') return `15_${maxLevel}`
+                if (defence.id === 'hidden_tesla') return `21_${maxLevel}`
                 if (defence.id === 'lab') return `13_${maxLevel}`
                 if (defence.id === 'hero_hall') return `202_${maxLevel}`
                 if (defence.id === 'army_camp') return `10_${maxLevel}`
@@ -739,8 +741,10 @@ export default function BuildingEditorPage({ username, onLogout }) {
                 if (defence.id === 'walls') return `60_${maxLevel}`
                 if (defence.id === 'gold_mine') return `2_${maxLevel}`
                 if (defence.id === 'elixir_collector') return `3_${maxLevel}`
+                if (defence.id === 'dark_elixir_driller') return `4_${maxLevel}`
                 if (defence.id === 'gold_storage') return `5_${maxLevel}`
                 if (defence.id === 'elixir_storage') return `6_${maxLevel}`
+                if (defence.id === 'dark_elixir_storage') return `7_${maxLevel}`
                 if (defence.id === 'barbarian') return `31_${maxLevel}`
                 if (defence.id === 'archer') return `32_${maxLevel}`
                 if (defence.id === 'giant') return `33_${maxLevel}`
@@ -749,9 +753,11 @@ export default function BuildingEditorPage({ username, onLogout }) {
                 if (defence.id === 'balloon') return `36_${maxLevel}`
                 if (defence.id === 'wizard') return `37_${maxLevel}`
                 if (defence.id === 'healer') return `38_${maxLevel}`
+                if (defence.id === 'dragon') return `39_${maxLevel}`
                 if (defence.id === 'minion') return `53_${maxLevel}`
                 if (defence.id === 'lightning_spell') return '43'
                 if (defence.id === 'healing_spell') return '44'
+                if (defence.id === 'rage_spell') return '45'
                 if (defence.id === 'barbarian_king') return '61'
                 if (defence.id === 'archer_queen') return '62'
                 if (defence.id === 'grand_warden') return '63'

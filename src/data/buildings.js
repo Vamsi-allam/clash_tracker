@@ -9,6 +9,7 @@ export const BUILDING_SECTIONS = {
     { id: 'wizard_tower', name: 'Wizard Tower', image: '/src/assets/Defences/wizard_tower' },
     { id: 'air_defense', name: 'Air Defense', image: '/src/assets/Defences/air_defense' },
     { id: 'air_sweeper', name: 'Air Sweeper', image: '/src/assets/Defences/air_sweeper' },
+    { id: 'hidden_tesla', name: 'Hidden Tesla', image: '/src/assets/Defences/hidden_tesla' },
     { id: 'inferno_tower', name: 'Inferno Tower', image: '/src/assets/Defences/Inferno_tower' },
     { id: 'x_bow', name: 'X-Bow', image: '/src/assets/Defences/x-bow' },
     { id: 'eagle_artillery', name: 'Eagle Artillery', image: '/src/assets/Defences/Eagle_Artillery' },
@@ -17,6 +18,7 @@ export const BUILDING_SECTIONS = {
     { id: 'bomb', name: 'Bomb', image: '/src/assets/Traps/Bomb' },
     { id: 'giant_bomb', name: 'Giant Bomb', image: '/src/assets/Traps/Gaint_Bomb' },
     { id: 'air_bomb', name: 'Air Bomb', image: '/src/assets/Traps/Air_Bomb' },
+    { id: 'seeking_air_mine', name: 'Seeking Air Mine', image: '/src/assets/Traps/Seeking_Air_Mine' },
     { id: 'spring_trap', name: 'Spring Trap', image: '/src/assets/Traps/Spring_Trap' },
   ],
   army: [
@@ -33,6 +35,8 @@ export const BUILDING_SECTIONS = {
     { id: 'elixir_collector', name: 'Elixir Collector', image: '/src/assets/Resources/elixir_collector' },
     { id: 'gold_storage', name: 'Gold Storage', image: '/src/assets/Resources/gold_storage' },
     { id: 'elixir_storage', name: 'Elixir Storage', image: '/src/assets/Resources/elixi_storage' },
+    { id: 'dark_elixir_driller', name: 'Dark Elixir Drill', image: '/src/assets/Resources/dark_elixir_driller' },
+    { id: 'dark_elixir_storage', name: 'Dark Elixir Storage', image: '/src/assets/Resources/dark_elixir_storage' },
   ],
   troops: [
     { id: 'barbarian', name: 'Barbarian', image: '/src/assets/Troops/Barbarian' },
@@ -43,10 +47,12 @@ export const BUILDING_SECTIONS = {
     { id: 'balloon', name: 'Balloon', image: '/src/assets/Troops/Ballon' },
     { id: 'wizard', name: 'Wizard', image: '/src/assets/Troops/wizard' },
     { id: 'healer', name: 'Healer', image: '/src/assets/Troops/Healer' },
+    { id: 'dragon', name: 'Dragon', image: '/src/assets/Troops/Dragon' },
   ],
   spells: [
     { id: 'lightning_spell', name: 'Lightning Spell', image: '/src/assets/spells/Lightning_Spell' },
     { id: 'healing_spell', name: 'Healing Spell', image: '/src/assets/spells/Healing_Spell' },
+    { id: 'rage_spell', name: 'Rage Spell', image: '/src/assets/spells/Rage_Spell' },
   ],
   dark_troops: [
     { id: 'minion', name: 'Minion', image: '/src/assets/Dark_Troops/Minion' },
@@ -341,6 +347,62 @@ export const getDefaultBuildingData = (townhallLevel) => {
         dark_barracks_level_unlocked: 1,
         levels: [
           { level: 1, cost: 0, resource: 'dark_elixir', time: '0sec', lab_level_unlocked: 1 },
+        ],
+      },
+      dragon: {
+        id: 'dragon',
+        image_path: '/src/assets/Troops/Dragon/39_',
+        buildings_unlocked: 1,
+        copy_unlocks: [true],
+        barracks_level_unlocked: 9,
+        levels: [
+          { level: 1, cost: 0, resource: 'elixir', time: '0sec', lab_level_unlocked: 1 },
+        ],
+      },
+      rage_spell: {
+        id: 'rage_spell',
+        image_path: '/src/assets/spells/Rage_Spell/45_',
+        buildings_unlocked: 1,
+        copy_unlocks: createCopyUnlocks(1, 1),
+        spell_factory_level_unlocked: 3,
+        levels: [
+          { level: 1, cost: 0, resource: 'elixir', time: '0sec', lab_level_unlocked: 1 },
+        ],
+      },
+      dark_elixir_driller: {
+        id: 'dark_elixir_driller',
+        image_path: '/src/assets/Resources/dark_elixir_driller/4_',
+        buildings_unlocked: 1,
+        copy_unlocks: createCopyUnlocks(1, 1),
+        levels: [
+          { level: 1, cost: 0, resource: 'elixir', time: '0sec' },
+        ],
+      },
+      dark_elixir_storage: {
+        id: 'dark_elixir_storage',
+        image_path: '/src/assets/Resources/dark_elixir_storage/7_',
+        buildings_unlocked: 1,
+        copy_unlocks: createCopyUnlocks(1, 1),
+        levels: [
+          { level: 1, cost: 0, resource: 'elixir', time: '0sec' },
+        ],
+      },
+      hidden_tesla: {
+        id: 'hidden_tesla',
+        image_path: '/src/assets/Defences/hidden_tesla/21_',
+        buildings_unlocked: 1,
+        copy_unlocks: createCopyUnlocks(1, 1),
+        levels: [
+          { level: 1, cost: 0, resource: 'gold', time: '0sec' },
+        ],
+      },
+      seeking_air_mine: {
+        id: 'seeking_air_mine',
+        image_path: '/src/assets/Traps/Seeking_Air_Mine/29_',
+        buildings_unlocked: 1,
+        copy_unlocks: createCopyUnlocks(1, 1),
+        levels: [
+          { level: 1, cost: 0, resource: 'gold', time: '0sec' },
         ],
       },
     }
