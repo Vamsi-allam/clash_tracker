@@ -344,6 +344,7 @@ const darkBarracksImages = import.meta.glob('../assets/Army/Dark_Barracks/*.png'
 const spellFactoryImages = import.meta.glob('../assets/Army/Spell_Factory/*.png', { eager: true, import: 'default' })
 const clanCastleImages = import.meta.glob('../assets/Army/clan_castle/*.png', { eager: true, import: 'default' })
 const labImages = import.meta.glob('../assets/Army/Lab/*.png', { eager: true, import: 'default' })
+const blacksmithImages = import.meta.glob('../assets/Army/Blacksmith/*.png', { eager: true, import: 'default' })
 const heroHallImages = import.meta.glob('../assets/Army/Hero_Hall/*.png', { eager: true, import: 'default' })
 const goldMineImages = import.meta.glob('../assets/Resources/goldmine/*.png', { eager: true, import: 'default' })
 const elixirCollectorImages = import.meta.glob('../assets/Resources/elixir_collector/*.png', { eager: true, import: 'default' })
@@ -2737,6 +2738,7 @@ export default function UserPage({ username, onLogout, userId }) {
       spell_factory: (imageLevel) => spellFactoryImages[`../assets/Army/Spell_Factory/11_${imageLevel}.png`] || '',
       clan_castle: (imageLevel) => clanCastleImages[`../assets/Army/clan_castle/19_${imageLevel}.png`] || '',
       lab: (imageLevel) => labImages[`../assets/Army/Lab/13_${imageLevel}.png`] || '',
+      blacksmith: (imageLevel) => blacksmithImages[`../assets/Army/Blacksmith/152_${imageLevel}.png`] || '',
       hero_hall: (imageLevel) => heroHallImages[`../assets/Army/Hero_Hall/202_${imageLevel}.png`] || '',
       gold_mine: (imageLevel) => goldMineImages[`../assets/Resources/goldmine/2_${imageLevel}.png`] || '',
       elixir_collector: (imageLevel) => elixirCollectorImages[`../assets/Resources/elixir_collector/3_${imageLevel}.png`] || '',
@@ -2774,8 +2776,9 @@ export default function UserPage({ username, onLogout, userId }) {
       return ''
     }
 
-    if (building?.image_path) {
-      return `${building.image_path}${requestedLevel}.png`
+    const fallbackImagePath = building?.image_path || building?.image
+    if (fallbackImagePath) {
+      return `${fallbackImagePath}${requestedLevel}.png`
     }
 
     return ''
