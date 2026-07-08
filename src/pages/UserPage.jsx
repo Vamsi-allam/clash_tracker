@@ -75,14 +75,16 @@ const parseTimeStringToSeconds = (timeString) => {
 
 const formatUpgradeClock = (remainingSeconds) => {
   const safeSeconds = Math.max(0, Math.ceil(Number(remainingSeconds || 0)))
-  const hours = Math.floor(safeSeconds / 3600)
+  const days = Math.floor(safeSeconds / 86400)
+  const hours = Math.floor((safeSeconds % 86400) / 3600)
   const minutes = Math.floor((safeSeconds % 3600) / 60)
   const seconds = safeSeconds % 60
 
   return [
+    days ? `${days}d` : '',
     hours ? `${hours}h` : '',
     minutes ? `${minutes}m` : '',
-    !hours && !minutes ? `${seconds}s` : seconds ? `${seconds}s` : '',
+    !days && !hours && !minutes ? `${seconds}s` : seconds ? `${seconds}s` : '',
   ].filter(Boolean).join(' ')
 }
 
@@ -1654,29 +1656,32 @@ export default function UserPage({ username, onLogout, userId }) {
     if (!raw) return '0s'
 
     const compact = raw.replace(/\s+/g, '')
-    const parts = compact.match(/\d+(?:\.\d+)?(?:h|hr|hrs|m|min|mins|s|sec|secs)/g)
+    const parts = compact.match(/\d+(?:\.\d+)?(?:d|day|days|h|hr|hrs|m|min|mins|s|sec|secs)/g)
     const tokens = parts || [compact]
     let totalSeconds = 0
 
     tokens.forEach((token) => {
-      const match = token.match(/(\d+(?:\.\d+)?)(h|hr|hrs|m|min|mins|s|sec|secs)/)
+      const match = token.match(/(\d+(?:\.\d+)?)(d|day|days|h|hr|hrs|m|min|mins|s|sec|secs)/)
       if (!match) return
 
       const amount = Number(match[1])
       const unit = match[2]
-      if (unit.startsWith('h')) totalSeconds += amount * 3600
+      if (unit.startsWith('d')) totalSeconds += amount * 86400
+      else if (unit.startsWith('h')) totalSeconds += amount * 3600
       else if (unit.startsWith('m')) totalSeconds += amount * 60
       else totalSeconds += amount
     })
 
-    const hours = Math.floor(totalSeconds / 3600)
+    const days = Math.floor(totalSeconds / 86400)
+    const hours = Math.floor((totalSeconds % 86400) / 3600)
     const minutes = Math.floor((totalSeconds % 3600) / 60)
     const seconds = Math.round(totalSeconds % 60)
 
     return [
+      days ? `${days}d` : '',
       hours ? `${hours}h` : '',
       minutes ? `${minutes}m` : '',
-      !hours && !minutes ? `${seconds}s` : seconds ? `${seconds}s` : '',
+      !days && !hours && !minutes ? `${seconds}s` : seconds ? `${seconds}s` : '',
     ].filter(Boolean).join(' ')
   }
 
@@ -1685,26 +1690,35 @@ export default function UserPage({ username, onLogout, userId }) {
     if (!raw) return 0
 
     const compact = raw.replace(/\s+/g, '')
-    const match = compact.match(/^(\d+(?:\.\d+)?)(h|hr|hrs|m|min|mins|s|sec|secs)$/)
-    if (!match) return 0
+    const parts = compact.match(/\d+(?:\.\d+)?(?:d|day|days|h|hr|hrs|m|min|mins|s|sec|secs)/g)
+    if (!parts) return 0
 
-    const amount = Number(match[1])
-    const unit = match[2]
-    if (unit.startsWith('h')) return amount * 3600
-    if (unit.startsWith('m')) return amount * 60
-    return amount
+    let totalSeconds = 0
+    parts.forEach((token) => {
+      const match = token.match(/(\d+(?:\.\d+)?)(d|day|days|h|hr|hrs|m|min|mins|s|sec|secs)/)
+      if (!match) return
+      const amount = Number(match[1])
+      const unit = match[2]
+      if (unit.startsWith('d')) totalSeconds += amount * 86400
+      else if (unit.startsWith('h')) totalSeconds += amount * 3600
+      else if (unit.startsWith('m')) totalSeconds += amount * 60
+      else totalSeconds += amount
+    })
+    return totalSeconds
   }
 
   const formatSeconds = (totalSeconds) => {
     const safeSeconds = Math.max(0, Math.round(Number(totalSeconds || 0)))
-    const hours = Math.floor(safeSeconds / 3600)
+    const days = Math.floor(safeSeconds / 86400)
+    const hours = Math.floor((safeSeconds % 86400) / 3600)
     const minutes = Math.floor((safeSeconds % 3600) / 60)
     const seconds = safeSeconds % 60
 
     return [
+      days ? `${days}d` : '',
       hours ? `${hours}h` : '',
       minutes ? `${minutes}m` : '',
-      !hours && !minutes ? `${seconds}s` : seconds ? `${seconds}s` : '',
+      !days && !hours && !minutes ? `${seconds}s` : seconds ? `${seconds}s` : '',
     ].filter(Boolean).join(' ')
   }
 
