@@ -158,6 +158,7 @@ export const pruneTownhallSnapshotToSeed = (snapshot = {}, seedSnapshot = {}) =>
   spells: pruneArrayCategoryToSeed(snapshot.spells, seedSnapshot.spells),
   dark_troops: pruneArrayCategoryToSeed(snapshot.dark_troops, seedSnapshot.dark_troops),
   heroes: pruneArrayCategoryToSeed(snapshot.heroes, seedSnapshot.heroes),
+  equipment: pruneArrayCategoryToSeed(snapshot.equipment, seedSnapshot.equipment),
   walls: pruneObjectCategoryToSeed(snapshot.walls, seedSnapshot.walls),
 })
 
@@ -172,6 +173,7 @@ export const mergeTownhallSnapshot = (previousSnapshot = {}, nextSnapshot = {}) 
   spells: mergeArrayCategory(previousSnapshot.spells, nextSnapshot.spells),
   dark_troops: mergeArrayCategory(previousSnapshot.dark_troops, nextSnapshot.dark_troops),
   heroes: mergeArrayCategory(previousSnapshot.heroes, nextSnapshot.heroes),
+  equipment: mergeArrayCategory(previousSnapshot.equipment, nextSnapshot.equipment),
   walls: mergeObjectCategory(previousSnapshot.walls, nextSnapshot.walls),
 })
 
@@ -193,14 +195,14 @@ export const getTownhallSnapshotForLevel = (rows = [], townhallLevel, seedSnapsh
   if (exactTownhallRow) {
     const exactSnapshot = mergeTownhallSnapshot(seedSnapshot || {}, exactTownhallRow)
     const prunedSnapshot = pruneTownhallSnapshotToSeed(exactSnapshot, seedSnapshot || {})
-    const hasPrunedContent = ['defences', 'traps', 'army', 'resources', 'troops', 'spells', 'dark_troops', 'heroes'].some((key) => Array.isArray(prunedSnapshot[key]) && prunedSnapshot[key].length > 0)
+    const hasPrunedContent = ['defences', 'traps', 'army', 'resources', 'troops', 'spells', 'dark_troops', 'heroes', 'equipment'].some((key) => Array.isArray(prunedSnapshot[key]) && prunedSnapshot[key].length > 0)
 
     return hasPrunedContent ? prunedSnapshot : exactSnapshot
   }
 
   const inheritedSnapshot = buildTownhallSnapshotFromRows(rows, seedSnapshot)
   const prunedInheritedSnapshot = pruneTownhallSnapshotToSeed(inheritedSnapshot, seedSnapshot || {})
-  const hasPrunedInheritedContent = ['defences', 'traps', 'army', 'resources', 'troops', 'spells', 'dark_troops', 'heroes'].some((key) => Array.isArray(prunedInheritedSnapshot[key]) && prunedInheritedSnapshot[key].length > 0)
+  const hasPrunedInheritedContent = ['defences', 'traps', 'army', 'resources', 'troops', 'spells', 'dark_troops', 'heroes', 'equipment'].some((key) => Array.isArray(prunedInheritedSnapshot[key]) && prunedInheritedSnapshot[key].length > 0)
 
   return hasPrunedInheritedContent ? prunedInheritedSnapshot : inheritedSnapshot
 }

@@ -293,6 +293,118 @@
   gap: 4px;
 }
 
+.equipmentCostBreakdown {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.equipmentRequirementBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(102, 227, 196, 0.25);
+  background: rgba(102, 227, 196, 0.08);
+  color: var(--accent-2);
+  font-size: 0.76rem;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.equipmentCostItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.equipmentCostIcon {
+  width: 14px;
+  height: 14px;
+  object-fit: contain;
+}
+
+.equipmentCostValue {
+  color: #ffd700;
+  font-weight: 700;
+  font-size: 0.85rem;
+  line-height: 1;
+}
+
+.equipmentResourceGrid {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.equipmentResourceField {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.equipmentResourceIcon {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}
+
+.equipmentResourceInput {
+  width: 88px;
+  padding: 3px 8px;
+  border: 1px solid rgba(102, 227, 196, 0.4);
+  background: rgba(0, 0, 0, 0.3);
+  color: var(--text);
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  line-height: 1.2;
+  height: auto;
+  text-align: center;
+}
+
+.equipmentResourceInput:focus {
+  outline: none;
+  border-color: var(--accent-2);
+  background: rgba(102, 227, 196, 0.1);
+}
+
+.equipmentRequirementField {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding-left: 2px;
+}
+
+.equipmentRequirementLabel {
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.equipmentRequirementInput {
+  width: 48px;
+  padding: 3px 6px;
+  border: 1px solid rgba(102, 227, 196, 0.4);
+  background: rgba(0, 0, 0, 0.3);
+  color: var(--accent-2);
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+}
+
+.equipmentRequirementInput:focus {
+  outline: none;
+  border-color: var(--accent-2);
+  background: rgba(102, 227, 196, 0.1);
+}
+
 .resourceOption {
   display: inline-flex;
   align-items: center;
@@ -362,6 +474,14 @@
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.equipmentEditControls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 6px 0 10px;
 }
 
 .headingCountInput {
@@ -532,7 +652,27 @@
   cursor: pointer;
 }
 
+.unlockSourceSelect {
+  width: 112px;
+  cursor: pointer;
+}
+
+.equipmentHeroSelect {
+  width: 146px;
+  cursor: pointer;
+}
+
 .resourceSelect option {
+  background: #0a1527;
+  color: var(--text);
+}
+
+.unlockSourceSelect option {
+  background: #0a1527;
+  color: var(--text);
+}
+
+.equipmentHeroSelect option {
   background: #0a1527;
   color: var(--text);
 }

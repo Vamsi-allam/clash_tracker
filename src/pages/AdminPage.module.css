@@ -557,6 +557,20 @@
   margin: 0;
 }
 
+.buildingItemInlineMeta {
+  margin-left: 8px;
+  color: var(--accent-2);
+  font-weight: 700;
+}
+
+.levelMetaText {
+  color: var(--accent-2);
+  font-size: 0.76rem;
+  font-weight: 700;
+  margin-left: 8px;
+  white-space: nowrap;
+}
+
 .buildingItemData {
   font-size: 0.85rem;
   color: var(--accent-2);
@@ -576,6 +590,32 @@
   gap: 6px;
   font-size: 0.8rem;
   color: var(--accent-2);
+
+.equipmentCostBreakdown {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.equipmentCostItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.equipmentCostIcon {
+  width: 14px;
+  height: 14px;
+  object-fit: contain;
+}
+
+.equipmentCostValue {
+  color: #ffd700;
+  font-weight: 700;
+  font-size: 0.85rem;
+  line-height: 1;
+}
   font-weight: 500;
 }
 

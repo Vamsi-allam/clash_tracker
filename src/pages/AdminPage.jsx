@@ -5,6 +5,7 @@ import Header from '../components/Header'
 import { supabase } from '../supabaseClient'
 import { getTownhallSnapshotForLevel } from '../utils/townhallSnapshot'
 import { ADMIN_BUILDINGS_BY_CATEGORY, getDefaultBuildingData } from '../data/buildings'
+import { formatResourceCostBreakdown, getLevelResourceOptions } from '../utils/resourceCosts'
 
 const formatSecondsToTimeDisplay = (seconds) => {
   if (!seconds || seconds === 0) return '0sec'
@@ -53,20 +54,17 @@ const formatTownhallResourceLabel = (resource) => {
   return 'Gold'
 }
 
-const getLevelResourceOptions = (levelInfo, { isWallLevel = false } = {}) => {
-  const normalizedFromOptions = Array.isArray(levelInfo?.resource_options)
-    ? levelInfo.resource_options
-      .map((resource) => String(resource || '').trim().toLowerCase())
-      .filter((resource, index, collection) => Boolean(resource) && collection.indexOf(resource) === index)
-    : []
+const equipmentResourceIcons = {
+  shiny_ore: '/src/assets/magic-items/ore-shiny.png',
+  glowy_ore: '/src/assets/magic-items/ore-glowy.png',
+  starry_ore: '/src/assets/magic-items/ore-starry.png',
+}
 
-  if (normalizedFromOptions.length > 0) return normalizedFromOptions
-
-  if (isWallLevel && Number(levelInfo?.level || 0) >= 5) {
-    return ['gold', 'elixir']
-  }
-
-  return [String(levelInfo?.resource || 'gold').trim().toLowerCase() || 'gold']
+const formatEquipmentResourceLabel = (resource) => {
+  if (resource === 'glowy_ore') return 'Glowy Ore'
+  if (resource === 'shiny_ore') return 'Shiny Ore'
+  if (resource === 'starry_ore') return 'Starry Ore'
+  return formatTownhallResourceLabel(resource)
 }
 
 const parseTimeStringToSeconds = (timeString) => {
@@ -147,7 +145,7 @@ export default function AdminPage({ username, onLogout }) {
         const inheritedSnapshot = getTownhallSnapshotForLevel(rows || [], selectedTownhall, staticDefaults)
         const merged = {}
 
-        ;[...(inheritedSnapshot.defences || []), ...(inheritedSnapshot.traps || []), ...(inheritedSnapshot.army || []), ...(inheritedSnapshot.resources || []), ...(inheritedSnapshot.troops || []), ...(inheritedSnapshot.spells || []), ...(inheritedSnapshot.dark_troops || []), ...(inheritedSnapshot.heroes || [])].forEach((building) => {
+        ;[...(inheritedSnapshot.defences || []), ...(inheritedSnapshot.traps || []), ...(inheritedSnapshot.army || []), ...(inheritedSnapshot.resources || []), ...(inheritedSnapshot.troops || []), ...(inheritedSnapshot.spells || []), ...(inheritedSnapshot.dark_troops || []), ...(inheritedSnapshot.heroes || []), ...(inheritedSnapshot.equipment || [])].forEach((building) => {
           merged[building.id] = building
         })
         if (inheritedSnapshot.walls) {
@@ -433,8 +431,14 @@ export default function AdminPage({ username, onLogout }) {
                 const darkBarracksLevelNeeded = Number(buildingData?.dark_barracks_level_unlocked ?? staticDefaults[building.id]?.dark_barracks_level_unlocked ?? 1) || 1
                 const spellFactoryLevelNeeded = Number(buildingData?.spell_factory_level_unlocked ?? staticDefaults[building.id]?.spell_factory_level_unlocked ?? 1) || 1
                 const heroHallLevelNeeded = Number(buildingData?.hero_hall_level_unlocked ?? staticDefaults[building.id]?.hero_hall_level_unlocked ?? 1) || 1
+                const equipmentUnlockSource = String(buildingData?.unlock_source || staticDefaults[building.id]?.unlock_source || 'blacksmith').trim().toLowerCase()
+                const equipmentUnlockLevel = Number(buildingData?.blacksmith_level_unlocked ?? staticDefaults[building.id]?.blacksmith_level_unlocked ?? 1) || 1
+                const equipmentUnlockLabel = equipmentUnlockSource === 'blacksmith'
+                  ? `Blacksmith Lvl: ${equipmentUnlockLevel}`
+                  : `Gems (Blacksmith Lvl: ${equipmentUnlockLevel})`
                 
                 const getImagePath = () => {
+                  if (activeTab === 'equipment') return ''
                   if (building.id === 'archer_tower') return `16_${maxLevel}`
                   if (building.id === 'canon') return `18_${maxLevel}`
                   if (building.id === 'bomb') return `27_${maxLevel}`
@@ -485,6 +489,10 @@ export default function AdminPage({ username, onLogout }) {
                   return '18_3'
                 }
 
+                const imageSource = activeTab === 'equipment'
+                  ? building.image
+                  : `${building.image}/${getImagePath()}.png`
+
                 return (
                   <div
                     key={building.id}
@@ -492,13 +500,18 @@ export default function AdminPage({ username, onLogout }) {
                     onClick={() => handleBuildingClick(building.id)}
                   >
                     <img
-                      src={`${building.image}/${getImagePath()}.png`}
+                      src={imageSource}
                       alt={building.name}
                       className={`${styles.buildingItemImage} ${activeTab === 'traps' ? styles.trapBuildingItemImage : ''}`}
                     />
                     <div className={styles.buildingItemInfo}>
                       <div className={styles.buildingItemHeader}>
                         <p className={styles.buildingItemName}>{building.name}</p>
+                        {activeTab === 'equipment' && building.hero && (
+                                  <p className={styles.buildingItemCount}>
+                                    Hero: {building.hero}
+                                  </p>
+                                )}
                         {(activeTab === 'troops' || activeTab === 'dark_troops') && (
                           <p className={styles.buildingItemCount}>
                             Level Count: {levelCountValue}
@@ -512,19 +525,17 @@ export default function AdminPage({ username, onLogout }) {
                         {activeTab !== 'troops' && activeTab !== 'dark_troops' && (
                           <p className={styles.buildingItemCount}>
                             Level Count: {levels.length}
+                            {activeTab === 'equipment' && (
+                              <span className={styles.buildingItemInlineMeta}>
+                                {equipmentUnlockLabel}
+                              </span>
+                            )}
                           </p>
                         )}
                         {activeTab === 'troops' && (
                           <>
                             <p className={styles.buildingItemCount}>
                               Barracks level needed: {barracksLevelNeeded}
-                            </p>
-                          </>
-                        )}
-                        {activeTab === 'dark_troops' && (
-                          <>
-                            <p className={styles.buildingItemCount}>
-                              Dark Barracks level needed: {darkBarracksLevelNeeded}
                             </p>
                           </>
                         )}
@@ -556,6 +567,12 @@ export default function AdminPage({ username, onLogout }) {
                             const timeDisplay = typeof level.time === 'number' 
                               ? formatSecondsToTimeDisplay(level.time)
                               : level.time || '—'
+                            const costDisplay = activeTab === 'equipment' && Array.isArray(level.resource_costs) && level.resource_costs.length > 0
+                              ? formatResourceCostBreakdown(level, {
+                                formatCost,
+                                formatResourceLabel: formatEquipmentResourceLabel,
+                              }, 'glowy_ore')
+                              : formatCost(level.cost)
                             return (
                               <div key={idx} className={styles.buildingLevelRow}>
                                 <div className={styles.levelResourceIcons}>
@@ -580,8 +597,27 @@ export default function AdminPage({ username, onLogout }) {
                                   )}
                                 </div>
                                 <span className={styles.levelNumber}>Lvl: {level.level}</span>
-                                <span className={styles.levelCost}>{formatCost(level.cost)}</span>
-                                <span className={styles.levelTime}>{timeDisplay}</span>
+                                {activeTab === 'equipment' && Array.isArray(level.resource_costs) && level.resource_costs.length > 0 ? (
+                                  <div className={styles.equipmentCostBreakdown}>
+                                    {level.resource_costs.map(({ resource, cost }) => (
+                                      <span key={`${level.level}-${resource}`} className={styles.equipmentCostItem}>
+                                        {equipmentResourceIcons[resource] ? (
+                                          <img
+                                            src={equipmentResourceIcons[resource]}
+                                            alt={formatEquipmentResourceLabel(resource)}
+                                            className={styles.equipmentCostIcon}
+                                          />
+                                        ) : null}
+                                        <span className={styles.equipmentCostValue}>{formatCost(cost)}</span>
+                                      </span>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <>
+                                    <span className={styles.levelCost}>{costDisplay}</span>
+                                    <span className={styles.levelTime}>{timeDisplay}</span>
+                                  </>
+                                )}
                                 {activeTab === 'troops' && (
                                   <span className={styles.levelNumber}>
                                     Lab Lvl: {Number(level.lab_level_unlocked ?? 0)}
@@ -600,6 +636,11 @@ export default function AdminPage({ username, onLogout }) {
                                 {activeTab === 'heroes' && (
                                   <span className={styles.levelNumber}>
                                     Hero Hall Lvl: {Number(level.hero_hall_level_unlocked ?? 0)}
+                                  </span>
+                                )}
+                                {activeTab === 'equipment' && (
+                                  <span className={styles.levelNumber}>
+                                    Blacksmith Lvl: {Number(level.blacksmith_level_unlocked ?? level.level ?? 0)}
                                   </span>
                                 )}
                               </div>

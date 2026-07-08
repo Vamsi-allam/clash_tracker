@@ -6,27 +6,59 @@ import Header from '../components/Header'
 import ToastNotification from '../components/ToastNotification'
 import { getTownhallSnapshotForLevel } from '../utils/townhallSnapshot'
 import { ALL_BUILDINGS, BUILDING_SECTIONS, getBuildingCategory, getDefaultBuildingData } from '../data/buildings'
+import { formatResourceCostBreakdown, getLevelResourceOptions, normalizeResourceCosts } from '../utils/resourceCosts'
+
+const EQUIPMENT_RESOURCE_KEYS = ['shiny_ore', 'glowy_ore', 'starry_ore']
+const EQUIPMENT_HERO_OPTIONS = BUILDING_SECTIONS.heroes.map((building) => building.name)
 
 const RESOURCE_ICONS = {
   gold: '/src/assets/magic-items/gold.png',
   elixir: '/src/assets/magic-items/elixir.png',
   dark_elixir: '/src/assets/magic-items/de.png',
+  glowy_ore: '/src/assets/magic-items/ore-glowy.png',
+  shiny_ore: '/src/assets/magic-items/ore-shiny.png',
+  starry_ore: '/src/assets/magic-items/ore-starry.png',
 }
 
-const getLevelResourceOptions = (levelInfo, { isWallLevel = false } = {}) => {
-  const normalizedFromOptions = Array.isArray(levelInfo?.resource_options)
-    ? levelInfo.resource_options
-      .map((resource) => String(resource || '').trim().toLowerCase())
-      .filter((resource, index, collection) => Boolean(resource) && collection.indexOf(resource) === index)
-    : []
-
-  if (normalizedFromOptions.length > 0) return normalizedFromOptions
-
-  if (isWallLevel && Number(levelInfo?.level || 0) >= 5) {
-    return ['gold', 'elixir']
-  }
-
-  return [String(levelInfo?.resource || 'gold').trim().toLowerCase() || 'gold']
+const EQUIPMENT_BUILDINGS = {
+  barbarian_puppet: { id: 'barbarian_puppet', name: 'Barbarian Puppet', hero: 'Barbarian King', image: '/src/assets/Equipment/Barbarian_King/Barbarian_puppet/157.png', levelCount: 4, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1 },
+  rage_vial: { id: 'rage_vial', name: 'Rage Vial', hero: 'Barbarian King', image: '/src/assets/Equipment/Barbarian_King/Rage_Vial/158.png', levelCount: 4, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1 },
+  earthquake_boots: { id: 'earthquake_boots', name: 'Earthquake Boots', hero: 'Barbarian King', image: '/src/assets/Equipment/Barbarian_King/Earthquake_Boots/159.png', levelCount: 4, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1 },
+  vampstache: { id: 'vampstache', name: 'Vampstache', hero: 'Barbarian King', image: '/src/assets/Equipment/Barbarian_King/Vampstache/160.png', levelCount: 4, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1 },
+  archer_puppet: { id: 'archer_puppet', name: 'Archer Puppet', hero: 'Archer Queen', image: '/src/assets/Equipment/Archer_Queen/Archer_Puppet/161.png', levelCount: 4, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1 },
+  invisibility_vial: { id: 'invisibility_vial', name: 'Invisibility Vial', hero: 'Archer Queen', image: '/src/assets/Equipment/Archer_Queen/Invisibility_vial/162.png', levelCount: 4, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1 },
+  giant_arrow: { id: 'giant_arrow', name: 'Giant Arrow', hero: 'Archer Queen', image: '/src/assets/Equipment/Archer_Queen/Giant_Arrow/163.png', levelCount: 4, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1 },
+  healer_puppet: { id: 'healer_puppet', name: 'Healer Puppet', hero: 'Archer Queen', image: '/src/assets/Equipment/Archer_Queen/Healer_Puppet/164.png', levelCount: 4, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1 },
+  eternal_tome: { id: 'eternal_tome', name: 'Eternal Tome', hero: 'Grand Warden', image: '/src/assets/Equipment/Grand_Warden/Eternal_Tome/165.png', levelCount: 4, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1 },
+  life_gem: { id: 'life_gem', name: 'Life Gem', hero: 'Grand Warden', image: '/src/assets/Equipment/Grand_Warden/Life_Gem/166.png', levelCount: 4, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1 },
+  healing_tome: { id: 'healing_tome', name: 'Healing Tome', hero: 'Grand Warden', image: '/src/assets/Equipment/Grand_Warden/Healing_Tome/167.png', levelCount: 4, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1 },
+  rage_gem: { id: 'rage_gem', name: 'Rage Gem', hero: 'Grand Warden', image: '/src/assets/Equipment/Grand_Warden/Rage_Gem/168.png', levelCount: 4, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1 },
+  royal_gem: { id: 'royal_gem', name: 'Royal Gem', hero: 'Royal Champion', image: '/src/assets/Equipment/Royal_Champion/Royal_Gem/169.png', levelCount: 4, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1 },
+  seeking_shield: { id: 'seeking_shield', name: 'Seeking Shield', hero: 'Royal Champion', image: '/src/assets/Equipment/Royal_Champion/Seeking_Shield/170.png', levelCount: 4, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1 },
+  giant_gauntlet: { id: 'giant_gauntlet', name: 'Giant Gauntlet', hero: 'Barbarian King', image: '/src/assets/Equipment/Barbarian_King/Gaint_Gauntlet/171.png', levelCount: 4, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1 },
+  frozen_arrow: { id: 'frozen_arrow', name: 'Frozen Arrow', hero: 'Archer Queen', image: '/src/assets/Equipment/Archer_Queen/Fronzen_Arrow/172.png', levelCount: 4, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1 },
+  hog_rider_puppet: { id: 'hog_rider_puppet', name: 'Hog Rider Puppet', hero: 'Royal Champion', image: '/src/assets/Equipment/Royal_Champion/Hog_Rider_Puppet/173.png', levelCount: 4, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1 },
+  haste_vial: { id: 'haste_vial', name: 'Haste Vial', hero: 'Royal Champion', image: '/src/assets/Equipment/Royal_Champion/Haste_Vial/174.png', levelCount: 4, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1 },
+  fireball: { id: 'fireball', name: 'Fireball', hero: 'Grand Warden', image: '/src/assets/Equipment/Grand_Warden/Fireball/176.png', levelCount: 4, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1 },
+  magic_mirror: { id: 'magic_mirror', name: 'Magic Mirror', hero: 'Archer Queen', image: '/src/assets/Equipment/Archer_Queen/Magic_Mirror/198.png', levelCount: 4, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1 },
+  lavaloon_puppet: { id: 'lavaloon_puppet', name: 'Lavaloon Puppet', hero: 'Grand Warden', image: '/src/assets/Equipment/Grand_Warden/Lavaloon_Puppet/199.png', levelCount: 4, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1 },
+  dark_orb: { id: 'dark_orb', name: 'Dark Orb', hero: 'Minion Prince', image: '/src/assets/Equipment/Minion_Prince/Dark_Orb/209.png', levelCount: 4, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1 },
+  henchmen_puppet: { id: 'henchmen_puppet', name: 'Henchmen Puppet', hero: 'Minion Prince', image: '/src/assets/Equipment/Minion_Prince/Henchmen_Puppet/210.png', levelCount: 4, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1 },
+  electro_boots: { id: 'electro_boots', name: 'Electro Boots', hero: 'Royal Champion', image: '/src/assets/Equipment/Royal_Champion/Electro_Boots/211.png', levelCount: 4, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1 },
+  snake_bracelet: { id: 'snake_bracelet', name: 'Snake Bracelet', hero: 'Barbarian King', image: '/src/assets/Equipment/Barbarian_King/Snake_Bracelet/213.png', levelCount: 4, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1 },
+  metal_pants: { id: 'metal_pants', name: 'Metal Pants', hero: 'Minion Prince', image: '/src/assets/Equipment/Minion_Prince/Metal_pants/216_0.png', levelCount: 4, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1 },
+  noble_iron: { id: 'noble_iron', name: 'Noble Iron', hero: 'Minion Prince', image: '/src/assets/Equipment/Minion_Prince/Noble_Iron/219_0.png', levelCount: 4, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1 },
+  action_figure: { id: 'action_figure', name: 'Action Figure', hero: 'Archer Queen', image: '/src/assets/Equipment/Archer_Queen/Action_Figure/220.png', levelCount: 4, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1 },
+  dark_crown: { id: 'dark_crown', name: 'Dark Crown', hero: 'Minion Prince', image: '/src/assets/Equipment/Minion_Prince/Dark_Crown/222.png', levelCount: 4, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1 },
+  heroic_torch: { id: 'heroic_torch', name: 'Heroic Torch', hero: 'Grand Warden', image: '/src/assets/Equipment/Grand_Warden/Heroic_Torch/237.png', levelCount: 4, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1 },
+  meteor_staff: { id: 'meteor_staff', name: 'Meteor Staff', hero: 'Minion Prince', image: '/src/assets/Equipment/Minion_Prince/Meteor_Staff/238.png', levelCount: 4, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1 },
+  frost_flake: { id: 'frost_flake', name: 'Frost Flake', hero: 'Royal Champion', image: '/src/assets/Equipment/Royal_Champion/Frost_Flake/257.png', levelCount: 4, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1 },
+  stick_horse: { id: 'stick_horse', name: 'Stick Horse', hero: 'Barbarian King', image: '/src/assets/Equipment/Barbarian_King/Stick_Horse/258.png', levelCount: 4, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1 },
+  fire_heart: { id: 'fire_heart', name: 'Fire Heart', hero: 'Dragon Duke', image: '/src/assets/Equipment/Dragon_Duke/Fire_Heart/261.png', levelCount: 4, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1 },
+  flame_blower: { id: 'flame_blower', name: 'Flame Blower', hero: 'Dragon Duke', image: '/src/assets/Equipment/Dragon_Duke/Flame_Blower/262.png', levelCount: 4, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1 },
+  stun_blaster: { id: 'stun_blaster', name: 'Stun Blaster', hero: 'Dragon Duke', image: '/src/assets/Equipment/Dragon_Duke/Stun_Blaster/263.png', levelCount: 4, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1 },
+  rocket_backpack: { id: 'rocket_backpack', name: 'Rocket Backpack', hero: 'Dragon Duke', image: '/src/assets/Equipment/Dragon_Duke/Rocket_Backpack/276.png', levelCount: 4, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1 },
+  monolith_arrow: { id: 'monolith_arrow', name: 'Monolith Arrow', hero: 'Archer Queen', image: '/src/assets/Equipment/Archer_Queen/Monolith_Arrow/280.png', levelCount: 4, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1 },
 }
 
 const formatCost = (value) => {
@@ -38,6 +70,22 @@ const formatCost = (value) => {
   }
   return value.toString()
 }
+
+const formatEquipmentResourceLabel = (resource) => {
+  if (resource === 'glowy_ore') return 'Glowy'
+  if (resource === 'shiny_ore') return 'Shiny'
+  if (resource === 'starry_ore') return 'Starry'
+  return String(resource || '').replace(/_/g, ' ')
+}
+
+const formatEquipmentResourceName = (resource) => {
+  if (resource === 'glowy_ore') return 'Glowy Ore'
+  if (resource === 'shiny_ore') return 'Shiny Ore'
+  if (resource === 'starry_ore') return 'Starry Ore'
+  return String(resource || '').replace(/_/g, ' ')
+}
+
+const getEquipmentCostBreakdown = (levelInfo) => normalizeResourceCosts(levelInfo, 'glowy_ore')
 
 const parseTimeStringToSeconds = (timeString) => {
   if (!timeString || typeof timeString !== 'string') return 0
@@ -146,6 +194,94 @@ const createHeroLevelDraft = (levelNumber, sourceLevel = {}) => ({
 const normalizeHeroLevels = (count, sourceLevels = []) =>
   Array.from({ length: Math.max(0, count) }, (_, index) => createHeroLevelDraft(index + 1, sourceLevels[index]))
 
+const createEquipmentLevelDraft = (levelNumber, sourceLevel = {}) => ({
+  level: levelNumber,
+  cost: Number(sourceLevel.cost ?? 0),
+  costDisplay: Number(sourceLevel.costDisplay ?? sourceLevel.cost ?? 0),
+  costMagnitude: sourceLevel.costMagnitude || '',
+  resource: String(sourceLevel.resource || 'glowy_ore').trim().toLowerCase() || 'glowy_ore',
+  resource_options: getLevelResourceOptions(sourceLevel, { isEquipmentLevel: true, fallbackResource: 'glowy_ore' }),
+  resource_costs: normalizeResourceCosts(sourceLevel, 'glowy_ore'),
+  blacksmith_level_unlocked: Number(sourceLevel.blacksmith_level_unlocked ?? levelNumber ?? 0),
+  time: '0sec',
+})
+
+const getEquipmentResourceAmounts = (levelInfo = {}) => {
+  const amounts = {
+    glowy_ore: 0,
+    shiny_ore: 0,
+    starry_ore: 0,
+  }
+
+  const normalizedCosts = normalizeResourceCosts(levelInfo, 'glowy_ore')
+  if (Array.isArray(levelInfo?.resource_costs) && normalizedCosts.length > 0) {
+    normalizedCosts.forEach(({ resource, cost }) => {
+      if (resource in amounts) {
+        amounts[resource] = Math.max(0, Number(cost) || 0)
+      }
+    })
+    return amounts
+  }
+
+  const primaryResource = String(levelInfo?.resource || 'glowy_ore').trim().toLowerCase() || 'glowy_ore'
+  amounts[primaryResource] = Math.max(0, Number(levelInfo?.cost ?? 0) || 0)
+  return amounts
+}
+
+const getEquipmentBlacksmithLevel = (levelInfo = {}) => Number(levelInfo?.blacksmith_level_unlocked ?? levelInfo?.level ?? 0)
+
+const updateEquipmentResourceCosts = (levelInfo, resourceKey, amountValue) => {
+  const nextAmounts = getEquipmentResourceAmounts(levelInfo)
+  nextAmounts[resourceKey] = Math.max(0, Number(amountValue) || 0)
+
+  const nextResourceCosts = EQUIPMENT_RESOURCE_KEYS
+    .map((key) => ({ resource: key, cost: nextAmounts[key] }))
+    .filter((entry) => entry.cost > 0)
+
+  const totalCost = Object.values(nextAmounts).reduce((total, amount) => total + Number(amount || 0), 0)
+  const primaryResource = EQUIPMENT_RESOURCE_KEYS.find((key) => nextAmounts[key] > 0) || 'glowy_ore'
+
+  return {
+    ...levelInfo,
+    cost: totalCost,
+    costDisplay: totalCost,
+    resource: primaryResource,
+    resource_options: nextResourceCosts.map((entry) => entry.resource),
+    resource_costs: nextResourceCosts,
+  }
+}
+
+const normalizeEquipmentLevels = (count, sourceLevels = []) =>
+  Array.from({ length: Math.max(0, count) }, (_, index) => createEquipmentLevelDraft(index + 1, sourceLevels[index] || [
+    { cost: 0, resource: 'glowy_ore', resource_costs: [{ resource: 'glowy_ore', cost: 0 }], blacksmith_level_unlocked: 1 },
+    { cost: 1800, resource: 'shiny_ore', resource_costs: [{ resource: 'shiny_ore', cost: 1800 }], blacksmith_level_unlocked: 2 },
+    { cost: 2300, resource: 'shiny_ore', resource_options: ['glowy_ore', 'shiny_ore'], resource_costs: [{ resource: 'shiny_ore', cost: 2200 }, { resource: 'glowy_ore', cost: 100 }], blacksmith_level_unlocked: 3 },
+    { cost: 5000, resource: 'starry_ore', resource_costs: [{ resource: 'starry_ore', cost: 5000 }], blacksmith_level_unlocked: 4 },
+  ][index] || {
+    cost: 5000,
+    resource: 'starry_ore',
+    resource_costs: [{ resource: 'starry_ore', cost: 5000 }],
+    blacksmith_level_unlocked: index + 1,
+  }))
+
+const getDefaultEquipmentData = (buildingId) => {
+  const equipment = EQUIPMENT_BUILDINGS[buildingId]
+  if (!equipment) return {}
+
+  return {
+    [buildingId]: {
+      id: equipment.id,
+      image_path: equipment.image,
+      hero: equipment.hero,
+      buildings_unlocked: 1,
+      copy_unlocks: [true],
+      unlock_source: equipment.unlock_source || 'blacksmith',
+      blacksmith_level_unlocked: Number(equipment.blacksmith_level_unlocked || 1) || 1,
+      levels: normalizeEquipmentLevels(Number(equipment.levelCount || 4), []),
+    },
+  }
+}
+
 const createBuildingLevelDraft = (levelNumber, sourceLevel = {}) => ({
   level: levelNumber,
   cost: Number(sourceLevel.cost ?? 0),
@@ -153,6 +289,12 @@ const createBuildingLevelDraft = (levelNumber, sourceLevel = {}) => ({
   costMagnitude: sourceLevel.costMagnitude || '',
   resource: sourceLevel.resource || 'gold',
   resource_options: Array.isArray(sourceLevel.resource_options) ? [...sourceLevel.resource_options] : [],
+  resource_costs: Array.isArray(sourceLevel.resource_costs)
+    ? sourceLevel.resource_costs.map((entry) => ({
+      resource: String(entry?.resource || '').trim().toLowerCase(),
+      cost: Number(entry?.cost ?? 0),
+    })).filter((entry) => Boolean(entry.resource))
+    : [],
   time: sourceLevel.time || '0sec',
 })
 
@@ -174,6 +316,8 @@ export default function BuildingEditorPage({ username, onLogout }) {
   const isSpellBuilding = BUILDING_SECTIONS.spells.some((building) => building.id === buildingId)
   const isTroopLikeBuilding = isTroopBuilding || isSpellBuilding
   const isHeroBuilding = BUILDING_SECTIONS.heroes.some((building) => building.id === buildingId)
+  const equipmentMeta = EQUIPMENT_BUILDINGS[buildingId]
+  const isEquipmentBuilding = Boolean(equipmentMeta)
 
   const [staticData, setStaticData] = useState({})
   const [dynamicData, setDynamicData] = useState({})
@@ -185,8 +329,17 @@ export default function BuildingEditorPage({ username, onLogout }) {
   const [editingBarracksLevelUnlocked, setEditingBarracksLevelUnlocked] = useState(1)
   const [editingSpellFactoryLevelUnlocked, setEditingSpellFactoryLevelUnlocked] = useState(1)
   const [editingHeroHallLevelUnlocked, setEditingHeroHallLevelUnlocked] = useState(1)
+  const [editingEquipmentUnlockSource, setEditingEquipmentUnlockSource] = useState('blacksmith')
+  const [editingEquipmentHero, setEditingEquipmentHero] = useState('')
+  const [editingBlacksmithLevelUnlocked, setEditingBlacksmithLevelUnlocked] = useState(1)
   const [savingLoading, setSavingLoading] = useState(false)
   const [toast, setToast] = useState({ open: false, message: '', severity: 'success' })
+  const equipmentUnlockSource = isEquipmentBuilding
+    ? String(editingEquipmentUnlockSource || 'blacksmith').trim().toLowerCase() || 'blacksmith'
+    : 'blacksmith'
+  const equipmentUnlockLabel = equipmentUnlockSource === 'blacksmith'
+    ? `Blacksmith Lvl: ${editingBlacksmithLevelUnlocked}`
+    : `Gems (Blacksmith Lvl: ${editingBlacksmithLevelUnlocked})`
 
   const showToast = (message, severity = 'success') => {
     setToast({ open: true, message, severity })
@@ -201,7 +354,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
   const [timeModalLevel, setTimeModalLevel] = useState(null)
   const [timeModalValues, setTimeModalValues] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 })
 
-  const defence = ALL_BUILDINGS.find((d) => d.id === buildingId)
+  const defence = ALL_BUILDINGS.find((d) => d.id === buildingId) || equipmentMeta || { id: buildingId, name: buildingId, image: '' }
 
   // Keep ref in sync with isEditing state
   useEffect(() => {
@@ -215,11 +368,11 @@ export default function BuildingEditorPage({ username, onLogout }) {
 
       setLoading(true)
       try {
-        const categoryField = getBuildingCategory(buildingId)
+        const categoryField = isEquipmentBuilding ? 'equipment' : getBuildingCategory(buildingId)
         // Fetch dynamic data from database
         const selectedTownhall = parseInt(townhallLevel)
         // Load static data
-        const defaultData = getDefaultBuildingData(selectedTownhall)
+        const defaultData = isEquipmentBuilding ? getDefaultEquipmentData(buildingId) : getDefaultBuildingData(selectedTownhall)
         const { data: rows, error } = await supabase
           .from('townhall_buildings')
           .select('*')
@@ -231,6 +384,10 @@ export default function BuildingEditorPage({ username, onLogout }) {
         const inheritedTownhallData = getTownhallSnapshotForLevel(rows || [], selectedTownhall, defaultData)
         const staticBuildingData = categoryField === 'walls'
           ? inheritedTownhallData.walls || { buildings_unlocked: 0, levels: [] }
+          : categoryField === 'equipment'
+            ? (Array.isArray(inheritedTownhallData.equipment) ? inheritedTownhallData.equipment : []).find((entry) => entry?.id === buildingId)
+              || defaultData[buildingId]
+              || { buildings_unlocked: 0, levels: [] }
           : (inheritedTownhallData[categoryField] || []).find((entry) => entry?.id === buildingId)
             || defaultData[buildingId]
             || { buildings_unlocked: 0, levels: [] }
@@ -242,6 +399,8 @@ export default function BuildingEditorPage({ username, onLogout }) {
 
         const buildingData = categoryField === 'walls'
           ? categoryData
+          : categoryField === 'equipment'
+            ? (Array.isArray(categoryData) ? categoryData : []).find((entry) => entry?.id === buildingId)
           : Array.isArray(categoryData)
             ? categoryData.find((entry) => entry?.id === buildingId)
             : categoryData?.[buildingId]
@@ -252,12 +411,12 @@ export default function BuildingEditorPage({ username, onLogout }) {
           : JSON.parse(JSON.stringify(staticBuildingData.levels || []))
         const initialLevelCount = isTroopLikeBuilding
           ? normalizeTroopLevelCount(resolvedLevels, buildingData?.buildings_unlocked || staticBuildingData.buildings_unlocked || 0)
-          : isHeroBuilding
+          : isHeroBuilding || isEquipmentBuilding
             ? 1
             : Number(buildingData?.buildings_unlocked || staticBuildingData.buildings_unlocked || 0)
         const initialBuildingLevelCount = isTroopLikeBuilding
           ? initialLevelCount
-          : isHeroBuilding
+          : isHeroBuilding || isEquipmentBuilding
             ? normalizeTroopLevelCount(resolvedLevels, resolvedLevels.length || 1)
             : Math.max(0, resolvedLevels.length)
         const initialBarracksLevelUnlocked = isDarkTroopBuilding
@@ -265,6 +424,9 @@ export default function BuildingEditorPage({ username, onLogout }) {
           : Number(buildingData?.barracks_level_unlocked ?? staticBuildingData.barracks_level_unlocked ?? 1) || 1
         const initialSpellFactoryLevelUnlocked = Number(buildingData?.spell_factory_level_unlocked ?? staticBuildingData.spell_factory_level_unlocked ?? 1) || 1
         const initialHeroHallLevelUnlocked = Number(buildingData?.hero_hall_level_unlocked ?? staticBuildingData.hero_hall_level_unlocked ?? 1) || 1
+        const initialBlacksmithLevelUnlocked = Number(buildingData?.blacksmith_level_unlocked ?? staticBuildingData.blacksmith_level_unlocked ?? 1) || 1
+        const initialEquipmentUnlockSource = String(buildingData?.unlock_source ?? staticBuildingData.unlock_source ?? 'blacksmith').trim().toLowerCase() || 'blacksmith'
+        const initialEquipmentHero = String(buildingData?.hero ?? staticBuildingData.hero ?? equipmentMeta?.hero ?? '').trim()
         if (buildingData) {
           // Only update if still not editing
           if (!isEditingRef.current) {
@@ -279,13 +441,18 @@ export default function BuildingEditorPage({ username, onLogout }) {
                   ? normalizeSpellLevels(initialLevelCount, resolvedLevels)
                 : isHeroBuilding
                   ? normalizeHeroLevels(initialBuildingLevelCount, resolvedLevels)
-                  : normalizeBuildingLevels(initialBuildingLevelCount, resolvedLevels)
+                  : isEquipmentBuilding
+                    ? normalizeEquipmentLevels(initialBuildingLevelCount, resolvedLevels)
+                    : normalizeBuildingLevels(initialBuildingLevelCount, resolvedLevels)
             )
             setEditingBuildingCount(initialLevelCount)
             setEditingLevelCount(initialBuildingLevelCount)
             setEditingBarracksLevelUnlocked(initialBarracksLevelUnlocked)
             setEditingSpellFactoryLevelUnlocked(initialSpellFactoryLevelUnlocked)
             setEditingHeroHallLevelUnlocked(initialHeroHallLevelUnlocked)
+            setEditingBlacksmithLevelUnlocked(initialBlacksmithLevelUnlocked)
+            setEditingEquipmentUnlockSource(initialEquipmentUnlockSource)
+            setEditingEquipmentHero(initialEquipmentHero)
             setEditingCopyUnlocks(
               isTroopLikeBuilding
                 ? createCopyUnlocks(1, 1)
@@ -295,28 +462,6 @@ export default function BuildingEditorPage({ username, onLogout }) {
                     buildingData.starts_unlocked ?? staticBuildingData.starts_unlocked ?? true,
                   )
             )
-          }
-        } else {
-          // No database record yet - use static data as initial dynamic data
-          if (!isEditingRef.current) {
-            const draftLevels = JSON.parse(JSON.stringify(staticBuildingData.levels || []))
-            const draftCount = isTroopLikeBuilding
-              ? normalizeTroopLevelCount(draftLevels, staticBuildingData.buildings_unlocked || 0)
-              : isHeroBuilding
-                ? 1
-                : staticBuildingData.buildings_unlocked || 0
-            const draftLevelCount = isTroopLikeBuilding
-              ? draftCount
-              : isHeroBuilding
-                ? normalizeTroopLevelCount(draftLevels, draftLevels.length || 1)
-                : draftLevels.length
-            const draftUnlocks = isTroopLikeBuilding
-              ? createCopyUnlocks(1, 1)
-              : normalizeCopyUnlocks(
-                  draftCount,
-                  staticBuildingData.copy_unlocks || [],
-                  staticBuildingData.starts_unlocked ?? true,
-                )
 
             setDynamicData({
               buildings_unlocked: draftCount,
@@ -327,7 +472,9 @@ export default function BuildingEditorPage({ username, onLogout }) {
                   ? normalizeSpellLevels(draftCount, draftLevels)
                   : isHeroBuilding
                     ? normalizeHeroLevels(draftLevelCount, draftLevels)
-                    : normalizeBuildingLevels(draftLevelCount, draftLevels),
+                    : isEquipmentBuilding
+                      ? normalizeEquipmentLevels(draftLevelCount, draftLevels)
+                      : normalizeBuildingLevels(draftLevelCount, draftLevels),
               ...(isTroopBuilding
                 ? (isDarkTroopBuilding
                     ? { dark_barracks_level_unlocked: Number(staticBuildingData.dark_barracks_level_unlocked ?? 1) || 1 }
@@ -335,6 +482,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
                 : {}),
               ...(isSpellBuilding ? { spell_factory_level_unlocked: Number(staticBuildingData.spell_factory_level_unlocked ?? 1) || 1 } : {}),
               ...(isHeroBuilding ? { hero_hall_level_unlocked: Number(staticBuildingData.hero_hall_level_unlocked ?? 1) || 1 } : {}),
+              ...(isEquipmentBuilding ? { blacksmith_level_unlocked: Number(staticBuildingData.blacksmith_level_unlocked ?? 1) || 1, unlock_source: String(staticBuildingData.unlock_source ?? 'blacksmith').trim().toLowerCase() || 'blacksmith' } : {}),
             })
             setEditingLevels(
               isTroopBuilding
@@ -343,7 +491,9 @@ export default function BuildingEditorPage({ username, onLogout }) {
                   ? normalizeSpellLevels(draftCount, draftLevels)
                   : isHeroBuilding
                     ? normalizeHeroLevels(draftLevelCount, draftLevels)
-                    : normalizeBuildingLevels(draftLevelCount, draftLevels)
+                    : isEquipmentBuilding
+                      ? normalizeEquipmentLevels(draftLevelCount, draftLevels)
+                      : normalizeBuildingLevels(draftLevelCount, draftLevels)
             )
             setEditingBuildingCount(draftCount)
             setEditingLevelCount(draftLevelCount)
@@ -354,6 +504,9 @@ export default function BuildingEditorPage({ username, onLogout }) {
             )
             setEditingSpellFactoryLevelUnlocked(Number(staticBuildingData.spell_factory_level_unlocked ?? 1) || 1)
             setEditingHeroHallLevelUnlocked(Number(staticBuildingData.hero_hall_level_unlocked ?? 1) || 1)
+            setEditingBlacksmithLevelUnlocked(Number(staticBuildingData.blacksmith_level_unlocked ?? 1) || 1)
+            setEditingEquipmentUnlockSource(String(staticBuildingData.unlock_source ?? 'blacksmith').trim().toLowerCase() || 'blacksmith')
+            setEditingEquipmentHero(initialEquipmentHero)
             setEditingCopyUnlocks(draftUnlocks)
           }
         }
@@ -376,7 +529,8 @@ export default function BuildingEditorPage({ username, onLogout }) {
       staticLevel.time === dynamicLevel.time &&
       staticLevel.resource === dynamicLevel.resource &&
       Number(staticLevel.lab_level_unlocked ?? 0) === Number(dynamicLevel.lab_level_unlocked ?? 0) &&
-      Number(staticLevel.hero_hall_level_unlocked ?? 0) === Number(dynamicLevel.hero_hall_level_unlocked ?? 0)
+      Number(staticLevel.hero_hall_level_unlocked ?? 0) === Number(dynamicLevel.hero_hall_level_unlocked ?? 0) &&
+      Number(staticLevel.blacksmith_level_unlocked ?? 0) === Number(dynamicLevel.blacksmith_level_unlocked ?? 0)
     )
   }
 
@@ -405,6 +559,8 @@ export default function BuildingEditorPage({ username, onLogout }) {
         costMagnitude: value,
         cost: displayValue * multiplier,
       }
+    } else if (isEquipmentBuilding && field === 'equipmentResourceCost') {
+      toUpdate[levelIndex] = updateEquipmentResourceCosts(toUpdate[levelIndex], value.resource, value.amount)
     } else {
       toUpdate[levelIndex] = {
         ...toUpdate[levelIndex],
@@ -446,6 +602,18 @@ export default function BuildingEditorPage({ username, onLogout }) {
 
   const handleEditingHeroHallLevelUnlockedChange = (value) => {
     setEditingHeroHallLevelUnlocked(Math.max(1, parseInt(value) || 1))
+  }
+
+  const handleEditingBlacksmithLevelUnlockedChange = (value) => {
+    setEditingBlacksmithLevelUnlocked(Math.max(1, parseInt(value) || 1))
+  }
+
+  const handleEditingEquipmentUnlockSourceChange = (value) => {
+    setEditingEquipmentUnlockSource(String(value || 'blacksmith').trim().toLowerCase() || 'blacksmith')
+  }
+
+  const handleEditingEquipmentHeroChange = (value) => {
+    setEditingEquipmentHero(String(value || '').trim())
   }
 
   const handleToggleCopyUnlock = (copyIndex) => {
@@ -503,16 +671,18 @@ export default function BuildingEditorPage({ username, onLogout }) {
 
       if (fetchError) throw fetchError
 
-      const inheritedTownhallData = getTownhallSnapshotForLevel(rows || [], selectedTownhall, getDefaultBuildingData(selectedTownhall))
+      const inheritedTownhallData = getTownhallSnapshotForLevel(rows || [], selectedTownhall, isEquipmentBuilding ? getDefaultEquipmentData(buildingId) : getDefaultBuildingData(selectedTownhall))
 
-      const categoryField = getBuildingCategory(buildingId)
+      const categoryField = isEquipmentBuilding ? 'equipment' : getBuildingCategory(buildingId)
       const normalizedLevels = isTroopBuilding
         ? normalizeTroopLevels(editingBuildingCount, editingLevels)
         : isSpellBuilding
           ? normalizeSpellLevels(editingBuildingCount, editingLevels)
         : isHeroBuilding
           ? normalizeHeroLevels(editingLevelCount, editingLevels)
-          : normalizeBuildingLevels(editingLevelCount, editingLevels)
+          : isEquipmentBuilding
+            ? normalizeEquipmentLevels(editingLevelCount, editingLevels)
+            : normalizeBuildingLevels(editingLevelCount, editingLevels)
       const normalizedLevelsWithWallResources = isWallBuilding
         ? normalizedLevels.map((levelInfo) => Number(levelInfo.level || 0) >= 5
           ? {
@@ -520,6 +690,18 @@ export default function BuildingEditorPage({ username, onLogout }) {
             resource: 'gold',
             resource_options: ['gold', 'elixir'],
           }
+          : isEquipmentBuilding
+            ? {
+              level: levelInfo.level,
+              resource: String(levelInfo.resource || 'glowy_ore').trim().toLowerCase() || 'glowy_ore',
+              resource_options: getLevelResourceOptions(levelInfo, { isEquipmentLevel: true, fallbackResource: 'glowy_ore' }),
+              resource_costs: Array.isArray(levelInfo.resource_costs) ? levelInfo.resource_costs.map((entry) => ({
+                resource: String(entry?.resource || '').trim().toLowerCase(),
+                cost: Number(entry?.cost ?? 0),
+              })).filter((entry) => entry.resource) : [],
+              blacksmith_level_unlocked: Number(levelInfo.blacksmith_level_unlocked ?? 0),
+              time: '0sec',
+            }
           : {
             ...levelInfo,
             resource_options: Array.isArray(levelInfo.resource_options) ? [...levelInfo.resource_options] : [],
@@ -527,7 +709,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
         : normalizedLevels
       const troopLevelCount = isTroopLikeBuilding
         ? normalizedLevelsWithWallResources.length
-        : isHeroBuilding
+        : isHeroBuilding || isEquipmentBuilding
           ? 1
           : editingBuildingCount
       const updatedBuildingData = {
@@ -542,6 +724,11 @@ export default function BuildingEditorPage({ username, onLogout }) {
           : {}),
         ...(isSpellBuilding ? { spell_factory_level_unlocked: editingSpellFactoryLevelUnlocked } : {}),
         ...(isHeroBuilding ? { hero_hall_level_unlocked: editingHeroHallLevelUnlocked } : {}),
+        ...(isEquipmentBuilding ? {
+          hero: editingEquipmentHero || staticData.hero || equipmentMeta?.hero || '',
+          unlock_source: editingEquipmentUnlockSource,
+          blacksmith_level_unlocked: editingBlacksmithLevelUnlocked,
+        } : {}),
       }
 
       // Build complete record with the correct category updated
@@ -555,6 +742,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
         spells: inheritedTownhallData.spells || [],
         dark_troops: inheritedTownhallData.dark_troops || [],
         heroes: inheritedTownhallData.heroes || [],
+        equipment: inheritedTownhallData.equipment || [],
         walls: inheritedTownhallData.walls || {},
         updated_at: new Date().toISOString(),
       }
@@ -598,6 +786,11 @@ export default function BuildingEditorPage({ username, onLogout }) {
           : {}),
         ...(isSpellBuilding ? { spell_factory_level_unlocked: editingSpellFactoryLevelUnlocked } : {}),
         ...(isHeroBuilding ? { hero_hall_level_unlocked: editingHeroHallLevelUnlocked } : {}),
+        ...(isEquipmentBuilding ? {
+          hero: editingEquipmentHero || staticData.hero || equipmentMeta?.hero || '',
+          unlock_source: editingEquipmentUnlockSource,
+          blacksmith_level_unlocked: editingBlacksmithLevelUnlocked,
+        } : {}),
       })
       setIsEditing(false)
     } catch (err) {
@@ -689,9 +882,26 @@ export default function BuildingEditorPage({ username, onLogout }) {
     if (isHeroBuilding && Number(editingHeroHallLevelUnlocked) !== Number(dynamicData.hero_hall_level_unlocked || 1)) {
       return true
     }
+    if (isEquipmentBuilding && (
+      String(editingEquipmentUnlockSource || 'blacksmith') !== String(dynamicData.unlock_source || 'blacksmith')
+      || String(editingEquipmentHero || '') !== String(dynamicData.hero || '')
+      || Number(editingBlacksmithLevelUnlocked) !== Number(dynamicData.blacksmith_level_unlocked || 1)
+    )) {
+      return true
+    }
     return editingLevels.some((level, idx) => {
       const original = (dynamicData.levels || [])[idx]
       if (!original) return true
+      if (isEquipmentBuilding) {
+        const currentCosts = JSON.stringify(level.resource_costs || [])
+        const originalCosts = JSON.stringify(original.resource_costs || [])
+        return (
+          currentCosts !== originalCosts
+          || JSON.stringify(level.resource_options || []) !== JSON.stringify(original.resource_options || [])
+          || String(level.resource || 'glowy_ore') !== String(original.resource || 'glowy_ore')
+          || Number(level.blacksmith_level_unlocked ?? 0) !== Number(original.blacksmith_level_unlocked ?? 0)
+        )
+      }
       return (
         level.cost !== original.cost ||
         level.time !== original.time ||
@@ -719,6 +929,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
               const maxLevel = allLevels.length > 0 ? Math.max(...allLevels.map(l => l.level)) : 3
               
               const getImagePath = () => {
+                if (isEquipmentBuilding) return ''
                 if (defence.id === 'archer_tower') return `16_${maxLevel}`
                 if (defence.id === 'canon') return `18_${maxLevel}`
                 if (defence.id === 'bomb') return `27_${maxLevel}`
@@ -769,15 +980,27 @@ export default function BuildingEditorPage({ username, onLogout }) {
                 return '18_3'
               }
               
+              const imageSource = isEquipmentBuilding ? defence.image : `${defence.image}/${getImagePath()}.png`
+
               return (
                 <img
-                  src={`${defence.image}/${getImagePath()}.png`}
+                  src={imageSource}
                   alt={defence.name}
                   className={styles.buildingImage}
                 />
               )
             })()}
             <p className={styles.buildingNameLabel}>{defence.name}</p>
+            {isEquipmentBuilding && (editingEquipmentHero || dynamicData.hero || staticData.hero || equipmentMeta?.hero) && (
+              <p className={styles.buildingNameLabel} style={{ marginTop: '4px', fontSize: '0.8rem', opacity: 0.8 }}>
+                {editingEquipmentHero || dynamicData.hero || staticData.hero || equipmentMeta?.hero}
+              </p>
+            )}
+            {isEquipmentBuilding && (
+              <p className={styles.buildingNameLabel} style={{ marginTop: '4px', fontSize: '0.75rem', opacity: 0.75 }}>
+                Unlock: {equipmentUnlockLabel}
+              </p>
+            )}
           </div>
 
           {/* Divider */}
@@ -808,7 +1031,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
             <div>
               <div className={styles.sectionHeading}>
                 Static
-                {!isHeroBuilding && (
+                {!isHeroBuilding && !isEquipmentBuilding && (
                   <span style={{ fontSize: '0.75rem', color: 'var(--muted)', marginLeft: '8px' }}>
                     {troopCountLabel}: {staticData.buildings_unlocked || 0}
                   </span>
@@ -823,51 +1046,94 @@ export default function BuildingEditorPage({ username, onLogout }) {
                     {isDarkTroopBuilding ? 'Dark Barracks' : 'Barracks'} level needed: {troopBarracksLevel}
                   </span>
                 )}
-                {isSpellBuilding && (
-                  <span style={{ fontSize: '0.75rem', color: 'var(--muted)', marginLeft: '8px' }}>
-                    Spell Factory level needed: {spellFactoryUnlockLevel}
-                  </span>
-                )}
-                {isHeroBuilding && (
-                  <span style={{ fontSize: '0.75rem', color: 'var(--muted)', marginLeft: '8px' }}>
-                    Hero Hall level needed: {heroHallUnlockLevel}
-                  </span>
-                )}
               </div>
+              {isEquipmentBuilding && isEditing && (
+                <div className={styles.equipmentEditControls}>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>Hero:</span>
+                  <select
+                    value={editingEquipmentHero}
+                    onChange={(e) => handleEditingEquipmentHeroChange(e.target.value)}
+                    className={styles.equipmentHeroSelect}
+                  >
+                    {EQUIPMENT_HERO_OPTIONS.map((heroName) => (
+                      <option key={heroName} value={heroName}>{heroName}</option>
+                    ))}
+                  </select>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>Unlock source:</span>
+                  <select
+                    value={editingEquipmentUnlockSource}
+                    onChange={(e) => handleEditingEquipmentUnlockSourceChange(e.target.value)}
+                    className={styles.unlockSourceSelect}
+                  >
+                    <option value="blacksmith">Blacksmith</option>
+                    <option value="gems">Gems</option>
+                  </select>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>Blacksmith level:</span>
+                  <input
+                    type="number"
+                    value={editingBlacksmithLevelUnlocked}
+                    onChange={(e) => handleEditingBlacksmithLevelUnlockedChange(e.target.value)}
+                    min="1"
+                    className={styles.headingCountInput}
+                  />
+                </div>
+              )}
               <div className={styles.levelsList}>
                 {currentStaticLevel.map((level) => (
                   <div key={`static-${level.level}`} className={styles.levelRow}>
-                    <div className={styles.resourceIconsWrap}>
-                      {(() => {
-                        const resourceOptions = getLevelResourceOptions(level, { isWallLevel: isWallBuilding })
-                        const usesDualGoldElixirIcon = resourceOptions.includes('gold') && resourceOptions.includes('elixir')
+                    {!isEquipmentBuilding && (
+                      <div className={styles.resourceIconsWrap}>
+                        {(() => {
+                          const resourceOptions = getLevelResourceOptions(level, { isWallLevel: isWallBuilding, isEquipmentLevel: isEquipmentBuilding })
+                          const usesDualGoldElixirIcon = resourceOptions.includes('gold') && resourceOptions.includes('elixir')
 
-                        if (usesDualGoldElixirIcon) {
-                          return (
-                            <img
-                              src="/src/assets/magic-items/goldelxir.png"
-                              alt="Gold or Elixir"
-                              className={styles.resourceIcon}
-                            />
-                          )
-                        }
-
-                        return resourceOptions.map((resourceKey) => (
-                          <span key={`static-${level.level}-${resourceKey}`} className={styles.resourceOption}>
-                            {RESOURCE_ICONS[resourceKey] ? (
+                          if (usesDualGoldElixirIcon) {
+                            return (
                               <img
-                                src={RESOURCE_ICONS[resourceKey]}
-                                alt={resourceKey}
+                                src="/src/assets/magic-items/goldelxir.png"
+                                alt="Gold or Elixir"
                                 className={styles.resourceIcon}
                               />
-                            ) : null}
-                          </span>
-                        ))
-                      })()}
-                    </div>
+                            )
+                          }
+
+                          return resourceOptions.map((resourceKey) => (
+                            <span key={`static-${level.level}-${resourceKey}`} className={styles.resourceOption}>
+                              {RESOURCE_ICONS[resourceKey] ? (
+                                <img
+                                  src={RESOURCE_ICONS[resourceKey]}
+                                  alt={resourceKey}
+                                  className={styles.resourceIcon}
+                                />
+                              ) : null}
+                            </span>
+                          ))
+                        })()}
+                      </div>
+                    )}
                     <div className={styles.levelLabel}>Lvl {level.level}:</div>
-                    <span className={`${styles.costValue} ${styles[level.resource]}`}>{formatCost(level.cost)}</span>
-                    <span className={styles.timeValue}>{level.time}</span>
+                    {isEquipmentBuilding ? (
+                      <div className={styles.equipmentCostBreakdown}>
+                        {getEquipmentCostBreakdown(level).map(({ resource, cost }) => (
+                          <span key={`static-${level.level}-${resource}`} className={styles.equipmentCostItem}>
+                            {RESOURCE_ICONS[resource] ? (
+                              <img
+                                src={RESOURCE_ICONS[resource]}
+                                alt={formatEquipmentResourceName(resource)}
+                                className={styles.equipmentCostIcon}
+                              />
+                            ) : null}
+                            <span className={styles.equipmentCostValue}>{formatCost(cost)}</span>
+                          </span>
+                        ))}
+                        <span className={styles.equipmentRequirementBadge}>Blacksmith Lvl: {getEquipmentBlacksmithLevel(level)}</span>
+                      </div>
+                    ) : (
+                      <>
+                        <span className={`${styles.costValue} ${styles[level.resource]}`}>{formatCost(level.cost)}</span>
+                        <span className={styles.timeValue}>{level.time}</span>
+                      </>
+                    )}
                   </div>
                 ))}
               </div>
@@ -884,7 +1150,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
                 )}
                 {isEditing && (
                   <>
-                    {!isHeroBuilding && (
+                    {!isHeroBuilding && !isEquipmentBuilding && (
                       <>
                         <span style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>{troopCountLabel}:</span>
                         <input
@@ -967,7 +1233,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
                   </span>
                 )}
               </div>
-              {isEditing && !isWallBuilding && !isTroopLikeBuilding && !isHeroBuilding && editingBuildingCount > 0 && (
+              {isEditing && !isWallBuilding && !isTroopLikeBuilding && !isHeroBuilding && !isEquipmentBuilding && editingBuildingCount > 0 && (
                 <div className={styles.unlockPreview}>
                   <div className={styles.unlockPreviewTitle}>{isTroopBuilding ? 'Level unlock preview' : 'Unlock preview'}</div>
                   {Array.from({ length: editingBuildingCount }, (_, index) => (
@@ -993,37 +1259,59 @@ export default function BuildingEditorPage({ username, onLogout }) {
 
                     return (
                       <div key={`dynamic-${level.level}`} className={styles.levelRow}>
-                        <div className={styles.resourceIconsWrap}>
-                          {(() => {
-                            const resourceOptions = getLevelResourceOptions(level, { isWallLevel: isWallBuilding })
-                            const usesDualGoldElixirIcon = resourceOptions.includes('gold') && resourceOptions.includes('elixir')
+                        {!isEquipmentBuilding && (
+                          <div className={styles.resourceIconsWrap}>
+                            {(() => {
+                              const resourceOptions = getLevelResourceOptions(level, { isWallLevel: isWallBuilding, isEquipmentLevel: isEquipmentBuilding })
+                              const usesDualGoldElixirIcon = resourceOptions.includes('gold') && resourceOptions.includes('elixir')
 
-                            if (usesDualGoldElixirIcon) {
-                              return (
-                                <img
-                                  src="/src/assets/magic-items/goldelxir.png"
-                                  alt="Gold or Elixir"
-                                  className={styles.resourceIcon}
-                                />
-                              )
-                            }
-
-                            return resourceOptions.map((resourceKey) => (
-                              <span key={`dynamic-${level.level}-${resourceKey}`} className={styles.resourceOption}>
-                                {RESOURCE_ICONS[resourceKey] ? (
+                              if (usesDualGoldElixirIcon) {
+                                return (
                                   <img
-                                    src={RESOURCE_ICONS[resourceKey]}
-                                    alt={resourceKey}
+                                    src="/src/assets/magic-items/goldelxir.png"
+                                    alt="Gold or Elixir"
                                     className={styles.resourceIcon}
                                   />
-                                ) : null}
-                              </span>
-                            ))
-                          })()}
-                        </div>
+                                )
+                              }
+
+                              return resourceOptions.map((resourceKey) => (
+                                <span key={`dynamic-${level.level}-${resourceKey}`} className={styles.resourceOption}>
+                                  {RESOURCE_ICONS[resourceKey] ? (
+                                    <img
+                                      src={RESOURCE_ICONS[resourceKey]}
+                                      alt={resourceKey}
+                                      className={styles.resourceIcon}
+                                    />
+                                  ) : null}
+                                </span>
+                              ))
+                            })()}
+                          </div>
+                        )}
                         <div className={styles.levelLabel}>Lvl {level.level}:</div>
-                        <span className={`${styles.costValue} ${styles[level.resource]}`}>{formatCost(level.cost)}</span>
-                        <span className={styles.timeValue}>{level.time}</span>
+                        {isEquipmentBuilding ? (
+                          <div className={styles.equipmentCostBreakdown}>
+                            {getEquipmentCostBreakdown(level).map(({ resource, cost }) => (
+                              <span key={`dynamic-${level.level}-${resource}`} className={styles.equipmentCostItem}>
+                                {RESOURCE_ICONS[resource] ? (
+                                  <img
+                                    src={RESOURCE_ICONS[resource]}
+                                    alt={formatEquipmentResourceName(resource)}
+                                    className={styles.equipmentCostIcon}
+                                  />
+                                ) : null}
+                                <span className={styles.equipmentCostValue}>{formatCost(cost)}</span>
+                              </span>
+                            ))}
+                            <span className={styles.equipmentRequirementBadge}>Blacksmith Lvl: {getEquipmentBlacksmithLevel(level)}</span>
+                          </div>
+                        ) : (
+                          <>
+                            <span className={`${styles.costValue} ${styles[level.resource]}`}>{formatCost(level.cost)}</span>
+                            <span className={styles.timeValue}>{level.time}</span>
+                          </>
+                        )}
                         {isMatching && <span className={styles.checkmark}>✓</span>}
                       </div>
                     )
@@ -1039,74 +1327,116 @@ export default function BuildingEditorPage({ username, onLogout }) {
                 <div className={styles.levelsList}>
                   {(editingLevels.length > 0 ? editingLevels : currentStaticLevel).map((level, idx) => (
                     <div key={`edit-${level.level}`} className={styles.levelEditRow}>
-                      <div className={styles.resourceIconsWrap}>
-                        {(() => {
-                          const resourceOptions = getLevelResourceOptions(level, { isWallLevel: isWallBuilding })
-                          const usesDualGoldElixirIcon = resourceOptions.includes('gold') && resourceOptions.includes('elixir')
+                      {!isEquipmentBuilding && (
+                        <div className={styles.resourceIconsWrap}>
+                          {(() => {
+                            const resourceOptions = getLevelResourceOptions(level, { isWallLevel: isWallBuilding, isEquipmentLevel: isEquipmentBuilding })
+                            const usesDualGoldElixirIcon = resourceOptions.includes('gold') && resourceOptions.includes('elixir')
 
-                          if (usesDualGoldElixirIcon) {
-                            return (
-                              <img
-                                src="/src/assets/magic-items/goldelxir.png"
-                                alt="Gold or Elixir"
-                                className={styles.resourceIcon}
-                              />
-                            )
-                          }
-
-                          return resourceOptions.map((resourceKey) => (
-                            <span key={`edit-${level.level}-${resourceKey}`} className={styles.resourceOption}>
-                              {RESOURCE_ICONS[resourceKey] ? (
+                            if (usesDualGoldElixirIcon) {
+                              return (
                                 <img
-                                  src={RESOURCE_ICONS[resourceKey]}
-                                  alt={resourceKey}
+                                  src="/src/assets/magic-items/goldelxir.png"
+                                  alt="Gold or Elixir"
                                   className={styles.resourceIcon}
                                 />
-                              ) : null}
-                            </span>
-                          ))
-                        })()}
-                      </div>
+                              )
+                            }
+
+                            return resourceOptions.map((resourceKey) => (
+                              <span key={`edit-${level.level}-${resourceKey}`} className={styles.resourceOption}>
+                                {RESOURCE_ICONS[resourceKey] ? (
+                                  <img
+                                    src={RESOURCE_ICONS[resourceKey]}
+                                    alt={resourceKey}
+                                    className={styles.resourceIcon}
+                                  />
+                                ) : null}
+                              </span>
+                            ))
+                          })()}
+                        </div>
+                      )}
                       <span className={styles.levelLabel}>Lvl {level.level}:</span>
-                      <div className={styles.costInputGroup}>
-                        <input
-                          type="number"
-                          value={level.costDisplay || level.cost}
-                          onChange={(e) => handleEditLevel(idx, 'cost', e.target.value)}
-                          className={styles.costInput}
-                          placeholder="0"
-                        />
-                        <select
-                          value={level.costMagnitude || ''}
-                          onChange={(e) => handleEditLevel(idx, 'costMagnitude', e.target.value)}
-                          className={styles.magnitudeSelect}
-                        >
-                          <option value="">None</option>
-                          <option value="k">k</option>
-                          <option value="m">m</option>
-                          <option value="b">b</option>
-                        </select>
-                      </div>
+                      {!isEquipmentBuilding && (
+                        <div className={styles.costInputGroup}>
+                          <input
+                            type="number"
+                            value={level.costDisplay || level.cost}
+                            onChange={(e) => handleEditLevel(idx, 'cost', e.target.value)}
+                            className={styles.costInput}
+                            placeholder="0"
+                          />
+                          <select
+                            value={level.costMagnitude || ''}
+                            onChange={(e) => handleEditLevel(idx, 'costMagnitude', e.target.value)}
+                            className={styles.magnitudeSelect}
+                          >
+                            <option value="">None</option>
+                            <option value="k">k</option>
+                            <option value="m">m</option>
+                            <option value="b">b</option>
+                          </select>
+                        </div>
+                      )}
                       {isWallBuilding && Number(level.level || 0) >= 5 ? (
                         <span className={styles.wallDualResourceLabel}>Gold or Elixir</span>
                       ) : (
-                        <select
-                          value={level.resource}
-                          onChange={(e) => handleEditLevel(idx, 'resource', e.target.value)}
-                          className={styles.resourceSelect}
-                        >
-                          <option value="gold">Gold</option>
-                          <option value="elixir">Elixir</option>
-                          <option value="dark_elixir">Dark Elixir</option>
-                        </select>
+                        !isEquipmentBuilding && (
+                          <select
+                            value={level.resource}
+                            onChange={(e) => handleEditLevel(idx, 'resource', e.target.value)}
+                            className={styles.resourceSelect}
+                          >
+                            <>
+                              <option value="gold">Gold</option>
+                              <option value="elixir">Elixir</option>
+                              <option value="dark_elixir">Dark Elixir</option>
+                            </>
+                          </select>
+                        )
                       )}
-                      <button
-                        onClick={() => openTimeModal(idx)}
-                        className={styles.timeModalBtn}
-                        title="Click to set time"
-                      >
-                        {level.time}
-                      </button>
+                      {isEquipmentBuilding && (
+                        <div className={styles.equipmentResourceGrid}>
+                          {EQUIPMENT_RESOURCE_KEYS.map((resourceKey) => (
+                            <div key={`edit-${level.level}-${resourceKey}`} className={styles.equipmentResourceField}>
+                              {RESOURCE_ICONS[resourceKey] ? (
+                                <img
+                                  src={RESOURCE_ICONS[resourceKey]}
+                                  alt={formatEquipmentResourceLabel(resourceKey)}
+                                  className={styles.equipmentResourceIcon}
+                                />
+                              ) : null}
+                              <input
+                                type="number"
+                                min="0"
+                                value={getEquipmentResourceAmounts(level)[resourceKey]}
+                                onChange={(e) => handleEditLevel(idx, 'equipmentResourceCost', { resource: resourceKey, amount: e.target.value })}
+                                className={styles.equipmentResourceInput}
+                              />
+                            </div>
+                          ))}
+                          <div className={styles.equipmentRequirementField}>
+                            <span className={styles.equipmentRequirementLabel}>Blacksmith</span>
+                            <input
+                              type="number"
+                              value={level.blacksmith_level_unlocked ?? 0}
+                              onChange={(e) => handleEditLevel(idx, 'blacksmith_level_unlocked', Math.max(0, parseInt(e.target.value) || 0))}
+                              min="0"
+                              className={styles.equipmentRequirementInput}
+                            />
+                          </div>
+                        </div>
+                      )}
+                      {!isEquipmentBuilding && (
+                        <button
+                          onClick={() => openTimeModal(idx)}
+                          className={styles.timeModalBtn}
+                          title="Click to set time"
+                        >
+                          {level.time}
+                        </button>
+                      )}
                       {(isTroopBuilding || isSpellBuilding) && Number(townhallLevel) >= 3 && (
                         <div className={styles.troopLabGroup}>
                           <span className={styles.troopLabLabel}>Lab:</span>

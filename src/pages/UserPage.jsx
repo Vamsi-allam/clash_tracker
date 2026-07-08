@@ -179,6 +179,11 @@ const getCurrentSpellFactoryLevel = (structureLevels = {}) => {
   return spellFactoryLevels.reduce((highest, value) => Math.max(highest, Number(value) || 0), 0)
 }
 
+const getCurrentBlacksmithLevel = (structureLevels = {}) => {
+  const blacksmithLevels = Array.isArray(structureLevels?.blacksmith) ? structureLevels.blacksmith : []
+  return blacksmithLevels.reduce((highest, value) => Math.max(highest, Number(value) || 0), 0)
+}
+
 const getAllowedBuildingRowIdsForSnapshot = (snapshot = {}) => {
   const rowIds = new Set()
 
@@ -414,11 +419,12 @@ export default function UserPage({ username, onLogout, userId }) {
   const currentLabLevel = getCurrentLabLevel(structureLevels)
   const currentSpellFactoryLevel = getCurrentSpellFactoryLevel(structureLevels)
   const currentHeroHallLevel = getCurrentHeroHallLevel(structureLevels)
+  const currentBlacksmithLevel = getCurrentBlacksmithLevel(structureLevels)
   const showTrapsTab = Number(activeVillage?.townhall_level || 0) >= 3
   const showSpellsTab = Number(activeVillage?.townhall_level || 0) >= 5
   const showDarkTroopsTab = Number(activeVillage?.townhall_level || 0) >= 7
   const showHeroesTab = Number(activeVillage?.townhall_level || 0) >= 4
-  const showEquipmentTab = Number(activeVillage?.townhall_level || 0) >= 8
+  const showEquipmentTab = false
   const displayedLoadedTab = !showTrapsTab && activeLoadedTab === 'traps'
     ? 'defences'
     : !showSpellsTab && activeLoadedTab === 'spells'
@@ -1761,13 +1767,18 @@ export default function UserPage({ username, onLogout, userId }) {
     return styles.readOnlyResourceCostGold
   }
 
-  const getUpgradeSummary = (building, currentLevel, labLevel = 0, heroHallLevel = 0) => {
+  const getUpgradeSummary = (building, currentLevel, labLevel = 0, heroHallLevel = 0, blacksmithLevel = 0) => {
     const allNextLevels = getNextUpgradeLevels(building, currentLevel)
+    const equipmentUsesBlacksmithRequirement = allNextLevels.some((level) => level?.blacksmith_level_unlocked != null)
     const nextLevels = (TROOP_BUILDING_IDS.has(String(building?.id || '')) || DARK_TROOP_BUILDING_IDS.has(String(building?.id || '')) || SPELL_BUILDING_IDS.has(String(building?.id || '')))
       ? allNextLevels.filter((level) => Number(level.lab_level_unlocked ?? 0) <= Number(labLevel || 0))
       : HERO_BUILDING_IDS.has(String(building?.id || ''))
         ? allNextLevels.filter((level) => Number(level.hero_hall_level_unlocked ?? 0) <= Number(heroHallLevel || 0))
-        : allNextLevels
+        : String(building?.id || '') === 'blacksmith'
+          ? allNextLevels
+          : equipmentUsesBlacksmithRequirement
+            ? allNextLevels.filter((level) => Number(level.blacksmith_level_unlocked ?? building?.blacksmith_level_unlocked ?? 0) <= Number(blacksmithLevel || 0))
+            : allNextLevels
     const totalCost = nextLevels.reduce((total, level) => total + Number(level.cost || 0), 0)
     const totalSeconds = nextLevels.reduce((total, level) => total + getTimeSeconds(level.time), 0)
 
@@ -2252,6 +2263,11 @@ export default function UserPage({ username, onLogout, userId }) {
     const buildingRowId = `${building.id}-${rowIndex + 1}`
     const existingUpgrade = getPendingUpgradeForRow(activeVillage.id, buildingRowId, rowIndex)
     if (existingUpgrade) return
+
+    if (rowState.labRequirementLabel === 'Blacksmith' && rowState.labRequirementLevel != null && rowState.visibleNextLevels.length === 0) {
+      showToast(`Blacksmith level ${rowState.labRequirementLevel} is required to upgrade this equipment.`, 'error')
+      return
+    }
 
     if ((TROOP_BUILDING_IDS.has(String(building.id || '')) || DARK_TROOP_BUILDING_IDS.has(String(building.id || '')) || SPELL_BUILDING_IDS.has(String(building.id || ''))) && rowState.labRequirementLevel != null && rowState.visibleNextLevels.length === 0) {
       const unitLabel = SPELL_BUILDING_IDS.has(String(building.id || '')) ? 'spell' : 'troop'
@@ -2793,7 +2809,7 @@ export default function UserPage({ username, onLogout, userId }) {
       const defaultLevel = getDefaultRowLevel(building, rowIndex, isCopyUnlocked(building, rowIndex))
       const rowLevel = clampLevel(currentLevels[rowIndex] ?? defaultLevel, rowIndex)
       const minimumLevel = getMinimumLevel(rowIndex)
-      const upgradeSummary = getUpgradeSummary(building, rowLevel, currentLabLevel, currentHeroHallLevel)
+      const upgradeSummary = getUpgradeSummary(building, rowLevel, currentLabLevel, currentHeroHallLevel, currentBlacksmithLevel)
       const pendingUpgrade = getPendingUpgradeForRow(activeVillage?.id, `${building.id}-${rowIndex + 1}`, rowIndex)
       const pendingRemainingSeconds = pendingUpgrade ? Math.max(0, Math.ceil((Number(pendingUpgrade.finishAt) - upgradeClock) / 1000)) : 0
       const pendingDurationSeconds = pendingUpgrade ? Math.max(0, Number(pendingUpgrade.durationSeconds || 0)) : 0
@@ -2806,15 +2822,29 @@ export default function UserPage({ username, onLogout, userId }) {
       const visibleNextLevels = pendingUpgrade
         ? upgradeSummary.nextLevels.filter((levelInfo) => Number(levelInfo.level) > Number(pendingUpgrade.toLevel))
         : upgradeSummary.nextLevels
+      const equipmentUsesBlacksmithRequirement = allRemainingNextLevels.some((levelInfo) => levelInfo?.blacksmith_level_unlocked != null)
+      const blacksmithLockedNextLevels = equipmentUsesBlacksmithRequirement
+        ? allRemainingNextLevels.filter((levelInfo) => Number(levelInfo.blacksmith_level_unlocked ?? 0) > Number(currentBlacksmithLevel || 0))
+        : []
       const labLockedNextLevels = (TROOP_BUILDING_IDS.has(String(building?.id || '')) || DARK_TROOP_BUILDING_IDS.has(String(building?.id || '')) || SPELL_BUILDING_IDS.has(String(building?.id || '')))
         ? allRemainingNextLevels.filter((levelInfo) => Number(levelInfo.lab_level_unlocked ?? 0) > Number(currentLabLevel || 0))
         : HERO_BUILDING_IDS.has(String(building?.id || ''))
           ? allRemainingNextLevels.filter((levelInfo) => Number(levelInfo.hero_hall_level_unlocked ?? 0) > Number(currentHeroHallLevel || 0))
-          : []
+          : equipmentUsesBlacksmithRequirement
+            ? blacksmithLockedNextLevels
+            : []
       const labRequirementLevel = labLockedNextLevels.length > 0
         ? Math.min(...labLockedNextLevels.map((levelInfo) => (TROOP_BUILDING_IDS.has(String(building?.id || '')) || DARK_TROOP_BUILDING_IDS.has(String(building?.id || '')) || SPELL_BUILDING_IDS.has(String(building?.id || ''))) ? Number(levelInfo.lab_level_unlocked || 0) || 0 : Number(levelInfo.hero_hall_level_unlocked || 0) || 0))
+        : blacksmithLockedNextLevels.length > 0
+          ? Math.min(...blacksmithLockedNextLevels.map((levelInfo) => Number(levelInfo.blacksmith_level_unlocked || 0) || 0))
         : null
-      const labRequirementLabel = (TROOP_BUILDING_IDS.has(String(building?.id || '')) || DARK_TROOP_BUILDING_IDS.has(String(building?.id || '')) || SPELL_BUILDING_IDS.has(String(building?.id || ''))) ? 'Lab' : HERO_BUILDING_IDS.has(String(building?.id || '')) ? 'Hero Hall' : 'Requirement'
+      const labRequirementLabel = (TROOP_BUILDING_IDS.has(String(building?.id || '')) || DARK_TROOP_BUILDING_IDS.has(String(building?.id || '')) || SPELL_BUILDING_IDS.has(String(building?.id || '')))
+        ? 'Lab'
+        : HERO_BUILDING_IDS.has(String(building?.id || ''))
+          ? 'Hero Hall'
+          : blacksmithLockedNextLevels.length > 0
+            ? 'Blacksmith'
+            : 'Requirement'
       const pendingLevelInfo = pendingUpgrade ? visibleNextLevels[0] || null : null
       const allRemainingTotalCost = allRemainingNextLevels.reduce((total, level) => total + Number(level.cost || 0), 0)
       const allRemainingTotalSeconds = allRemainingNextLevels.reduce((total, level) => total + getTimeSeconds(level.time), 0)
@@ -3303,7 +3333,11 @@ export default function UserPage({ username, onLogout, userId }) {
                                       />
                                     ) : null}
                                   </span>
-                                  <span className={`${styles.readOnlyUpgradeLevel} ${(rowState.labRequirementLabel === 'Lab' && Number(levelInfo.lab_level_unlocked ?? 0) > Number(currentLabLevel || 0)) ? styles.readOnlyUpgradeLevelLocked : ''}`}>Lvl {levelInfo.level}:</span>
+                                  <span className={`${styles.readOnlyUpgradeLevel} ${(['Lab', 'Hero Hall', 'Blacksmith'].includes(rowState.labRequirementLabel) && (
+                                    (rowState.labRequirementLabel === 'Lab' && Number(levelInfo.lab_level_unlocked ?? 0) > Number(currentLabLevel || 0)) ||
+                                    (rowState.labRequirementLabel === 'Hero Hall' && Number(levelInfo.hero_hall_level_unlocked ?? 0) > Number(currentHeroHallLevel || 0)) ||
+                                    (rowState.labRequirementLabel === 'Blacksmith' && Number(currentBlacksmithLevel || 0) < Number(rowState.labRequirementLevel || 0))
+                                  )) ? styles.readOnlyUpgradeLevelLocked : ''}`}>Lvl {levelInfo.level}:</span>
                                   <span className={`${styles.readOnlyUpgradeCost} ${getUpgradeResourceClass(levelInfo.resource)}`}>
                                     {formatNumberShort(levelInfo.cost)}
                                   </span>
@@ -3342,7 +3376,11 @@ export default function UserPage({ username, onLogout, userId }) {
                                       />
                                     ) : null}
                                   </span>
-                                  <span className={`${styles.readOnlyUpgradeLevel} ${(rowState.labRequirementLabel === 'Lab' && Number(levelInfo.lab_level_unlocked ?? 0) > Number(currentLabLevel || 0)) ? styles.readOnlyUpgradeLevelLocked : ''}`}>Lvl {levelInfo.level}:</span>
+                                  <span className={`${styles.readOnlyUpgradeLevel} ${(['Lab', 'Hero Hall', 'Blacksmith'].includes(rowState.labRequirementLabel) && (
+                                    (rowState.labRequirementLabel === 'Lab' && Number(levelInfo.lab_level_unlocked ?? 0) > Number(currentLabLevel || 0)) ||
+                                    (rowState.labRequirementLabel === 'Hero Hall' && Number(levelInfo.hero_hall_level_unlocked ?? 0) > Number(currentHeroHallLevel || 0)) ||
+                                    (rowState.labRequirementLabel === 'Blacksmith' && Number(currentBlacksmithLevel || 0) < Number(rowState.labRequirementLevel || 0))
+                                  )) ? styles.readOnlyUpgradeLevelLocked : ''}`}>Lvl {levelInfo.level}:</span>
                                   <span className={`${styles.readOnlyUpgradeCost} ${getUpgradeResourceClass(levelInfo.resource)}`}>
                                     {formatNumberShort(levelInfo.cost)}
                                   </span>
@@ -3372,7 +3410,11 @@ export default function UserPage({ username, onLogout, userId }) {
                                   />
                                 ) : null}
                               </span>
-                              <span className={`${styles.readOnlyUpgradeLevel} ${(rowState.labRequirementLabel === 'Lab' && Number(levelInfo.lab_level_unlocked ?? 0) > Number(currentLabLevel || 0)) ? styles.readOnlyUpgradeLevelLocked : ''}`}>Lvl {levelInfo.level}:</span>
+                              <span className={`${styles.readOnlyUpgradeLevel} ${(['Lab', 'Hero Hall', 'Blacksmith'].includes(rowState.labRequirementLabel) && (
+                                (rowState.labRequirementLabel === 'Lab' && Number(levelInfo.lab_level_unlocked ?? 0) > Number(currentLabLevel || 0)) ||
+                                (rowState.labRequirementLabel === 'Hero Hall' && Number(levelInfo.hero_hall_level_unlocked ?? 0) > Number(currentHeroHallLevel || 0)) ||
+                                (rowState.labRequirementLabel === 'Blacksmith' && Number(currentBlacksmithLevel || 0) < Number(rowState.labRequirementLevel || 0))
+                              )) ? styles.readOnlyUpgradeLevelLocked : ''}`}>Lvl {levelInfo.level}:</span>
                               <span className={`${styles.readOnlyUpgradeCost} ${getUpgradeResourceClass(levelInfo.resource)}`}>
                                 {formatNumberShort(levelInfo.cost)}
                               </span>
@@ -3411,7 +3453,11 @@ export default function UserPage({ username, onLogout, userId }) {
                                   />
                                 ) : null}
                               </span>
-                              <span className={`${styles.readOnlyUpgradeLevel} ${(rowState.labRequirementLabel === 'Lab' && Number(levelInfo.lab_level_unlocked ?? 0) > Number(currentLabLevel || 0)) ? styles.readOnlyUpgradeLevelLocked : ''}`}>Lvl {levelInfo.level}:</span>
+                              <span className={`${styles.readOnlyUpgradeLevel} ${(['Lab', 'Hero Hall', 'Blacksmith'].includes(rowState.labRequirementLabel) && (
+                                (rowState.labRequirementLabel === 'Lab' && Number(levelInfo.lab_level_unlocked ?? 0) > Number(currentLabLevel || 0)) ||
+                                (rowState.labRequirementLabel === 'Hero Hall' && Number(levelInfo.hero_hall_level_unlocked ?? 0) > Number(currentHeroHallLevel || 0)) ||
+                                (rowState.labRequirementLabel === 'Blacksmith' && Number(currentBlacksmithLevel || 0) < Number(rowState.labRequirementLevel || 0))
+                              )) ? styles.readOnlyUpgradeLevelLocked : ''}`}>Lvl {levelInfo.level}:</span>
                               <span className={`${styles.readOnlyUpgradeCost} ${getUpgradeResourceClass(levelInfo.resource)}`}>
                                 {formatNumberShort(levelInfo.cost)}
                               </span>
