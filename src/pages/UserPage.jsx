@@ -1695,6 +1695,22 @@ export default function UserPage({ username, onLogout, userId }) {
     return 'Gold'
   }
 
+  const getLevelResourceOptions = (levelInfo, { isWallLevel = false } = {}) => {
+    const normalizedFromOptions = Array.isArray(levelInfo?.resource_options)
+      ? levelInfo.resource_options
+        .map((resource) => String(resource || '').trim().toLowerCase())
+        .filter((resource, index, collection) => Boolean(resource) && collection.indexOf(resource) === index)
+      : []
+
+    if (normalizedFromOptions.length > 0) return normalizedFromOptions
+
+    if (isWallLevel && Number(levelInfo?.level || 0) >= 5) {
+      return ['gold', 'elixir']
+    }
+
+    return [String(levelInfo?.resource || 'gold').trim().toLowerCase() || 'gold']
+  }
+
   const getUpgradeResourceClass = (resource) => {
     const normalizedResource = String(resource || '').trim().toLowerCase()
     if (normalizedResource === 'dark_elixir') return styles.readOnlyResourceCostDarkElixir
@@ -4217,13 +4233,34 @@ export default function UserPage({ username, onLogout, userId }) {
                                       <div className={styles.loadedWallUpgradeList}>
                                         {upcomingWallLevels.map((upgradeLevel) => (
                                           <div key={`wall-upgrade-${wallLevel.level}-${upgradeLevel.level}`} className={styles.loadedWallUpgradeItem}>
-                                            {upgradeResourceIcons[String(upgradeLevel.resource || '').trim().toLowerCase()] ? (
-                                              <img
-                                                src={upgradeResourceIcons[String(upgradeLevel.resource || '').trim().toLowerCase()]}
-                                                alt={getUpgradeResourceLabel(upgradeLevel.resource)}
-                                                className={styles.loadedWallCostIcon}
-                                              />
-                                            ) : null}
+                                            <div className={styles.loadedWallCostIcons}>
+                                              {(() => {
+                                                const resourceOptions = getLevelResourceOptions(upgradeLevel, { isWallLevel: true })
+                                                const usesDualGoldElixirIcon = resourceOptions.includes('gold') && resourceOptions.includes('elixir')
+
+                                                if (usesDualGoldElixirIcon) {
+                                                  return (
+                                                    <img
+                                                      src="/src/assets/magic-items/goldelxir.png"
+                                                      alt="Gold or Elixir"
+                                                      className={styles.loadedWallCostIcon}
+                                                    />
+                                                  )
+                                                }
+
+                                                return resourceOptions.map((resourceKey) => (
+                                                  <span key={`${wallLevel.level}-${upgradeLevel.level}-${resourceKey}`} className={styles.loadedWallCostOption}>
+                                                    {upgradeResourceIcons[resourceKey] ? (
+                                                      <img
+                                                        src={upgradeResourceIcons[resourceKey]}
+                                                        alt={getUpgradeResourceLabel(resourceKey)}
+                                                        className={styles.loadedWallCostIcon}
+                                                      />
+                                                    ) : null}
+                                                  </span>
+                                                ))
+                                              })()}
+                                            </div>
                                             <span className={styles.loadedWallUpgradeLabel}>Lvl {upgradeLevel.level}:</span>
                                             <span className={styles.loadedWallUpgradeValue}>{formatNumberShort(upgradeLevel.cost || 0)}</span>
                                           </div>

@@ -287,6 +287,24 @@
   display: block;
 }
 
+.resourceIconsWrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.resourceOption {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.resourceOr {
+  color: var(--muted);
+  font-size: 0.7rem;
+  line-height: 1;
+}
+
 .levelRow > .resourceIcon {
   margin-right: -14px;
 }
@@ -517,6 +535,13 @@
 .resourceSelect option {
   background: #0a1527;
   color: var(--text);
+}
+
+.wallDualResourceLabel {
+  color: var(--muted);
+  font-size: 0.76rem;
+  min-width: 78px;
+  text-align: center;
 }
 
 .timeInput {

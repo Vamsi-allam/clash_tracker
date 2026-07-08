@@ -53,6 +53,22 @@ const formatTownhallResourceLabel = (resource) => {
   return 'Gold'
 }
 
+const getLevelResourceOptions = (levelInfo, { isWallLevel = false } = {}) => {
+  const normalizedFromOptions = Array.isArray(levelInfo?.resource_options)
+    ? levelInfo.resource_options
+      .map((resource) => String(resource || '').trim().toLowerCase())
+      .filter((resource, index, collection) => Boolean(resource) && collection.indexOf(resource) === index)
+    : []
+
+  if (normalizedFromOptions.length > 0) return normalizedFromOptions
+
+  if (isWallLevel && Number(levelInfo?.level || 0) >= 5) {
+    return ['gold', 'elixir']
+  }
+
+  return [String(levelInfo?.resource || 'gold').trim().toLowerCase() || 'gold']
+}
+
 const parseTimeStringToSeconds = (timeString) => {
   if (!timeString || typeof timeString !== 'string') return 0
 
@@ -487,19 +503,39 @@ export default function AdminPage({ username, onLogout }) {
                       {levels.length > 0 ? (
                         <div className={styles.buildingItemLevels}>
                           {levels.map((level, idx) => {
-                            const resourceIcon = {
+                            const resourceIcons = {
                               gold: '/src/assets/magic-items/gold.png',
                               elixir: '/src/assets/magic-items/elixir.png',
                               dark_elixir: '/src/assets/magic-items/de.png',
-                            }[level.resource] || ''
+                            }
+                            const resourceOptions = getLevelResourceOptions(level, { isWallLevel: activeTab === 'walls' })
+                            const usesDualGoldElixirIcon = resourceOptions.includes('gold') && resourceOptions.includes('elixir')
                             const timeDisplay = typeof level.time === 'number' 
                               ? formatSecondsToTimeDisplay(level.time)
                               : level.time || '—'
                             return (
                               <div key={idx} className={styles.buildingLevelRow}>
-                                {resourceIcon && (
-                                  <img src={resourceIcon} alt={level.resource} className={styles.levelResourceIcon} />
-                                )}
+                                <div className={styles.levelResourceIcons}>
+                                  {usesDualGoldElixirIcon ? (
+                                    <img
+                                      src="/src/assets/magic-items/goldelxir.png"
+                                      alt="Gold or Elixir"
+                                      className={styles.levelResourceIcon}
+                                    />
+                                  ) : (
+                                    resourceOptions.map((resourceKey) => (
+                                      <span key={`${level.level}-${resourceKey}`} className={styles.levelResourceOption}>
+                                        {resourceIcons[resourceKey] ? (
+                                          <img
+                                            src={resourceIcons[resourceKey]}
+                                            alt={formatTownhallResourceLabel(resourceKey)}
+                                            className={styles.levelResourceIcon}
+                                          />
+                                        ) : null}
+                                      </span>
+                                    ))
+                                  )}
+                                </div>
                                 <span className={styles.levelNumber}>Lvl: {level.level}</span>
                                 <span className={styles.levelCost}>{formatCost(level.cost)}</span>
                                 <span className={styles.levelTime}>{timeDisplay}</span>

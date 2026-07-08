@@ -585,6 +585,24 @@
   object-fit: contain;
 }
 
+.levelResourceIcons {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.levelResourceOption {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.levelResourceOr {
+  color: var(--muted);
+  font-size: 0.7rem;
+  line-height: 1;
+}
+
 .levelNumber {
   color: var(--accent-2);
   min-width: 50px;

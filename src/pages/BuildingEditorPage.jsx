@@ -13,6 +13,22 @@ const RESOURCE_ICONS = {
   dark_elixir: '/src/assets/magic-items/de.png',
 }
 
+const getLevelResourceOptions = (levelInfo, { isWallLevel = false } = {}) => {
+  const normalizedFromOptions = Array.isArray(levelInfo?.resource_options)
+    ? levelInfo.resource_options
+      .map((resource) => String(resource || '').trim().toLowerCase())
+      .filter((resource, index, collection) => Boolean(resource) && collection.indexOf(resource) === index)
+    : []
+
+  if (normalizedFromOptions.length > 0) return normalizedFromOptions
+
+  if (isWallLevel && Number(levelInfo?.level || 0) >= 5) {
+    return ['gold', 'elixir']
+  }
+
+  return [String(levelInfo?.resource || 'gold').trim().toLowerCase() || 'gold']
+}
+
 const formatCost = (value) => {
   if (!value) return '0'
   if (value >= 1000000) {
@@ -136,6 +152,7 @@ const createBuildingLevelDraft = (levelNumber, sourceLevel = {}) => ({
   costDisplay: Number(sourceLevel.costDisplay ?? sourceLevel.cost ?? 0),
   costMagnitude: sourceLevel.costMagnitude || '',
   resource: sourceLevel.resource || 'gold',
+  resource_options: Array.isArray(sourceLevel.resource_options) ? [...sourceLevel.resource_options] : [],
   time: sourceLevel.time || '0sec',
 })
 
@@ -483,8 +500,20 @@ export default function BuildingEditorPage({ username, onLogout }) {
         : isHeroBuilding
           ? normalizeHeroLevels(editingLevelCount, editingLevels)
           : normalizeBuildingLevels(editingLevelCount, editingLevels)
+      const normalizedLevelsWithWallResources = isWallBuilding
+        ? normalizedLevels.map((levelInfo) => Number(levelInfo.level || 0) >= 5
+          ? {
+            ...levelInfo,
+            resource: 'gold',
+            resource_options: ['gold', 'elixir'],
+          }
+          : {
+            ...levelInfo,
+            resource_options: Array.isArray(levelInfo.resource_options) ? [...levelInfo.resource_options] : [],
+          })
+        : normalizedLevels
       const troopLevelCount = isTroopLikeBuilding
-        ? normalizedLevels.length
+        ? normalizedLevelsWithWallResources.length
         : isHeroBuilding
           ? 1
           : editingBuildingCount
@@ -492,7 +521,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
         buildings_unlocked: troopLevelCount,
         starts_unlocked: editingCopyUnlocks[0] ?? true,
         copy_unlocks: isTroopLikeBuilding ? createCopyUnlocks(1, 1) : normalizeCopyUnlocks(editingBuildingCount, editingCopyUnlocks, true),
-        levels: normalizedLevels,
+        levels: normalizedLevelsWithWallResources,
         ...(isTroopBuilding ? { barracks_level_unlocked: editingBarracksLevelUnlocked } : {}),
         ...(isSpellBuilding ? { spell_factory_level_unlocked: editingSpellFactoryLevelUnlocked } : {}),
         ...(isHeroBuilding ? { hero_hall_level_unlocked: editingHeroHallLevelUnlocked } : {}),
@@ -543,7 +572,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
         buildings_unlocked: troopLevelCount,
         starts_unlocked: editingCopyUnlocks[0] ?? true,
         copy_unlocks: isTroopLikeBuilding ? createCopyUnlocks(1, 1) : normalizeCopyUnlocks(editingBuildingCount, editingCopyUnlocks, true),
-        levels: normalizedLevels,
+        levels: normalizedLevelsWithWallResources,
         ...(isTroopBuilding ? { barracks_level_unlocked: editingBarracksLevelUnlocked } : {}),
         ...(isSpellBuilding ? { spell_factory_level_unlocked: editingSpellFactoryLevelUnlocked } : {}),
         ...(isHeroBuilding ? { hero_hall_level_unlocked: editingHeroHallLevelUnlocked } : {}),
@@ -768,11 +797,34 @@ export default function BuildingEditorPage({ username, onLogout }) {
               <div className={styles.levelsList}>
                 {currentStaticLevel.map((level) => (
                   <div key={`static-${level.level}`} className={styles.levelRow}>
-                    <img
-                      src={RESOURCE_ICONS[level.resource]}
-                      alt={level.resource}
-                      className={styles.resourceIcon}
-                    />
+                    <div className={styles.resourceIconsWrap}>
+                      {(() => {
+                        const resourceOptions = getLevelResourceOptions(level, { isWallLevel: isWallBuilding })
+                        const usesDualGoldElixirIcon = resourceOptions.includes('gold') && resourceOptions.includes('elixir')
+
+                        if (usesDualGoldElixirIcon) {
+                          return (
+                            <img
+                              src="/src/assets/magic-items/goldelxir.png"
+                              alt="Gold or Elixir"
+                              className={styles.resourceIcon}
+                            />
+                          )
+                        }
+
+                        return resourceOptions.map((resourceKey) => (
+                          <span key={`static-${level.level}-${resourceKey}`} className={styles.resourceOption}>
+                            {RESOURCE_ICONS[resourceKey] ? (
+                              <img
+                                src={RESOURCE_ICONS[resourceKey]}
+                                alt={resourceKey}
+                                className={styles.resourceIcon}
+                              />
+                            ) : null}
+                          </span>
+                        ))
+                      })()}
+                    </div>
                     <div className={styles.levelLabel}>Lvl {level.level}:</div>
                     <span className={`${styles.costValue} ${styles[level.resource]}`}>{formatCost(level.cost)}</span>
                     <span className={styles.timeValue}>{level.time}</span>
@@ -901,11 +953,34 @@ export default function BuildingEditorPage({ username, onLogout }) {
 
                     return (
                       <div key={`dynamic-${level.level}`} className={styles.levelRow}>
-                        <img
-                          src={RESOURCE_ICONS[level.resource]}
-                          alt={level.resource}
-                          className={styles.resourceIcon}
-                        />
+                        <div className={styles.resourceIconsWrap}>
+                          {(() => {
+                            const resourceOptions = getLevelResourceOptions(level, { isWallLevel: isWallBuilding })
+                            const usesDualGoldElixirIcon = resourceOptions.includes('gold') && resourceOptions.includes('elixir')
+
+                            if (usesDualGoldElixirIcon) {
+                              return (
+                                <img
+                                  src="/src/assets/magic-items/goldelxir.png"
+                                  alt="Gold or Elixir"
+                                  className={styles.resourceIcon}
+                                />
+                              )
+                            }
+
+                            return resourceOptions.map((resourceKey) => (
+                              <span key={`dynamic-${level.level}-${resourceKey}`} className={styles.resourceOption}>
+                                {RESOURCE_ICONS[resourceKey] ? (
+                                  <img
+                                    src={RESOURCE_ICONS[resourceKey]}
+                                    alt={resourceKey}
+                                    className={styles.resourceIcon}
+                                  />
+                                ) : null}
+                              </span>
+                            ))
+                          })()}
+                        </div>
                         <div className={styles.levelLabel}>Lvl {level.level}:</div>
                         <span className={`${styles.costValue} ${styles[level.resource]}`}>{formatCost(level.cost)}</span>
                         <span className={styles.timeValue}>{level.time}</span>
@@ -924,11 +999,34 @@ export default function BuildingEditorPage({ username, onLogout }) {
                 <div className={styles.levelsList}>
                   {(editingLevels.length > 0 ? editingLevels : currentStaticLevel).map((level, idx) => (
                     <div key={`edit-${level.level}`} className={styles.levelEditRow}>
-                      <img
-                        src={RESOURCE_ICONS[level.resource]}
-                        alt={level.resource}
-                        className={styles.resourceIcon}
-                      />
+                      <div className={styles.resourceIconsWrap}>
+                        {(() => {
+                          const resourceOptions = getLevelResourceOptions(level, { isWallLevel: isWallBuilding })
+                          const usesDualGoldElixirIcon = resourceOptions.includes('gold') && resourceOptions.includes('elixir')
+
+                          if (usesDualGoldElixirIcon) {
+                            return (
+                              <img
+                                src="/src/assets/magic-items/goldelxir.png"
+                                alt="Gold or Elixir"
+                                className={styles.resourceIcon}
+                              />
+                            )
+                          }
+
+                          return resourceOptions.map((resourceKey) => (
+                            <span key={`edit-${level.level}-${resourceKey}`} className={styles.resourceOption}>
+                              {RESOURCE_ICONS[resourceKey] ? (
+                                <img
+                                  src={RESOURCE_ICONS[resourceKey]}
+                                  alt={resourceKey}
+                                  className={styles.resourceIcon}
+                                />
+                              ) : null}
+                            </span>
+                          ))
+                        })()}
+                      </div>
                       <span className={styles.levelLabel}>Lvl {level.level}:</span>
                       <div className={styles.costInputGroup}>
                         <input
@@ -949,15 +1047,19 @@ export default function BuildingEditorPage({ username, onLogout }) {
                           <option value="b">b</option>
                         </select>
                       </div>
-                      <select
-                        value={level.resource}
-                        onChange={(e) => handleEditLevel(idx, 'resource', e.target.value)}
-                        className={styles.resourceSelect}
-                      >
-                        <option value="gold">Gold</option>
-                        <option value="elixir">Elixir</option>
-                        <option value="dark_elixir">Dark Elixir</option>
-                      </select>
+                      {isWallBuilding && Number(level.level || 0) >= 5 ? (
+                        <span className={styles.wallDualResourceLabel}>Gold or Elixir</span>
+                      ) : (
+                        <select
+                          value={level.resource}
+                          onChange={(e) => handleEditLevel(idx, 'resource', e.target.value)}
+                          className={styles.resourceSelect}
+                        >
+                          <option value="gold">Gold</option>
+                          <option value="elixir">Elixir</option>
+                          <option value="dark_elixir">Dark Elixir</option>
+                        </select>
+                      )}
                       <button
                         onClick={() => openTimeModal(idx)}
                         className={styles.timeModalBtn}

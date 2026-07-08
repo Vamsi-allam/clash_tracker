@@ -1059,6 +1059,24 @@
   object-fit: contain;
 }
 
+.loadedWallCostIcons {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.loadedWallCostOption {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.loadedWallCostOr {
+  color: rgba(233, 245, 255, 0.7);
+  font-size: 0.7rem;
+  line-height: 1;
+}
+
 .loadedWallsSummary,
 .loadedBuildersCard,
 .loadedStatsCard,
