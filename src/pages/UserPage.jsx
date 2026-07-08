@@ -2704,24 +2704,29 @@ export default function UserPage({ username, onLogout, userId }) {
       const pendingProgressPercent = pendingUpgrade && pendingDurationSeconds > 0
         ? Math.max(0, Math.min(100, Math.round(((pendingDurationSeconds - pendingRemainingSeconds) / pendingDurationSeconds) * 100)))
         : 0
+      const allRemainingNextLevels = pendingUpgrade
+        ? upgradeSummary.allNextLevels.filter((levelInfo) => Number(levelInfo.level) > Number(pendingUpgrade.toLevel))
+        : upgradeSummary.allNextLevels
       const visibleNextLevels = pendingUpgrade
         ? upgradeSummary.nextLevels.filter((levelInfo) => Number(levelInfo.level) > Number(pendingUpgrade.toLevel))
         : upgradeSummary.nextLevels
       const labLockedNextLevels = (TROOP_BUILDING_IDS.has(String(building?.id || '')) || SPELL_BUILDING_IDS.has(String(building?.id || '')))
-        ? upgradeSummary.allNextLevels.filter((levelInfo) => Number(levelInfo.lab_level_unlocked ?? 0) > Number(currentLabLevel || 0))
+        ? allRemainingNextLevels.filter((levelInfo) => Number(levelInfo.lab_level_unlocked ?? 0) > Number(currentLabLevel || 0))
         : HERO_BUILDING_IDS.has(String(building?.id || ''))
-          ? upgradeSummary.allNextLevels.filter((levelInfo) => Number(levelInfo.hero_hall_level_unlocked ?? 0) > Number(currentHeroHallLevel || 0))
+          ? allRemainingNextLevels.filter((levelInfo) => Number(levelInfo.hero_hall_level_unlocked ?? 0) > Number(currentHeroHallLevel || 0))
           : []
       const labRequirementLevel = labLockedNextLevels.length > 0
         ? Math.min(...labLockedNextLevels.map((levelInfo) => (TROOP_BUILDING_IDS.has(String(building?.id || '')) || SPELL_BUILDING_IDS.has(String(building?.id || ''))) ? Number(levelInfo.lab_level_unlocked || 0) || 0 : Number(levelInfo.hero_hall_level_unlocked || 0) || 0))
         : null
       const labRequirementLabel = (TROOP_BUILDING_IDS.has(String(building?.id || '')) || SPELL_BUILDING_IDS.has(String(building?.id || ''))) ? 'Lab' : HERO_BUILDING_IDS.has(String(building?.id || '')) ? 'Hero Hall' : 'Requirement'
       const pendingLevelInfo = pendingUpgrade ? visibleNextLevels[0] || null : null
+      const allRemainingTotalCost = allRemainingNextLevels.reduce((total, level) => total + Number(level.cost || 0), 0)
+      const allRemainingTotalSeconds = allRemainingNextLevels.reduce((total, level) => total + getTimeSeconds(level.time), 0)
       const visibleTotalCost = visibleNextLevels.reduce((total, level) => total + Number(level.cost || 0), 0)
       const visibleTotalSeconds = visibleNextLevels.reduce((total, level) => total + getTimeSeconds(level.time), 0)
       const labLockedTotalCost = labLockedNextLevels.reduce((total, level) => total + Number(level.cost || 0), 0)
       const labLockedTotalSeconds = labLockedNextLevels.reduce((total, level) => total + getTimeSeconds(level.time), 0)
-      const summaryResource = visibleNextLevels[0]?.resource || upgradeSummary.totalResource || ''
+      const summaryResource = allRemainingNextLevels[0]?.resource || visibleNextLevels[0]?.resource || upgradeSummary.totalResource || ''
       const actionRowKey = `${building.id}-${rowIndex + 1}`
 
       return {
@@ -2734,6 +2739,9 @@ export default function UserPage({ username, onLogout, userId }) {
         pendingRemainingSeconds,
         pendingProgressPercent,
         pendingLevelInfo,
+        allRemainingNextLevels,
+        allRemainingTotalCost,
+        allRemainingTotalSeconds,
         visibleNextLevels,
         labLockedNextLevels,
         labRequirementLevel,
@@ -2876,13 +2884,13 @@ export default function UserPage({ username, onLogout, userId }) {
                 )
               }
             }
-      const totalRemainingUpgrades = rowStates.reduce((total, rowState) => total + (rowState.pendingUpgrade ? rowState.visibleNextLevels.length : rowState.upgradeSummary.nextLevels.length), 0)
+      const totalRemainingUpgrades = rowStates.reduce((total, rowState) => total + rowState.allRemainingNextLevels.length, 0)
       const totalCost = rowStates.reduce((total, rowState) => {
-        const nextLevels = rowState.pendingUpgrade ? rowState.visibleNextLevels : rowState.upgradeSummary.nextLevels
+        const nextLevels = rowState.allRemainingNextLevels
         return total + nextLevels.reduce((rowTotal, levelInfo) => rowTotal + Number(levelInfo.cost || 0), 0)
       }, 0)
       const totalSeconds = rowStates.reduce((total, rowState) => {
-        const nextLevels = rowState.pendingUpgrade ? rowState.visibleNextLevels : rowState.upgradeSummary.nextLevels
+        const nextLevels = rowState.allRemainingNextLevels
         return total + nextLevels.reduce((rowTotal, levelInfo) => rowTotal + getTimeSeconds(levelInfo.time), 0)
       }, 0)
       const summaryImageLevel = rowStates[0]?.rowLevel ?? 0
@@ -3181,10 +3189,10 @@ export default function UserPage({ username, onLogout, userId }) {
                           <span>{rowState.pendingProgressPercent}%</span>
                         </div>
 
-                        {rowState.visibleNextLevels.length > 0 ? (
+                        {rowState.allRemainingNextLevels.length > 0 ? (
                           <>
                             <div className={styles.readOnlyUpgradeList}>
-                              {rowState.visibleNextLevels.map((levelInfo) => (
+                              {rowState.allRemainingNextLevels.map((levelInfo) => (
                                 <div key={`${building.id}-${rowState.rowIndex}-pending-lvl-${levelInfo.level}`} className={styles.readOnlyUpgradeItem}>
                                   <span className={styles.readOnlyUpgradeResourceLabel}>
                                     {upgradeResourceIcons[String(levelInfo.resource || '').trim().toLowerCase()] ? (
@@ -3195,7 +3203,7 @@ export default function UserPage({ username, onLogout, userId }) {
                                       />
                                     ) : null}
                                   </span>
-                                  <span className={styles.readOnlyUpgradeLevel}>Lvl {levelInfo.level}:</span>
+                                  <span className={`${styles.readOnlyUpgradeLevel} ${(rowState.labRequirementLabel === 'Lab' && Number(levelInfo.lab_level_unlocked ?? 0) > Number(currentLabLevel || 0)) ? styles.readOnlyUpgradeLevelLocked : ''}`}>Lvl {levelInfo.level}:</span>
                                   <span className={`${styles.readOnlyUpgradeCost} ${getUpgradeResourceClass(levelInfo.resource)}`}>
                                     {formatNumberShort(levelInfo.cost)}
                                   </span>
@@ -3204,14 +3212,21 @@ export default function UserPage({ username, onLogout, userId }) {
                               ))}
                             </div>
                             <div className={styles.readOnlyUpgradeSummary}>
-                              <span>{rowState.visibleNextLevels.length} Levels</span>
+                              <span>{rowState.allRemainingNextLevels.length} Levels</span>
                               <span>-</span>
                               <span className={`${styles.readOnlyUpgradeCost} ${getUpgradeResourceClass(rowState.summaryResource)}`}>
-                                {formatNumberShort(rowState.visibleTotalCost)}
+                                {formatNumberShort(rowState.allRemainingTotalCost)}
                               </span>
                               <span>-</span>
-                              <span>{formatSeconds(rowState.visibleTotalSeconds)}</span>
+                              <span>{formatSeconds(rowState.allRemainingTotalSeconds)}</span>
                             </div>
+                            {rowState.labRequirementLevel != null && rowState.labLockedNextLevels.length > 0 && (
+                              <div className={`${styles.readOnlyUpgradeSummary} ${styles.readOnlyTroopLockedSummary}`}>
+                                <span>
+                                  Requires {rowState.labRequirementLabel} level {rowState.labRequirementLevel} to unlock upgrades
+                                </span>
+                              </div>
+                            )}
                           </>
                         ) : rowState.labRequirementLevel != null ? (
                           <>
@@ -3227,7 +3242,7 @@ export default function UserPage({ username, onLogout, userId }) {
                                       />
                                     ) : null}
                                   </span>
-                                  <span className={styles.readOnlyUpgradeLevel}>Lvl {levelInfo.level}:</span>
+                                  <span className={`${styles.readOnlyUpgradeLevel} ${(rowState.labRequirementLabel === 'Lab' && Number(levelInfo.lab_level_unlocked ?? 0) > Number(currentLabLevel || 0)) ? styles.readOnlyUpgradeLevelLocked : ''}`}>Lvl {levelInfo.level}:</span>
                                   <span className={`${styles.readOnlyUpgradeCost} ${getUpgradeResourceClass(levelInfo.resource)}`}>
                                     {formatNumberShort(levelInfo.cost)}
                                   </span>
@@ -3243,10 +3258,10 @@ export default function UserPage({ username, onLogout, userId }) {
                           </>
                         ) : null}
                       </div>
-                    ) : rowState.visibleNextLevels.length > 0 ? (
+                    ) : rowState.allRemainingNextLevels.length > 0 ? (
                       <>
                         <div className={styles.readOnlyUpgradeList}>
-                          {rowState.visibleNextLevels.map((levelInfo) => (
+                          {rowState.allRemainingNextLevels.map((levelInfo) => (
                             <div key={`${building.id}-${rowState.rowIndex}-lvl-${levelInfo.level}`} className={styles.readOnlyUpgradeItem}>
                               <span className={styles.readOnlyUpgradeResourceLabel}>
                                 {upgradeResourceIcons[String(levelInfo.resource || '').trim().toLowerCase()] ? (
@@ -3257,7 +3272,7 @@ export default function UserPage({ username, onLogout, userId }) {
                                   />
                                 ) : null}
                               </span>
-                              <span className={styles.readOnlyUpgradeLevel}>Lvl {levelInfo.level}:</span>
+                              <span className={`${styles.readOnlyUpgradeLevel} ${(rowState.labRequirementLabel === 'Lab' && Number(levelInfo.lab_level_unlocked ?? 0) > Number(currentLabLevel || 0)) ? styles.readOnlyUpgradeLevelLocked : ''}`}>Lvl {levelInfo.level}:</span>
                               <span className={`${styles.readOnlyUpgradeCost} ${getUpgradeResourceClass(levelInfo.resource)}`}>
                                 {formatNumberShort(levelInfo.cost)}
                               </span>
@@ -3266,14 +3281,21 @@ export default function UserPage({ username, onLogout, userId }) {
                           ))}
                         </div>
                         <div className={styles.readOnlyUpgradeSummary}>
-                          <span>{rowState.visibleNextLevels.length} Levels</span>
+                          <span>{rowState.allRemainingNextLevels.length} Levels</span>
                           <span>-</span>
                           <span className={`${styles.readOnlyUpgradeCost} ${getUpgradeResourceClass(rowState.summaryResource)}`}>
-                            {formatNumberShort(rowState.visibleTotalCost)}
+                            {formatNumberShort(rowState.allRemainingTotalCost)}
                           </span>
                           <span>-</span>
-                          <span>{formatSeconds(rowState.visibleTotalSeconds)}</span>
+                          <span>{formatSeconds(rowState.allRemainingTotalSeconds)}</span>
                         </div>
+                        {rowState.labRequirementLevel != null && rowState.labLockedNextLevels.length > 0 && (
+                          <div className={`${styles.readOnlyUpgradeSummary} ${styles.readOnlyTroopLockedSummary}`}>
+                            <span>
+                              Requires {rowState.labRequirementLabel} level {rowState.labRequirementLevel} to unlock upgrades
+                            </span>
+                          </div>
+                        )}
                       </>
                     ) : rowState.labRequirementLevel != null ? (
                       <>
@@ -3289,7 +3311,7 @@ export default function UserPage({ username, onLogout, userId }) {
                                   />
                                 ) : null}
                               </span>
-                              <span className={styles.readOnlyUpgradeLevel}>Lvl {levelInfo.level}:</span>
+                              <span className={`${styles.readOnlyUpgradeLevel} ${(rowState.labRequirementLabel === 'Lab' && Number(levelInfo.lab_level_unlocked ?? 0) > Number(currentLabLevel || 0)) ? styles.readOnlyUpgradeLevelLocked : ''}`}>Lvl {levelInfo.level}:</span>
                               <span className={`${styles.readOnlyUpgradeCost} ${getUpgradeResourceClass(levelInfo.resource)}`}>
                                 {formatNumberShort(levelInfo.cost)}
                               </span>

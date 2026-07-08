@@ -2958,6 +2958,11 @@
   font-weight: 400;
 }
 
+.readOnlyUpgradeLevelLocked {
+  color: #ff4d4f;
+  font-weight: 700;
+}
+
 .readOnlyUpgradeCost {
   color: #ffd84f;
   font-weight: 500;
