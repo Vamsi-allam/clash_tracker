@@ -104,6 +104,7 @@ export const TROOP_BUILDING_IDS = new Set(BUILDING_SECTIONS.troops.map((building
 export const DARK_TROOP_BUILDING_IDS = new Set(BUILDING_SECTIONS.dark_troops.map((building) => building.id))
 export const SPELL_BUILDING_IDS = new Set(BUILDING_SECTIONS.spells.map((building) => building.id))
 export const HERO_BUILDING_IDS = new Set(BUILDING_SECTIONS.heroes.map((building) => building.id))
+export const EQUIPMENT_BUILDING_IDS = new Set(BUILDING_SECTIONS.equipment.map((building) => building.id))
 
 export const TROOP_BARRACKS_REQUIREMENTS = Object.fromEntries(
   BUILDING_SECTIONS.troops.map((building, index) => [building.id, index + 1]),
