@@ -1631,6 +1631,13 @@ export default function UserPage({ username, onLogout, userId }) {
     ? (structureCatalog.equipment || [])
     : []
 
+  const equipmentByHero = visibleEquipmentBuildings.reduce((acc, building) => {
+    const heroName = building?.hero || 'Other'
+    if (!acc[heroName]) acc[heroName] = []
+    acc[heroName].push(building)
+    return acc
+  }, {})
+
   const activeLoadedTabBuildings = activeLoadedTab === 'defences'
     ? visibleDefenseBuildings
     : activeLoadedTab === 'traps' && showTrapsTab
@@ -4322,7 +4329,23 @@ export default function UserPage({ username, onLogout, userId }) {
                               <span>Upgrades</span>
                             </div>
                             <div className={styles.readOnlyLoadedList}>
-                              {visibleEquipmentBuildings.map((building, index) => renderStructureCard(building, `tab-equipment-${building.id}-${index}`, { readOnly: true }))}
+                              {Object.entries(equipmentByHero).map(([heroName, equipmentList]) => (
+                                <div key={heroName} style={{ marginBottom: '20px' }}>
+                                  <div style={{
+                                    textAlign: 'center',
+                                    padding: '10px',
+                                    backgroundColor: '#1a3a52',
+                                    borderRadius: '6px',
+                                    marginBottom: '12px',
+                                    fontSize: '16px',
+                                    fontWeight: 'bold',
+                                    color: '#fff'
+                                  }}>
+                                    {heroName}
+                                  </div>
+                                  {equipmentList.map((building, index) => renderStructureCard(building, `tab-equipment-${heroName}-${building.id}-${index}`, { readOnly: true }))}
+                                </div>
+                              ))}
                             </div>
                           </div>
                         </div>
