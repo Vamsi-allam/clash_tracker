@@ -37,7 +37,14 @@ export const BUILDING_SECTIONS = {
     { id: 'wall_breaker', name: 'Wall Breaker', image: '/src/assets/Troops/Wall_breaker' },
     { id: 'balloon', name: 'Balloon', image: '/src/assets/Troops/Ballon' },
   ],
-  heroes: [],
+  heroes: [
+    { id: 'barbarian_king', name: 'Barbarian King', image: '/src/assets/Heros/Barbarian_King' },
+    { id: 'archer_queen', name: 'Archer Queen', image: '/src/assets/Heros/Archer_Queen' },
+    { id: 'grand_warden', name: 'Grand Warden', image: '/src/assets/Heros/Grand_Warden' },
+    { id: 'royal_champion', name: 'Royal Champion', image: '/src/assets/Heros/Royal_Champion' },
+    { id: 'minion_prince', name: 'Minion Prince', image: '/src/assets/Heros/Minion_Prince' },
+    { id: 'dragon_duke', name: 'Dragon Duke', image: '/src/assets/Heros/Dragon_Duke' },
+  ],
   walls: [
     { id: 'walls', name: 'Walls', image: '/src/assets/Walls' },
   ],
@@ -64,6 +71,7 @@ export const ALL_BUILDINGS = [
 ]
 
 export const TROOP_BUILDING_IDS = new Set(BUILDING_SECTIONS.troops.map((building) => building.id))
+export const HERO_BUILDING_IDS = new Set(BUILDING_SECTIONS.heroes.map((building) => building.id))
 
 export const TROOP_BARRACKS_REQUIREMENTS = Object.fromEntries(
   BUILDING_SECTIONS.troops.map((building, index) => [building.id, index + 1]),
@@ -159,6 +167,15 @@ export const getDefaultBuildingData = (townhallLevel) => {
         barracks_level_unlocked: 6,
         levels: [
           { level: 1, cost: 0, resource: 'elixir', time: '0sec', lab_level_unlocked: 1 },
+        ],
+      },
+      barbarian_king: {
+        id: 'barbarian_king',
+        image_path: '/src/assets/Heros/Barbarian_King/61_',
+        copy_unlocks: [true],
+        hero_hall_level_unlocked: 1,
+        levels: [
+          { level: 1, cost: 0, resource: 'dark_elixir', time: '0sec', hero_hall_level_unlocked: 1 },
         ],
       },
     }

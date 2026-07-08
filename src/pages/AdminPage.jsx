@@ -128,7 +128,7 @@ export default function AdminPage({ username, onLogout }) {
         const inheritedSnapshot = getTownhallSnapshotForLevel(rows || [], selectedTownhall, staticDefaults)
         const merged = {}
 
-        ;[...(inheritedSnapshot.defences || []), ...(inheritedSnapshot.traps || []), ...(inheritedSnapshot.army || []), ...(inheritedSnapshot.resources || []), ...(inheritedSnapshot.troops || [])].forEach((building) => {
+        ;[...(inheritedSnapshot.defences || []), ...(inheritedSnapshot.traps || []), ...(inheritedSnapshot.army || []), ...(inheritedSnapshot.resources || []), ...(inheritedSnapshot.troops || []), ...(inheritedSnapshot.heroes || [])].forEach((building) => {
           merged[building.id] = building
         })
         if (inheritedSnapshot.walls) {
@@ -247,6 +247,7 @@ export default function AdminPage({ username, onLogout }) {
           army: townhallRecord?.army || {},
           resources: townhallRecord?.resources || {},
           troops: townhallRecord?.troops || {},
+          heroes: townhallRecord?.heroes || {},
           walls: townhallRecord?.walls || {},
           traps: townhallRecord?.traps || [],
           townhall_upgrade_cost: parsedCost,
@@ -389,6 +390,7 @@ export default function AdminPage({ username, onLogout }) {
                 const levels = buildingData?.levels || []
                 const maxLevel = levels.length > 0 ? Math.max(...levels.map(l => l.level)) : 3
                 const barracksLevelNeeded = Number(buildingData?.barracks_level_unlocked ?? staticDefaults[building.id]?.barracks_level_unlocked ?? 1) || 1
+                const heroHallLevelNeeded = Number(buildingData?.hero_hall_level_unlocked ?? staticDefaults[building.id]?.hero_hall_level_unlocked ?? 1) || 1
                 
                 const getImagePath = () => {
                   if (building.id === 'archer_tower') return `16_${maxLevel}`
@@ -413,6 +415,12 @@ export default function AdminPage({ username, onLogout }) {
                   if (building.id === 'goblin') return `34_${maxLevel}`
                   if (building.id === 'wall_breaker') return `35_${maxLevel}`
                   if (building.id === 'balloon') return `36_${maxLevel}`
+                  if (building.id === 'barbarian_king') return '61'
+                  if (building.id === 'archer_queen') return '62'
+                  if (building.id === 'grand_warden') return '63'
+                  if (building.id === 'royal_champion') return '122'
+                  if (building.id === 'minion_prince') return '208'
+                  if (building.id === 'dragon_duke') return '260'
                   return '18_3'
                 }
 
@@ -447,6 +455,13 @@ export default function AdminPage({ username, onLogout }) {
                             </p>
                           </>
                         )}
+                        {activeTab === 'heroes' && (
+                          <>
+                            <p className={styles.buildingItemCount}>
+                              Hero Hall level needed: {heroHallLevelNeeded}
+                            </p>
+                          </>
+                        )}
                       </div>
                       {levels.length > 0 ? (
                         <div className={styles.buildingItemLevels}>
@@ -470,6 +485,11 @@ export default function AdminPage({ username, onLogout }) {
                                 {activeTab === 'troops' && (
                                   <span className={styles.levelNumber}>
                                     Lab Lvl: {Number(level.lab_level_unlocked ?? 0)}
+                                  </span>
+                                )}
+                                {activeTab === 'heroes' && (
+                                  <span className={styles.levelNumber}>
+                                    Hero Hall Lvl: {Number(level.hero_hall_level_unlocked ?? 0)}
                                   </span>
                                 )}
                               </div>
