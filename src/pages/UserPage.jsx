@@ -4170,11 +4170,12 @@ export default function UserPage({ username, onLogout, userId }) {
                             </div>
                             <div className={styles.loadedWallsTable}>
                               {wallLevels.map((wallLevel) => {
-                                const upcomingWallLevels = wallLevels
+                                const nextWallLevel = wallLevels
                                   .filter((levelInfo) => Number(levelInfo.level) > Number(wallLevel.level))
-                                  .sort((left, right) => Number(left.level) - Number(right.level))
-                                  .slice(0, 2)
-                                const canShowWallActions = !isWallMaxComplete && upcomingWallLevels.length > 0
+                                  .sort((left, right) => Number(left.level) - Number(right.level))[0] || null
+                                const wallLevelCount = Number(wallCounts[wallLevel.level] || 0)
+                                const hasWallsToUpgrade = wallLevelCount > 0
+                                const canShowWallActions = !isWallMaxComplete && Boolean(nextWallLevel) && hasWallsToUpgrade
 
                                 return (
                                 <div key={wallLevel.level} className={styles.loadedWallsTableRow}>
@@ -4229,9 +4230,9 @@ export default function UserPage({ username, onLogout, userId }) {
                                       <div className={styles.loadedWallCost}>
                                         <span className={styles.loadedWallMaxedLabel}>✓ All walls are maxed</span>
                                       </div>
-                                    ) : upcomingWallLevels.length > 0 ? (
+                                    ) : nextWallLevel && hasWallsToUpgrade ? (
                                       <div className={styles.loadedWallUpgradeList}>
-                                        {upcomingWallLevels.map((upgradeLevel) => (
+                                        {[nextWallLevel].map((upgradeLevel) => (
                                           <div key={`wall-upgrade-${wallLevel.level}-${upgradeLevel.level}`} className={styles.loadedWallUpgradeItem}>
                                             <div className={styles.loadedWallCostIcons}>
                                               {(() => {
