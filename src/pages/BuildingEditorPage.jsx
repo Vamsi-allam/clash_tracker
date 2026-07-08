@@ -339,7 +339,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
     : 'blacksmith'
   const equipmentUnlockLabel = equipmentUnlockSource === 'blacksmith'
     ? `Blacksmith Lvl: ${editingBlacksmithLevelUnlocked}`
-    : `Gems (Blacksmith Lvl: ${editingBlacksmithLevelUnlocked})`
+    : 'Gems'
 
   const showToast = (message, severity = 'success') => {
     setToast({ open: true, message, severity })
@@ -1068,14 +1068,18 @@ export default function BuildingEditorPage({ username, onLogout }) {
                     <option value="blacksmith">Blacksmith</option>
                     <option value="gems">Gems</option>
                   </select>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>Blacksmith level:</span>
-                  <input
-                    type="number"
-                    value={editingBlacksmithLevelUnlocked}
-                    onChange={(e) => handleEditingBlacksmithLevelUnlockedChange(e.target.value)}
-                    min="1"
-                    className={styles.headingCountInput}
-                  />
+                  {editingEquipmentUnlockSource === 'blacksmith' && (
+                    <>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>Blacksmith level:</span>
+                      <input
+                        type="number"
+                        value={editingBlacksmithLevelUnlocked}
+                        onChange={(e) => handleEditingBlacksmithLevelUnlockedChange(e.target.value)}
+                        min="1"
+                        className={styles.headingCountInput}
+                      />
+                    </>
+                  )}
                 </div>
               )}
               <div className={styles.levelsList}>

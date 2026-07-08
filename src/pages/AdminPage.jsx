@@ -435,7 +435,7 @@ export default function AdminPage({ username, onLogout }) {
                 const equipmentUnlockLevel = Number(buildingData?.blacksmith_level_unlocked ?? staticDefaults[building.id]?.blacksmith_level_unlocked ?? 1) || 1
                 const equipmentUnlockLabel = equipmentUnlockSource === 'blacksmith'
                   ? `Blacksmith Lvl: ${equipmentUnlockLevel}`
-                  : `Gems (Blacksmith Lvl: ${equipmentUnlockLevel})`
+                  : 'Gems'
                 
                 const getImagePath = () => {
                   if (activeTab === 'equipment') return ''
