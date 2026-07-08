@@ -2713,7 +2713,7 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.16);
   width: 100%;
   box-sizing: border-box;
-  height: 100%;
+  height: auto;
 }
 
 .readOnlyRow {
@@ -2741,10 +2741,10 @@
   justify-content: flex-start;
   align-items: stretch;
   gap: 8px;
-  height: 100%;
+  height: auto;
   padding: 10px 14px 12px;
   min-width: 0;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .readOnlyRow:last-child,
@@ -3092,7 +3092,6 @@
 }
 
 .readOnlyUpgradeProgressBlock .readOnlyUpgradeList {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 4px 12px;
 }
 
