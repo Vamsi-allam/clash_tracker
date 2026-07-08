@@ -356,6 +356,7 @@ const wizardTroopImages = import.meta.glob('../assets/Troops/wizard/*.png', { ea
 const healerTroopImages = import.meta.glob('../assets/Troops/Healer/*.png', { eager: true, import: 'default' })
 const dragonTroopImages = import.meta.glob('../assets/Troops/Dragon/*.png', { eager: true, import: 'default' })
 const minionDarkTroopImages = import.meta.glob('../assets/Dark_Troops/Minion/*.png', { eager: true, import: 'default' })
+const hogRiderDarkTroopImages = import.meta.glob('../assets/Dark_Troops/Hog_rider/*.png', { eager: true, import: 'default' })
 const lightningSpellImages = import.meta.glob('../assets/spells/Lightning_Spell/*.png', { eager: true, import: 'default' })
 const healingSpellImages = import.meta.glob('../assets/spells/Healing_Spell/*.png', { eager: true, import: 'default' })
 const rageSpellImages = import.meta.glob('../assets/spells/Rage_Spell/*.png', { eager: true, import: 'default' })
@@ -417,6 +418,7 @@ export default function UserPage({ username, onLogout, userId }) {
   const showSpellsTab = Number(activeVillage?.townhall_level || 0) >= 5
   const showDarkTroopsTab = Number(activeVillage?.townhall_level || 0) >= 7
   const showHeroesTab = Number(activeVillage?.townhall_level || 0) >= 4
+  const showEquipmentTab = Number(activeVillage?.townhall_level || 0) >= 8
   const displayedLoadedTab = !showTrapsTab && activeLoadedTab === 'traps'
     ? 'defences'
     : !showSpellsTab && activeLoadedTab === 'spells'
@@ -424,6 +426,8 @@ export default function UserPage({ username, onLogout, userId }) {
     : !showDarkTroopsTab && activeLoadedTab === 'dark_troops'
       ? 'defences'
     : !showHeroesTab && activeLoadedTab === 'heroes'
+      ? 'defences'
+    : !showEquipmentTab && activeLoadedTab === 'equipment'
       ? 'defences'
       : activeLoadedTab
 
@@ -1585,7 +1589,7 @@ export default function UserPage({ username, onLogout, userId }) {
   const editResourceBuildings = [...(structureCatalog.resources || [])]
     .filter((building) => ['gold_mine', 'elixir_collector', 'gold_storage', 'elixir_storage', 'dark_elixir_driller', 'dark_elixir_storage'].includes(building.id))
   const editArmyBuildings = [...(structureCatalog.army || [])]
-    .filter((building) => ['army_camp', 'lab', 'spell_factory', 'hero_hall'].includes(building.id))
+    .filter((building) => ['army_camp', 'lab', 'hero_hall', 'blacksmith'].includes(building.id))
   const visibleSpellBuildings = activeLoadedTab === 'spells'
     ? (structureCatalog.spells || [])
     : []
@@ -2688,6 +2692,12 @@ export default function UserPage({ username, onLogout, userId }) {
     }
   }, [activeLoadedTab, showHeroesTab])
 
+  useEffect(() => {
+    if (!showEquipmentTab && activeLoadedTab === 'equipment') {
+      setActiveLoadedTab('defences')
+    }
+  }, [activeLoadedTab, showEquipmentTab])
+
   const getBuildingImagePath = (building, level) => {
     const requestedLevel = Math.max(0, Number(level) || 0)
 
@@ -2728,6 +2738,7 @@ export default function UserPage({ username, onLogout, userId }) {
       healer: (imageLevel) => healerTroopImages[`../assets/Troops/Healer/38_${imageLevel}.png`] || '',
       dragon: (imageLevel) => dragonTroopImages[`../assets/Troops/Dragon/39_${imageLevel}.png`] || '',
       minion: (imageLevel) => minionDarkTroopImages[`../assets/Dark_Troops/Minion/53_${imageLevel}.png`] || '',
+      hog_rider: (imageLevel) => hogRiderDarkTroopImages[`../assets/Dark_Troops/Hog_rider/54_${imageLevel}.png`] || '',
       lightning_spell: (imageLevel) => imageLevel === 0 ? (lightningSpellImages['../assets/spells/Lightning_Spell/43_0.png'] || '') : (lightningSpellImages['../assets/spells/Lightning_Spell/43.png'] || ''),
       healing_spell: (imageLevel) => imageLevel === 0 ? (healingSpellImages['../assets/spells/Healing_Spell/44_0.png'] || '') : (healingSpellImages['../assets/spells/Healing_Spell/44.png'] || ''),
       rage_spell: (imageLevel) => imageLevel === 0 ? (rageSpellImages['../assets/spells/Rage_Spell/45_0.png'] || '') : (rageSpellImages['../assets/spells/Rage_Spell/45.png'] || ''),
@@ -3518,6 +3529,8 @@ export default function UserPage({ username, onLogout, userId }) {
               ? 'Spell'
             : displayedLoadedTab === 'dark_troops'
               ? 'Dark Troop'
+                : displayedLoadedTab === 'equipment'
+                  ? 'Equipment'
             : displayedLoadedTab === 'heroes'
               ? 'Hero'
             : 'Walls'
@@ -3539,8 +3552,8 @@ export default function UserPage({ username, onLogout, userId }) {
                 ? 'Spells'
               : displayedLoadedTab === 'dark_troops'
                 ? 'Dark Troop'
-              : displayedLoadedTab === 'dark_troops'
-                ? 'Dark Troops'
+                : displayedLoadedTab === 'equipment'
+                  ? 'Equipment'
               : displayedLoadedTab === 'heroes'
                 ? 'Heroes'
               : 'Walls'
@@ -3562,6 +3575,7 @@ export default function UserPage({ username, onLogout, userId }) {
     spells: 'Spells',
     dark_troops: 'Dark Troops',
     heroes: 'Heroes',
+    equipment: 'Equipment',
     walls: 'Walls',
   }
 
@@ -4012,7 +4026,7 @@ export default function UserPage({ username, onLogout, userId }) {
 
                 <div className={styles.loadedTabShell}>
                   <div className={styles.loadedTabBar}>
-                    {['defences', ...(showTrapsTab ? ['traps'] : []), 'army', 'resources', 'troops', ...(showSpellsTab ? ['spells'] : []), ...(showDarkTroopsTab ? ['dark_troops'] : []), ...(showHeroesTab ? ['heroes'] : []), 'walls'].map((tab) => (
+                    {['defences', ...(showTrapsTab ? ['traps'] : []), 'army', 'resources', 'troops', ...(showSpellsTab ? ['spells'] : []), ...(showDarkTroopsTab ? ['dark_troops'] : []), ...(showHeroesTab ? ['heroes'] : []), ...(showEquipmentTab ? ['equipment'] : []), 'walls'].map((tab) => (
                       (() => {
                         const upgradeCount = loadedTabUpgradeCounts[tab] || 0
                         const isUpgrading = upgradeCount > 0
@@ -4119,6 +4133,27 @@ export default function UserPage({ username, onLogout, userId }) {
                             </div>
                             <div className={styles.readOnlyLoadedList}>
                               {visibleHeroBuildings.map((building, index) => renderStructureCard(building, `tab-heroes-${building.id}-${index}`, { readOnly: true }))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {displayedLoadedTab === 'equipment' && showEquipmentTab && (
+                        <div className={styles.loadedTabSection}>
+                          <div className={styles.loadedTabSectionHeader}>
+                            <div className={styles.loadedTabHeaderLeft}>
+                              <h3 className={styles.loadedTabSectionTitle}>{loadedTabSectionTitle}</h3>
+                              <SettingsIcon className={styles.loadedTabSettingsIcon} />
+                            </div>
+                          </div>
+                          <div className={styles.loadedStructureFrame}>
+                            <div className={styles.loadedStructureHeader}>
+                              <span>{loadedTabPrimaryLabel}</span>
+                              <span>{loadedTabSecondaryLabel}</span>
+                              <span>Upgrades</span>
+                            </div>
+                            <div className={styles.readOnlyLoadedList}>
+                              <p>Equipment tab - content coming soon</p>
                             </div>
                           </div>
                         </div>

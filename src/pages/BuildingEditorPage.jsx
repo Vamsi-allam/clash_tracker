@@ -755,6 +755,8 @@ export default function BuildingEditorPage({ username, onLogout }) {
                 if (defence.id === 'healer') return `38_${maxLevel}`
                 if (defence.id === 'dragon') return `39_${maxLevel}`
                 if (defence.id === 'minion') return `53_${maxLevel}`
+                if (defence.id === 'hog_rider') return `54_${maxLevel}`
+                if (defence.id === 'blacksmith') return `152_${maxLevel}`
                 if (defence.id === 'lightning_spell') return '43'
                 if (defence.id === 'healing_spell') return '44'
                 if (defence.id === 'rage_spell') return '45'

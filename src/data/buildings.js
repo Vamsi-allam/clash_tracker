@@ -29,6 +29,7 @@ export const BUILDING_SECTIONS = {
     { id: 'spell_factory', name: 'Spell Factory', image: '/src/assets/Army/Spell_Factory' },
     { id: 'lab', name: 'Lab', image: '/src/assets/Army/Lab' },
     { id: 'hero_hall', name: 'Hero Hall', image: '/src/assets/Army/Hero_Hall' },
+    { id: 'blacksmith', name: 'Blacksmith', image: '/src/assets/Army/Blacksmith' },
   ],
   resources: [
     { id: 'gold_mine', name: 'Gold Mine', image: '/src/assets/Resources/goldmine' },
@@ -56,6 +57,7 @@ export const BUILDING_SECTIONS = {
   ],
   dark_troops: [
     { id: 'minion', name: 'Minion', image: '/src/assets/Dark_Troops/Minion' },
+    { id: 'hog_rider', name: 'Hog Rider', image: '/src/assets/Dark_Troops/Hog_rider' },
   ],
   heroes: [
     { id: 'barbarian_king', name: 'Barbarian King', image: '/src/assets/Heros/Barbarian_King' },
@@ -65,6 +67,7 @@ export const BUILDING_SECTIONS = {
     { id: 'minion_prince', name: 'Minion Prince', image: '/src/assets/Heros/Minion_Prince' },
     { id: 'dragon_duke', name: 'Dragon Duke', image: '/src/assets/Heros/Dragon_Duke' },
   ],
+  equipment: [],
   walls: [
     { id: 'walls', name: 'Walls', image: '/src/assets/Walls' },
   ],
@@ -79,6 +82,7 @@ export const ADMIN_BUILDINGS_BY_CATEGORY = {
   spells: BUILDING_SECTIONS.spells,
   dark_troops: BUILDING_SECTIONS.dark_troops,
   heroes: BUILDING_SECTIONS.heroes,
+  equipment: BUILDING_SECTIONS.equipment,
   walls: BUILDING_SECTIONS.walls,
 }
 
@@ -349,6 +353,15 @@ export const getDefaultBuildingData = (townhallLevel) => {
           { level: 1, cost: 0, resource: 'dark_elixir', time: '0sec', lab_level_unlocked: 1 },
         ],
       },
+      hog_rider: {
+        id: 'hog_rider',
+        image_path: '/src/assets/Dark_Troops/Hog_rider/54_',
+        copy_unlocks: [true],
+        dark_barracks_level_unlocked: 2,
+        levels: [
+          { level: 1, cost: 0, resource: 'dark_elixir', time: '0sec', lab_level_unlocked: 1 },
+        ],
+      },
       dragon: {
         id: 'dragon',
         image_path: '/src/assets/Troops/Dragon/39_',
@@ -403,6 +416,28 @@ export const getDefaultBuildingData = (townhallLevel) => {
         copy_unlocks: createCopyUnlocks(1, 1),
         levels: [
           { level: 1, cost: 0, resource: 'gold', time: '0sec' },
+        ],
+      },
+    }
+  }
+
+  if (Number(townhallLevel) === 8) {
+    return {
+      blacksmith: {
+        id: 'blacksmith',
+        image_path: '/src/assets/Army/Blacksmith/152_',
+        buildings_unlocked: 1,
+        copy_unlocks: createCopyUnlocks(1, 1),
+        levels: [
+          { level: 1, cost: 0, resource: 'elixir', time: '0sec' },
+          { level: 2, cost: 500000, resource: 'elixir', time: '1hr' },
+          { level: 3, cost: 1000000, resource: 'elixir', time: '2hr' },
+          { level: 4, cost: 2000000, resource: 'elixir', time: '4hr' },
+          { level: 5, cost: 4000000, resource: 'elixir', time: '8hr' },
+          { level: 6, cost: 8000000, resource: 'elixir', time: '12hr' },
+          { level: 7, cost: 12000000, resource: 'elixir', time: '18hr' },
+          { level: 8, cost: 16000000, resource: 'elixir', time: '1d' },
+          { level: 9, cost: 20000000, resource: 'elixir', time: '1d 12hr' },
         ],
       },
     }

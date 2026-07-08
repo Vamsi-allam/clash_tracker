@@ -142,6 +142,7 @@ CREATE TABLE IF NOT EXISTS public.townhall_buildings (
   spells JSONB DEFAULT '{}'::jsonb,
   dark_troops JSONB DEFAULT '{}'::jsonb,
   heroes JSONB DEFAULT '{}'::jsonb,
+  equipment JSONB DEFAULT '{}'::jsonb,
   walls JSONB DEFAULT '{}'::jsonb,
   townhall_upgrade_cost BIGINT,
   townhall_upgrade_resource TEXT,

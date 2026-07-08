@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS public.townhall_buildings (
   spells JSONB DEFAULT '{}'::jsonb,
   dark_troops JSONB DEFAULT '{}'::jsonb,
   heroes JSONB DEFAULT '{}'::jsonb,
+  equipment JSONB DEFAULT '{}'::jsonb,
   walls JSONB DEFAULT '{}'::jsonb,
   townhall_upgrade_cost BIGINT,
   townhall_upgrade_resource TEXT,
@@ -38,6 +39,9 @@ ALTER TABLE IF EXISTS public.townhall_buildings
 
 ALTER TABLE IF EXISTS public.townhall_buildings
   ADD COLUMN IF NOT EXISTS heroes JSONB DEFAULT '{}'::jsonb;
+
+ALTER TABLE IF EXISTS public.townhall_buildings
+  ADD COLUMN IF NOT EXISTS equipment JSONB DEFAULT '{}'::jsonb;
 
 -- Enable RLS on townhall_buildings table
 ALTER TABLE public.townhall_buildings ENABLE ROW LEVEL SECURITY;

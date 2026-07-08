@@ -113,6 +113,7 @@ export default function AdminPage({ username, onLogout }) {
   const showSpellsTab = Number(townhallLevel) >= 5
   const showDarkTroopsTab = Number(townhallLevel) >= 7
   const showHeroesTab = Number(townhallLevel) >= 4
+  const showEquipmentTab = Number(townhallLevel) >= 8
   const townhalls = Array.from({ length: 17 }, (_, i) => i + 2) // Town halls 2-18
   const [activeTab, setActiveTab] = useState('defenses')
   const [dynamicData, setDynamicData] = useState({})
@@ -186,6 +187,12 @@ export default function AdminPage({ username, onLogout }) {
       setActiveTab('defenses')
     }
   }, [activeTab, showHeroesTab])
+
+  useEffect(() => {
+    if (!showEquipmentTab && activeTab === 'equipment') {
+      setActiveTab('defenses')
+    }
+  }, [activeTab, showEquipmentTab])
 
   useEffect(() => {
     if (!showSpellsTab && activeTab === 'spells') {
@@ -402,7 +409,7 @@ export default function AdminPage({ username, onLogout }) {
             )}
 
             <div className={styles.tabsContainer}>
-              {['defenses', ...(showTrapsTab ? ['traps'] : []), 'army', 'resources', 'troops', ...(showSpellsTab ? ['spells'] : []), ...(showDarkTroopsTab ? ['dark_troops'] : []), ...(showHeroesTab ? ['heroes'] : []), 'walls'].map((tab) => (
+              {['defenses', ...(showTrapsTab ? ['traps'] : []), 'army', 'resources', 'troops', ...(showSpellsTab ? ['spells'] : []), ...(showDarkTroopsTab ? ['dark_troops'] : []), ...(showHeroesTab ? ['heroes'] : []), ...(showEquipmentTab ? ['equipment'] : []), 'walls'].map((tab) => (
                 <button
                   key={tab}
                   className={`${styles.tab} ${activeTab === tab ? styles.tabActive : ''}`}
@@ -442,6 +449,7 @@ export default function AdminPage({ username, onLogout }) {
                   if (building.id === 'hidden_tesla') return `21_${maxLevel}`
                   if (building.id === 'lab') return `13_${maxLevel}`
                   if (building.id === 'hero_hall') return `202_${maxLevel}`
+                  if (building.id === 'blacksmith') return `152_${maxLevel}`
                   if (building.id === 'army_camp') return `10_${maxLevel}`
                   if (building.id === 'spell_factory') return `11_${maxLevel}`
                   if (building.id === 'barracks') return `8_${maxLevel}`
@@ -464,6 +472,7 @@ export default function AdminPage({ username, onLogout }) {
                   if (building.id === 'healer') return `38_${maxLevel}`
                   if (building.id === 'dragon') return `39_${maxLevel}`
                   if (building.id === 'minion') return `53_${maxLevel}`
+                  if (building.id === 'hog_rider') return `54_${maxLevel}`
                   if (building.id === 'lightning_spell') return '43'
                   if (building.id === 'healing_spell') return '44'
                   if (building.id === 'rage_spell') return '45'
