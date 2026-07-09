@@ -1842,8 +1842,7 @@ export default function UserPage({ username, onLogout, userId }) {
 
   const getUpgradeSummary = (building, currentLevel, labLevel = 0, heroHallLevel = 0, blacksmithLevel = 0) => {
     const allNextLevels = getNextUpgradeLevels(building, currentLevel)
-    const isGemUnlock = String(building?.unlock_source || '').toLowerCase().includes('gem')
-    const equipmentUsesBlacksmithRequirement = !isGemUnlock && allNextLevels.some((level) => level?.blacksmith_level_unlocked != null)
+    const equipmentUsesBlacksmithRequirement = allNextLevels.some((level) => Number(level?.blacksmith_level_unlocked ?? building?.blacksmith_level_unlocked ?? 0) > 0)
     const nextLevels = (TROOP_BUILDING_IDS.has(String(building?.id || '')) || DARK_TROOP_BUILDING_IDS.has(String(building?.id || '')) || SPELL_BUILDING_IDS.has(String(building?.id || '')))
       ? allNextLevels.filter((level) => Number(level.lab_level_unlocked ?? 0) <= Number(labLevel || 0))
       : HERO_BUILDING_IDS.has(String(building?.id || ''))
@@ -2980,8 +2979,7 @@ export default function UserPage({ username, onLogout, userId }) {
       const visibleNextLevels = pendingUpgrade
         ? upgradeSummary.nextLevels.filter((levelInfo) => Number(levelInfo.level) > Number(pendingUpgrade.toLevel))
         : upgradeSummary.nextLevels
-      const isGemUnlock = String(building?.unlock_source || '').toLowerCase().includes('gem')
-      const equipmentUsesBlacksmithRequirement = !isGemUnlock && allRemainingNextLevels.some((levelInfo) => levelInfo?.blacksmith_level_unlocked != null)
+      const equipmentUsesBlacksmithRequirement = allRemainingNextLevels.some((levelInfo) => Number(levelInfo?.blacksmith_level_unlocked ?? building?.blacksmith_level_unlocked ?? 0) > 0)
       const blacksmithLockedNextLevels = equipmentUsesBlacksmithRequirement
         ? allRemainingNextLevels.filter((levelInfo) => Number(levelInfo.blacksmith_level_unlocked ?? 0) > Number(currentBlacksmithLevel || 0))
         : []
@@ -3206,6 +3204,14 @@ export default function UserPage({ username, onLogout, userId }) {
                           <div className={styles.readOnlySummaryImagePlaceholder} />
                         )}
                         <div className={styles.readOnlySummaryName}>{displayName}</div>
+                        <div className={styles.readOnlyEquipmentBadges}>
+                          <span className={`${styles.readOnlyEquipmentBadge} ${equipmentType === 'active' ? styles.readOnlyEquipmentBadgeActive : styles.readOnlyEquipmentBadgePassive}`}>
+                            {equipmentType === 'active' ? 'Active' : 'Passive'}
+                          </span>
+                          <span className={`${styles.readOnlyEquipmentBadge} ${equipmentRarity === 'epic' ? styles.readOnlyEquipmentBadgeEpic : styles.readOnlyEquipmentBadgeCommon}`}>
+                            {equipmentRarity === 'epic' ? 'Epic' : 'Common'}
+                          </span>
+                        </div>
                       </div>
 
                       <div className={styles.readOnlyRowsColumn} style={rowsColumnStyle}>

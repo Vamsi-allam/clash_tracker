@@ -749,13 +749,6 @@ export default function BuildingEditorPage({ username, onLogout }) {
             resource_options: Array.isArray(levelInfo.resource_options) ? [...levelInfo.resource_options] : [],
           })
         : normalizedLevels
-      // If equipment is unlocked via gems, ensure blacksmith unlocks are saved as 0 so UI won't filter by Blacksmith level
-      if (isEquipmentBuilding && String(editingEquipmentUnlockSource || '').trim().toLowerCase() === 'gems') {
-        normalizedLevelsWithWallResources = normalizedLevelsWithWallResources.map((level) => ({
-          ...level,
-          blacksmith_level_unlocked: 0,
-        }))
-      }
       const troopLevelCount = isTroopLikeBuilding
         ? normalizedLevelsWithWallResources.length
         : isHeroBuilding || isEquipmentBuilding
