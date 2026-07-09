@@ -104,6 +104,16 @@ const parseSecondsToDropdowns = (seconds) => {
   return { days, hours, minutes, seconds: remaining }
 }
 
+const normalizeEquipmentType = (value) => {
+  const normalized = String(value || '').trim().toLowerCase()
+  return normalized === 'passive' ? 'passive' : 'active'
+}
+
+const normalizeEquipmentRarity = (value) => {
+  const normalized = String(value || '').trim().toLowerCase()
+  return normalized === 'epic' ? 'epic' : 'common'
+}
+
 export default function AdminPage({ username, onLogout }) {
   const navigate = useNavigate()
   const { townhallLevel } = useParams()
@@ -285,6 +295,7 @@ export default function AdminPage({ username, onLogout }) {
           spells: townhallRecord?.spells || {},
           dark_troops: townhallRecord?.dark_troops || {},
           heroes: townhallRecord?.heroes || {},
+          equipment: townhallRecord?.equipment || {},
           walls: townhallRecord?.walls || {},
           traps: townhallRecord?.traps || [],
           townhall_upgrade_cost: parsedCost,
@@ -436,6 +447,8 @@ export default function AdminPage({ username, onLogout }) {
                 const equipmentUnlockLabel = equipmentUnlockSource === 'blacksmith'
                   ? `Blacksmith Lvl: ${equipmentUnlockLevel}`
                   : 'Gems'
+                const equipmentType = normalizeEquipmentType(buildingData?.equipment_type ?? staticDefaults[building.id]?.equipment_type)
+                const equipmentRarity = normalizeEquipmentRarity(buildingData?.equipment_rarity ?? staticDefaults[building.id]?.equipment_rarity)
                 
                 const getImagePath = () => {
                   if (activeTab === 'equipment') return ''
@@ -512,6 +525,16 @@ export default function AdminPage({ username, onLogout }) {
                                     Hero: {building.hero}
                                   </p>
                                 )}
+                        {activeTab === 'equipment' && (
+                          <div className={styles.equipmentMetaControls}>
+                            <span className={styles.equipmentMetaLabel}>
+                              Type: {equipmentType === 'active' ? 'Active' : 'Passive'}
+                            </span>
+                            <span className={styles.equipmentMetaLabel}>
+                              Rarity: {equipmentRarity === 'epic' ? 'Epic' : 'Common'}
+                            </span>
+                          </div>
+                        )}
                         {(activeTab === 'troops' || activeTab === 'dark_troops') && (
                           <p className={styles.buildingItemCount}>
                             Level Count: {levelCountValue}

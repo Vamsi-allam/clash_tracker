@@ -563,6 +563,33 @@
   font-weight: 700;
 }
 
+.equipmentMetaControls {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 10px;
+}
+
+.equipmentMetaLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.72rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.equipmentMetaSelect {
+  min-width: 88px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(102, 227, 196, 0.35);
+  background: rgba(16, 30, 52, 0.9);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
 .levelMetaText {
   color: var(--accent-2);
   font-size: 0.76rem;

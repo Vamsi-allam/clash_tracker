@@ -159,6 +159,16 @@ const parseSecondsToDropdowns = (seconds) => {
   return { days, hours, minutes, seconds: remaining }
 }
 
+const normalizeEquipmentType = (value) => {
+  const normalized = String(value || '').trim().toLowerCase()
+  return normalized === 'passive' ? 'passive' : 'active'
+}
+
+const normalizeEquipmentRarity = (value) => {
+  const normalized = String(value || '').trim().toLowerCase()
+  return normalized === 'epic' ? 'epic' : 'common'
+}
+
 const createCopyUnlocks = (count, unlockedCount = 1) =>
   Array.from({ length: count }, (_, index) => index < unlockedCount)
 
@@ -337,6 +347,8 @@ export default function BuildingEditorPage({ username, onLogout }) {
   const [editingHeroHallLevelUnlocked, setEditingHeroHallLevelUnlocked] = useState(1)
   const [editingEquipmentUnlockSource, setEditingEquipmentUnlockSource] = useState('blacksmith')
   const [editingEquipmentHero, setEditingEquipmentHero] = useState('')
+  const [editingEquipmentType, setEditingEquipmentType] = useState('active')
+  const [editingEquipmentRarity, setEditingEquipmentRarity] = useState('common')
   const [editingBlacksmithLevelUnlocked, setEditingBlacksmithLevelUnlocked] = useState(1)
   const [savingLoading, setSavingLoading] = useState(false)
   const [toast, setToast] = useState({ open: false, message: '', severity: 'success' })
@@ -433,6 +445,8 @@ export default function BuildingEditorPage({ username, onLogout }) {
         const initialBlacksmithLevelUnlocked = Number(buildingData?.blacksmith_level_unlocked ?? staticBuildingData.blacksmith_level_unlocked ?? 0) || 0
         const initialEquipmentUnlockSource = String(buildingData?.unlock_source ?? staticBuildingData.unlock_source ?? 'blacksmith').trim().toLowerCase() || 'blacksmith'
         const initialEquipmentHero = String(buildingData?.hero ?? staticBuildingData.hero ?? equipmentMeta?.hero ?? '').trim()
+        const initialEquipmentType = normalizeEquipmentType(buildingData?.equipment_type ?? staticBuildingData.equipment_type)
+        const initialEquipmentRarity = normalizeEquipmentRarity(buildingData?.equipment_rarity ?? staticBuildingData.equipment_rarity)
         if (buildingData) {
           // Only update if still not editing
           if (!isEditingRef.current) {
@@ -459,6 +473,8 @@ export default function BuildingEditorPage({ username, onLogout }) {
             setEditingBlacksmithLevelUnlocked(initialBlacksmithLevelUnlocked)
             setEditingEquipmentUnlockSource(initialEquipmentUnlockSource)
             setEditingEquipmentHero(initialEquipmentHero)
+            setEditingEquipmentType(initialEquipmentType)
+            setEditingEquipmentRarity(initialEquipmentRarity)
             setEditingCopyUnlocks(
               isTroopLikeBuilding
                 ? createCopyUnlocks(1, 1)
@@ -488,7 +504,13 @@ export default function BuildingEditorPage({ username, onLogout }) {
                 : {}),
               ...(isSpellBuilding ? { spell_factory_level_unlocked: Number(staticBuildingData.spell_factory_level_unlocked ?? 1) || 1 } : {}),
               ...(isHeroBuilding ? { hero_hall_level_unlocked: Number(staticBuildingData.hero_hall_level_unlocked ?? 1) || 1 } : {}),
-              ...(isEquipmentBuilding ? { blacksmith_level_unlocked: Number(staticBuildingData.blacksmith_level_unlocked ?? 1) || 1, unlock_source: String(staticBuildingData.unlock_source ?? 'blacksmith').trim().toLowerCase() || 'blacksmith' } : {}),
+              ...(isEquipmentBuilding ? {
+                blacksmith_level_unlocked: Number(staticBuildingData.blacksmith_level_unlocked ?? 1) || 1,
+                unlock_source: String(staticBuildingData.unlock_source ?? 'blacksmith').trim().toLowerCase() || 'blacksmith',
+                hero: initialEquipmentHero || staticBuildingData.hero || equipmentMeta?.hero || '',
+                equipment_type: normalizeEquipmentType(staticBuildingData.equipment_type),
+                equipment_rarity: normalizeEquipmentRarity(staticBuildingData.equipment_rarity),
+              } : {}),
             })
             setEditingLevels(
               isTroopBuilding
@@ -513,6 +535,8 @@ export default function BuildingEditorPage({ username, onLogout }) {
             setEditingBlacksmithLevelUnlocked(Number(staticBuildingData.blacksmith_level_unlocked ?? 1) || 1)
             setEditingEquipmentUnlockSource(String(staticBuildingData.unlock_source ?? 'blacksmith').trim().toLowerCase() || 'blacksmith')
             setEditingEquipmentHero(initialEquipmentHero)
+            setEditingEquipmentType(normalizeEquipmentType(staticBuildingData.equipment_type))
+            setEditingEquipmentRarity(normalizeEquipmentRarity(staticBuildingData.equipment_rarity))
             setEditingCopyUnlocks(draftUnlocks)
           }
         }
@@ -620,6 +644,14 @@ export default function BuildingEditorPage({ username, onLogout }) {
 
   const handleEditingEquipmentHeroChange = (value) => {
     setEditingEquipmentHero(String(value || '').trim())
+  }
+
+  const handleEditingEquipmentTypeChange = (value) => {
+    setEditingEquipmentType(normalizeEquipmentType(value))
+  }
+
+  const handleEditingEquipmentRarityChange = (value) => {
+    setEditingEquipmentRarity(normalizeEquipmentRarity(value))
   }
 
   const handleToggleCopyUnlock = (copyIndex) => {
@@ -739,6 +771,8 @@ export default function BuildingEditorPage({ username, onLogout }) {
         ...(isHeroBuilding ? { hero_hall_level_unlocked: editingHeroHallLevelUnlocked } : {}),
         ...(isEquipmentBuilding ? {
           hero: editingEquipmentHero || staticData.hero || equipmentMeta?.hero || '',
+          equipment_type: normalizeEquipmentType(editingEquipmentType),
+          equipment_rarity: normalizeEquipmentRarity(editingEquipmentRarity),
           unlock_source: editingEquipmentUnlockSource,
           blacksmith_level_unlocked: String(editingEquipmentUnlockSource || '').trim().toLowerCase() === 'gems' ? 0 : editingBlacksmithLevelUnlocked,
         } : {}),
@@ -801,6 +835,8 @@ export default function BuildingEditorPage({ username, onLogout }) {
         ...(isHeroBuilding ? { hero_hall_level_unlocked: editingHeroHallLevelUnlocked } : {}),
         ...(isEquipmentBuilding ? {
           hero: editingEquipmentHero || staticData.hero || equipmentMeta?.hero || '',
+          equipment_type: normalizeEquipmentType(editingEquipmentType),
+          equipment_rarity: normalizeEquipmentRarity(editingEquipmentRarity),
           unlock_source: editingEquipmentUnlockSource,
           blacksmith_level_unlocked: editingBlacksmithLevelUnlocked,
         } : {}),
@@ -898,6 +934,8 @@ export default function BuildingEditorPage({ username, onLogout }) {
     if (isEquipmentBuilding && (
       String(editingEquipmentUnlockSource || 'blacksmith') !== String(dynamicData.unlock_source || 'blacksmith')
       || String(editingEquipmentHero || '') !== String(dynamicData.hero || '')
+      || normalizeEquipmentType(editingEquipmentType) !== normalizeEquipmentType(dynamicData.equipment_type)
+      || normalizeEquipmentRarity(editingEquipmentRarity) !== normalizeEquipmentRarity(dynamicData.equipment_rarity)
       || Number(editingBlacksmithLevelUnlocked) !== Number(dynamicData.blacksmith_level_unlocked || 1)
     )) {
       return true
@@ -1071,6 +1109,24 @@ export default function BuildingEditorPage({ username, onLogout }) {
                     {EQUIPMENT_HERO_OPTIONS.map((heroName) => (
                       <option key={heroName} value={heroName}>{heroName}</option>
                     ))}
+                  </select>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>Type:</span>
+                  <select
+                    value={editingEquipmentType}
+                    onChange={(e) => handleEditingEquipmentTypeChange(e.target.value)}
+                    className={styles.unlockSourceSelect}
+                  >
+                    <option value="active">Active</option>
+                    <option value="passive">Passive</option>
+                  </select>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>Rarity:</span>
+                  <select
+                    value={editingEquipmentRarity}
+                    onChange={(e) => handleEditingEquipmentRarityChange(e.target.value)}
+                    className={styles.unlockSourceSelect}
+                  >
+                    <option value="common">Common</option>
+                    <option value="epic">Epic</option>
                   </select>
                   <span style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>Unlock source:</span>
                   <select

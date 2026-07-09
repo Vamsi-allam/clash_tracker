@@ -2685,6 +2685,51 @@
   text-align: center;
 }
 
+.readOnlyEquipmentBadges {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.readOnlyEquipmentBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 9px;
+  border-radius: 5px;
+  font-size: 0.72rem;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  color: #fff;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.65);
+  border: 1px solid rgba(10, 14, 22, 0.9);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.25),
+    0 2px 4px rgba(0, 0, 0, 0.35);
+}
+
+.readOnlyEquipmentBadgeActive {
+  background: linear-gradient(180deg, #8cd94f 0%, #5aa52a 100%);
+  border-color: #2f5f1a;
+}
+
+.readOnlyEquipmentBadgePassive {
+  background: linear-gradient(180deg, #c3c9d3 0%, #818a98 100%);
+  border-color: #4f5968;
+}
+
+.readOnlyEquipmentBadgeCommon {
+  background: linear-gradient(180deg, #62b3ff 0%, #347ad4 100%);
+  border-color: #214c8f;
+}
+
+.readOnlyEquipmentBadgeEpic {
+  background: linear-gradient(180deg, #f06cff 0%, #b647d6 100%);
+  border-color: #6d298c;
+}
+
 .readOnlySummaryBox {
   width: 100%;
   max-width: 120px;

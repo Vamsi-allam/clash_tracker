@@ -64,11 +64,23 @@ const normalizeResourceId = (resourceId) => {
   return cleaned
 }
 
+const normalizeEquipmentType = (value) => {
+  const normalized = String(value || '').trim().toLowerCase()
+  return normalized === 'passive' ? 'passive' : 'active'
+}
+
+const normalizeEquipmentRarity = (value) => {
+  const normalized = String(value || '').trim().toLowerCase()
+  return normalized === 'epic' ? 'epic' : 'common'
+}
+
 const equipmentResourceIcons = {
   glowy_ore: '/src/assets/magic-items/ore-glowy.png',
   shiny_ore: '/src/assets/magic-items/ore-shiny.png',
   starry_ore: '/src/assets/magic-items/ore-starry.png',
 }
+
+const equipmentResourceOrder = ['shiny_ore', 'glowy_ore', 'starry_ore']
 
 const parseTimeStringToSeconds = (timeString) => {
   if (!timeString || typeof timeString !== 'string') return 0
@@ -2938,6 +2950,9 @@ export default function UserPage({ username, onLogout, userId }) {
   const renderStructureCard = (building, cardKey = building.id, options = {}) => {
     const { readOnly = false } = options
     const displayName = building.name || formatStructureName(building.id)
+    const equipmentType = normalizeEquipmentType(building?.equipment_type)
+    const equipmentRarity = normalizeEquipmentRarity(building?.equipment_rarity)
+    const isEquipmentCard = activeLoadedTab === 'equipment' && EQUIPMENT_BUILDING_IDS.has(String(building?.id || ''))
     const currentLevels = structureLevels[building.id] || []
     const rowCount = getStructureRowCount(building, currentLevels)
     const maxLevel = Math.max(...(building.levels || []).map((level) => level.level), 0)
@@ -3248,6 +3263,16 @@ export default function UserPage({ username, onLogout, userId }) {
               )}
 
               <div className={styles.readOnlySummaryName}>{displayName}</div>
+              {isEquipmentCard && (
+                <div className={styles.readOnlyEquipmentBadges}>
+                  <span className={`${styles.readOnlyEquipmentBadge} ${equipmentType === 'active' ? styles.readOnlyEquipmentBadgeActive : styles.readOnlyEquipmentBadgePassive}`}>
+                    {equipmentType === 'active' ? 'Active' : 'Passive'}
+                  </span>
+                  <span className={`${styles.readOnlyEquipmentBadge} ${equipmentRarity === 'epic' ? styles.readOnlyEquipmentBadgeEpic : styles.readOnlyEquipmentBadgeCommon}`}>
+                    {equipmentRarity === 'epic' ? 'Epic' : 'Common'}
+                  </span>
+                </div>
+              )}
               {totalRemainingUpgrades > 0 && activeLoadedTab !== 'equipment' && (
                 <div className={styles.readOnlySummaryBox}>
                   <div className={styles.readOnlySummaryCount}>{totalRemainingUpgrades} Upgrades</div>
@@ -3585,7 +3610,9 @@ export default function UserPage({ username, onLogout, userId }) {
                                     }
                                     return acc
                                   }, {})
-                                  const keys = Object.keys(agg)
+                                  const preferredKeys = equipmentResourceOrder.filter((resourceKey) => Number(agg[resourceKey] || 0) > 0)
+                                  const fallbackKeys = Object.keys(agg).filter((resourceKey) => !equipmentResourceOrder.includes(resourceKey) && Number(agg[resourceKey] || 0) > 0)
+                                  const keys = [...preferredKeys, ...fallbackKeys]
                                   if (keys.length === 0) return <span className={`${styles.readOnlyUpgradeCost} ${getUpgradeResourceClass(rowState.summaryResource)}`}>{formatNumberShort(0)}</span>
                                   return (
                                     <div className={styles.equipmentCostBreakdown}>
@@ -3727,7 +3754,9 @@ export default function UserPage({ username, onLogout, userId }) {
                                 }
                                 return acc
                               }, {})
-                              const keys = Object.keys(agg)
+                              const preferredKeys = equipmentResourceOrder.filter((resourceKey) => Number(agg[resourceKey] || 0) > 0)
+                              const fallbackKeys = Object.keys(agg).filter((resourceKey) => !equipmentResourceOrder.includes(resourceKey) && Number(agg[resourceKey] || 0) > 0)
+                              const keys = [...preferredKeys, ...fallbackKeys]
                               if (keys.length === 0) return <span className={`${styles.readOnlyUpgradeCost} ${getUpgradeResourceClass(rowState.summaryResource)}`}>{formatNumberShort(0)}</span>
                               return (
                                 <div className={styles.equipmentCostBreakdown}>

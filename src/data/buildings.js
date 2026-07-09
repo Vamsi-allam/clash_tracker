@@ -70,8 +70,8 @@ export const BUILDING_SECTIONS = {
     { id: 'dragon_duke', name: 'Dragon Duke', image: '/src/assets/Heros/Dragon_Duke' },
   ],
   equipment: [
-    { id: 'barbarian_puppet', name: 'Barbarian Puppet', hero: 'Barbarian King', image: '/src/assets/Equipment/Barbarian_King/Barbarian_puppet/157.png', levelCount: 4, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1 },
-    { id: 'rage_vial', name: 'Rage Vial', hero: 'Barbarian King', image: '/src/assets/Equipment/Barbarian_King/Rage_Vial/158.png', levelCount: 1, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1 },
+    { id: 'barbarian_puppet', name: 'Barbarian Puppet', hero: 'Barbarian King', image: '/src/assets/Equipment/Barbarian_King/Barbarian_puppet/157.png', levelCount: 4, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1, equipment_type: 'active', equipment_rarity: 'common' },
+    { id: 'rage_vial', name: 'Rage Vial', hero: 'Barbarian King', image: '/src/assets/Equipment/Barbarian_King/Rage_Vial/158.png', levelCount: 1, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1, equipment_type: 'active', equipment_rarity: 'epic' },
   ],
   walls: [
     { id: 'walls', name: 'Walls', image: '/src/assets/Walls' },
@@ -454,6 +454,8 @@ export const getDefaultBuildingData = (townhallLevel) => {
         copy_unlocks: [true],
         unlock_source: 'blacksmith',
         blacksmith_level_unlocked: 1,
+        equipment_type: 'active',
+        equipment_rarity: 'common',
         levels: [
           { level: 1, cost: 0, resource: 'glowy_ore', resource_options: ['glowy_ore'], resource_costs: createEquipmentResourceCosts(['glowy_ore', 0]), time: '0sec' },
           { level: 2, cost: 1800, resource: 'shiny_ore', resource_options: ['shiny_ore'], resource_costs: createEquipmentResourceCosts(['shiny_ore', 1800]), time: '0sec' },
@@ -469,6 +471,8 @@ export const getDefaultBuildingData = (townhallLevel) => {
         copy_unlocks: [true],
         unlock_source: 'blacksmith',
         blacksmith_level_unlocked: 1,
+        equipment_type: 'active',
+        equipment_rarity: 'epic',
         levels: [
           { level: 1, cost: 0, resource: 'glowy_ore', resource_options: ['glowy_ore'], resource_costs: createEquipmentResourceCosts(['glowy_ore', 0]), time: '0sec' },
         ],
