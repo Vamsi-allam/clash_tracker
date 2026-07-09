@@ -29,6 +29,7 @@ export const BUILDING_SECTIONS = {
     { id: 'dark_barracks', name: 'Dark Barracks', image: '/src/assets/Army/Dark_Barracks' },
     { id: 'clan_castle', name: 'Clan Castle', image: '/src/assets/Army/clan_castle' },
     { id: 'spell_factory', name: 'Spell Factory', image: '/src/assets/Army/Spell_Factory' },
+    { id: 'dark_spell_factory', name: 'Dark Spell Factory', image: '/src/assets/Army/Dark_Spell_Factory' },
     { id: 'lab', name: 'Lab', image: '/src/assets/Army/Lab' },
     { id: 'hero_hall', name: 'Hero Hall', image: '/src/assets/Army/Hero_Hall' },
     { id: 'blacksmith', name: 'Blacksmith', image: '/src/assets/Army/Blacksmith' },
@@ -464,6 +465,15 @@ export const getDefaultBuildingData = (townhallLevel) => {
           { level: 7, cost: 12000000, resource: 'elixir', time: '18hr' },
           { level: 8, cost: 16000000, resource: 'elixir', time: '1d' },
           { level: 9, cost: 20000000, resource: 'elixir', time: '1d 12hr' },
+        ],
+      },
+      dark_spell_factory: {
+        id: 'dark_spell_factory',
+        image_path: '/src/assets/Army/Dark_Spell_Factory/12_',
+        buildings_unlocked: 1,
+        copy_unlocks: createCopyUnlocks(1, 1),
+        levels: [
+          { level: 1, cost: 0, resource: 'elixir', time: '0sec' },
         ],
       },
       barbarian_puppet: {

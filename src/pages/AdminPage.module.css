@@ -5,10 +5,7 @@
   overflow-x: hidden;
   display: block;
   padding: 32px 0;
-  background:
-    radial-gradient(circle at top left, rgba(102, 227, 196, 0.2), transparent 28%),
-    radial-gradient(circle at top right, rgba(255, 179, 71, 0.16), transparent 24%),
-    linear-gradient(145deg, var(--bg-1), var(--bg-2));
+  background: #0a1527;
   color: var(--text);
   scrollbar-width: none;
   -ms-overflow-style: none;
@@ -20,14 +17,7 @@
 
 .auroraLeft,
 .auroraRight {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(12px);
-  pointer-events: none;
-  width: 34vw;
-  height: 34vw;
-  opacity: 0.52;
-  z-index: 0;
+  display: none;
 }
 
 .auroraLeft {

@@ -994,6 +994,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
                 if (defence.id === 'hero_hall') return `202_${maxLevel}`
                 if (defence.id === 'army_camp') return `10_${maxLevel}`
                 if (defence.id === 'spell_factory') return `11_${maxLevel}`
+                if (defence.id === 'dark_spell_factory') return `12_${maxLevel}`
                 if (defence.id === 'barracks') return `8_${maxLevel}`
                 if (defence.id === 'dark_barracks') return `9_${maxLevel}`
                 if (defence.id === 'clan_castle') return `19_${maxLevel}`

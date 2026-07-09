@@ -373,6 +373,7 @@ const armyCampImages = import.meta.glob('../assets/Army/Army_Camp/*.png', { eage
 const barracksImages = import.meta.glob('../assets/Army/Barracks/*.png', { eager: true, import: 'default' })
 const darkBarracksImages = import.meta.glob('../assets/Army/Dark_Barracks/*.png', { eager: true, import: 'default' })
 const spellFactoryImages = import.meta.glob('../assets/Army/Spell_Factory/*.png', { eager: true, import: 'default' })
+const darkSpellFactoryImages = import.meta.glob('../assets/Army/Dark_Spell_Factory/*.png', { eager: true, import: 'default' })
 const clanCastleImages = import.meta.glob('../assets/Army/clan_castle/*.png', { eager: true, import: 'default' })
 const labImages = import.meta.glob('../assets/Army/Lab/*.png', { eager: true, import: 'default' })
 const blacksmithImages = import.meta.glob('../assets/Army/Blacksmith/*.png', { eager: true, import: 'default' })
@@ -1593,7 +1594,8 @@ export default function UserPage({ username, onLogout, userId }) {
       return total + (Number(count || 0) * levelRatio)
     }, 0)
 
-    return Math.round((totalProgress / wallPieces) * 100)
+    const rawPercent = (totalProgress / wallPieces) * 100
+    return Math.floor(rawPercent * 10) / 10
   }
   const isWallBuildComplete = wallPieces > 0 && remainingWalls === 0
   const isWallMaxComplete = wallPieces > 0 && wallMaxLevel > 0 && wallsAtMaxLevel >= wallPieces
@@ -1611,8 +1613,10 @@ export default function UserPage({ username, onLogout, userId }) {
     dark_barracks: 2,
     clan_castle: 3,
     spell_factory: 4,
-    lab: 5,
-    hero_hall: 6,
+    dark_spell_factory: 5,
+    lab: 6,
+    hero_hall: 7,
+    blacksmith: 8,
   }
 
   const visibleDefenseBuildings = [...(structureCatalog.defences || [])]
@@ -2501,54 +2505,70 @@ export default function UserPage({ username, onLogout, userId }) {
   const computeStructuresCompletion = () => {
     const buildings = [...(structureCatalog.defences || []), ...visibleTrapBuildings, ...(structureCatalog.army || []), ...(structureCatalog.resources || [])]
     if (!buildings || buildings.length === 0) return 0
-    let totalRatio = 0
-    let count = 0
+    let totalCurrentLevels = 0
+    let totalMaxLevels = 0
 
     buildings.forEach((building) => {
       const maxLevel = Math.max(...(building.levels || []).map((l) => l.level), 0)
       const rows = getStructureRowCount(building, structureLevels[building.id] || [])
-      const levelsArray = structureLevels[building.id] || Array.from({ length: rows }, () => getDefaultRowLevel(building, 0, true))
+      const levelsArray = structureLevels[building.id] || Array.from(
+        { length: rows },
+        (_, index) => getDefaultRowLevel(building, index, isCopyUnlocked(building, index)),
+      )
+
+      if (maxLevel <= 0) {
+        return
+      }
 
       for (let i = 0; i < rows; i++) {
-        const cur = Number(levelsArray[i] || 0)
-        if (maxLevel > 0) totalRatio += (cur / maxLevel)
-        else totalRatio += 0
-        count += 1
+        const currentLevel = Number(levelsArray[i] || 0)
+        totalCurrentLevels += Math.min(Math.max(currentLevel, 0), maxLevel)
+        totalMaxLevels += maxLevel
       }
     })
 
-    if (count === 0) return 0
-    return Math.round((totalRatio / count) * 100)
+    if (totalMaxLevels === 0) return 0
+    const rawPercent = (totalCurrentLevels / totalMaxLevels) * 100
+    return Math.floor(rawPercent * 10) / 10
   }
 
   const computeTroopsCompletion = () => {
-    const buildings = [...(structureCatalog.troops || [])]
+    const buildings = [...(structureCatalog.troops || []), ...(structureCatalog.dark_troops || [])]
     if (!buildings || buildings.length === 0) return 0
 
-    let totalRatio = 0
-    let count = 0
+    let totalCurrentLevels = 0
+    let totalMaxLevels = 0
 
     buildings.forEach((building) => {
       const maxLevel = Math.max(...(building.levels || []).map((l) => l.level), 0)
-      const troopRequirement = getTroopBarracksRequirement(building)
-      if (currentBarracksLevel < troopRequirement) {
-        count += 1
+      const isDarkTroop = DARK_TROOP_BUILDING_IDS.has(String(building?.id || ''))
+      const troopRequirement = isDarkTroop ? getDarkTroopBarracksRequirement(building) : getTroopBarracksRequirement(building)
+      const troopUnlocked = isDarkTroop
+        ? Number(currentDarkBarracksLevel || 0) >= Number(troopRequirement || 0)
+        : Number(currentBarracksLevel || 0) >= Number(troopRequirement || 0)
+
+      if (maxLevel <= 0) {
         return
       }
 
       const rows = getStructureRowCount(building, structureLevels[building.id] || [])
-      const levelsArray = structureLevels[building.id] || Array.from({ length: rows }, () => getDefaultRowLevel(building, 0, true))
+      const levelsArray = structureLevels[building.id] || Array.from(
+        { length: rows },
+        (_, index) => getDefaultRowLevel(building, index, isCopyUnlocked(building, index)),
+      )
 
       for (let i = 0; i < rows; i++) {
-        const cur = Number(levelsArray[i] || 0)
-        if (maxLevel > 0) totalRatio += (cur / maxLevel)
-        else totalRatio += 0
-        count += 1
+        // Locked troops are shown as 0/1 in the UI, so keep denominator at 1 until unlocked.
+        const denominatorMax = troopUnlocked ? maxLevel : 1
+        const currentLevel = troopUnlocked ? Number(levelsArray[i] || 0) : 0
+        totalCurrentLevels += Math.min(Math.max(currentLevel, 0), denominatorMax)
+        totalMaxLevels += denominatorMax
       }
     })
 
-    if (count === 0) return 0
-    return Math.round((totalRatio / count) * 100)
+    if (totalMaxLevels === 0) return 0
+    const rawPercent = (totalCurrentLevels / totalMaxLevels) * 100
+    return Math.floor(rawPercent * 10) / 10
   }
 
   const computeSpellsCompletion = () => {
@@ -2585,24 +2605,27 @@ export default function UserPage({ username, onLogout, userId }) {
     const buildings = [...(structureCatalog.heroes || [])]
     if (!buildings || buildings.length === 0) return 0
 
-    let totalRatio = 0
-    let count = 0
+    let totalCurrentLevels = 0
+    let totalMaxLevels = 0
 
     buildings.forEach((building) => {
       const heroRequirement = getHeroHallUnlockRequirement(building)
-      if (currentHeroHallLevel < heroRequirement) {
-        count += 1
-        return
-      }
-
+      const heroUnlocked = Number(currentHeroHallLevel || 0) >= Number(heroRequirement || 0)
       const levels = (building.levels || []).map((level) => ({
         ...level,
         hero_hall_level_unlocked: Number(level?.hero_hall_level_unlocked ?? 0),
       }))
-      const availableLevels = levels.filter((level) => level.hero_hall_level_unlocked <= Number(currentHeroHallLevel || 0))
-      const maxLevel = Math.max(...availableLevels.map((level) => Number(level.level || 0)), 0)
+
+      const maxLevel = !heroUnlocked
+        ? Math.max(...levels.map((level) => Number(level.level || 0)), 0)
+        : Math.max(
+          ...levels
+            .filter((level) => level.hero_hall_level_unlocked <= Number(currentHeroHallLevel || 0))
+            .map((level) => Number(level.level || 0)),
+          0,
+        )
+
       if (maxLevel <= 0) {
-        count += 1
         return
       }
 
@@ -2610,14 +2633,63 @@ export default function UserPage({ username, onLogout, userId }) {
       const levelsArray = structureLevels[building.id] || Array.from({ length: rows }, () => 0)
 
       for (let i = 0; i < rows; i += 1) {
-        const currentLevel = Number(levelsArray[i] || 0)
-        totalRatio += Math.min(currentLevel, maxLevel) / maxLevel
-        count += 1
+        const currentLevel = heroUnlocked ? Number(levelsArray[i] || 0) : 0
+        totalCurrentLevels += Math.min(Math.max(currentLevel, 0), maxLevel)
+        totalMaxLevels += maxLevel
       }
     })
 
-    if (count === 0) return 0
-    return Math.round((totalRatio / count) * 100)
+    if (totalMaxLevels === 0) return 0
+    const rawPercent = (totalCurrentLevels / totalMaxLevels) * 100
+    return Math.floor(rawPercent * 10) / 10
+  }
+
+  const computeEquipmentCompletion = () => {
+    const buildings = [...(structureCatalog.equipment || [])]
+    if (!buildings || buildings.length === 0) return 0
+
+    let totalCurrentProgressLevels = 0
+    let totalMaxProgressLevels = 0
+
+    buildings.forEach((building) => {
+      const levels = (building.levels || []).map((level) => ({
+        ...level,
+        blacksmith_level_unlocked: Number(level?.blacksmith_level_unlocked ?? 0),
+      }))
+
+      if (levels.length === 0) {
+        return
+      }
+
+      const minLevel = Math.min(...levels.map((level) => Number(level.level || 0)))
+      const maxLevel = Math.max(...levels.map((level) => Number(level.level || 0)))
+      const progressRange = Math.max(maxLevel - minLevel, 0)
+      const equipmentRequirement = Number(building?.blacksmith_level_unlocked ?? 0)
+      const isGemUnlock = String(building?.unlock_source || '').toLowerCase().includes('gem')
+      const equipmentUnlocked = isGemUnlock || equipmentRequirement === 0 || Number(currentBlacksmithLevel || 0) >= equipmentRequirement
+
+      const rows = getStructureRowCount(building, structureLevels[building.id] || [])
+      const levelsArray = structureLevels[building.id] || Array.from(
+        { length: rows },
+        (_, index) => getDefaultRowLevel(building, index, isCopyUnlocked(building, index)),
+      )
+
+      if (progressRange <= 0) {
+        return
+      }
+
+      for (let i = 0; i < rows; i += 1) {
+        const currentLevel = equipmentUnlocked ? Number(levelsArray[i] || 0) : 0
+        const clampedLevel = Math.min(Math.max(currentLevel, 0), maxLevel)
+        const progressLevels = Math.max(clampedLevel - minLevel, 0)
+        totalCurrentProgressLevels += Math.min(progressLevels, progressRange)
+        totalMaxProgressLevels += progressRange
+      }
+    })
+
+    if (totalMaxProgressLevels === 0) return 0
+    const rawPercent = (totalCurrentProgressLevels / totalMaxProgressLevels) * 100
+    return Math.floor(rawPercent * 10) / 10
   }
 
   useEffect(() => {
@@ -2878,6 +2950,7 @@ export default function UserPage({ username, onLogout, userId }) {
       barracks: (imageLevel) => barracksImages[`../assets/Army/Barracks/8_${imageLevel}.png`] || '',
       dark_barracks: (imageLevel) => darkBarracksImages[`../assets/Army/Dark_Barracks/9_${imageLevel}.png`] || '',
       spell_factory: (imageLevel) => spellFactoryImages[`../assets/Army/Spell_Factory/11_${imageLevel}.png`] || '',
+      dark_spell_factory: (imageLevel) => darkSpellFactoryImages[`../assets/Army/Dark_Spell_Factory/12_${imageLevel}.png`] || '',
       clan_castle: (imageLevel) => clanCastleImages[`../assets/Army/clan_castle/19_${imageLevel}.png`] || '',
       lab: (imageLevel) => labImages[`../assets/Army/Lab/13_${imageLevel}.png`] || '',
       blacksmith: (imageLevel) => blacksmithImages[`../assets/Army/Blacksmith/152_${imageLevel}.png`] || '',
@@ -4098,6 +4171,7 @@ export default function UserPage({ username, onLogout, userId }) {
   const showTroopsProgress = currentTownHallLevel >= 3
   const showSpellsProgress = currentTownHallLevel >= 5
   const showHeroesProgress = currentTownHallLevel >= 4
+  const showEquipmentProgress = currentTownHallLevel >= 8
   const townhallConstructionReady = (() => {
     const constructibleBuildings = [
       ...(structureCatalog.defences || []),
@@ -4321,6 +4395,16 @@ export default function UserPage({ username, onLogout, userId }) {
                                 <span className={styles.progressOverlayLabel}>{Math.max(0, computeHeroesCompletion())}%</span>
                               </div>
                               <div className={styles.progressName}>Heroes</div>
+                            </div>
+                          )}
+
+                          {showEquipmentProgress && (
+                            <div className={styles.progressRow}>
+                              <div className={styles.progressBarWrap}>
+                                <div className={styles.progressBarInner} style={{width: `${Math.max(0, computeEquipmentCompletion())}%`}} />
+                                <span className={styles.progressOverlayLabel}>{Math.max(0, computeEquipmentCompletion())}%</span>
+                              </div>
+                              <div className={styles.progressName}>Equipment</div>
                             </div>
                           )}
 

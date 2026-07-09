@@ -469,6 +469,7 @@ export default function AdminPage({ username, onLogout }) {
                   if (building.id === 'blacksmith') return `152_${maxLevel}`
                   if (building.id === 'army_camp') return `10_${maxLevel}`
                   if (building.id === 'spell_factory') return `11_${maxLevel}`
+                  if (building.id === 'dark_spell_factory') return `12_${maxLevel}`
                   if (building.id === 'barracks') return `8_${maxLevel}`
                   if (building.id === 'dark_barracks') return `9_${maxLevel}`
                   if (building.id === 'clan_castle') return `19_${maxLevel}`
