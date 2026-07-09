@@ -429,6 +429,15 @@ export const getDefaultBuildingData = (townhallLevel) => {
 
   if (Number(townhallLevel) === 8) {
     return {
+      archer_queen: {
+        id: 'archer_queen',
+        image_path: '/src/assets/Heros/Archer_Queen/62_',
+        copy_unlocks: [true],
+        hero_hall_level_unlocked: 1,
+        levels: [
+          { level: 1, cost: 0, resource: 'dark_elixir', time: '0sec', hero_hall_level_unlocked: 1 },
+        ],
+      },
       blacksmith: {
         id: 'blacksmith',
         image_path: '/src/assets/Army/Blacksmith/152_',

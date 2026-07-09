@@ -436,7 +436,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
           ? initialLevelCount
           : isHeroBuilding || isEquipmentBuilding
             ? normalizeTroopLevelCount(resolvedLevels, resolvedLevels.length || 1)
-            : Math.max(0, resolvedLevels.length)
+            : Math.max(1, resolvedLevels.length || 1)
         const initialBarracksLevelUnlocked = isDarkTroopBuilding
           ? Number(buildingData?.dark_barracks_level_unlocked ?? staticBuildingData.dark_barracks_level_unlocked ?? 1) || 1
           : Number(buildingData?.barracks_level_unlocked ?? staticBuildingData.barracks_level_unlocked ?? 1) || 1
@@ -613,10 +613,13 @@ export default function BuildingEditorPage({ username, onLogout }) {
   }
 
   const handleEditingLevelCountChange = (value) => {
-    const nextCount = Math.max(0, parseInt(value) || 0)
+    const minCount = 1
+    const nextCount = Math.max(minCount, parseInt(value) || 0)
     setEditingLevelCount(nextCount)
     if (isHeroBuilding) {
       setEditingLevels((current) => normalizeHeroLevels(nextCount, current))
+    } else if (isEquipmentBuilding) {
+      setEditingLevels((current) => normalizeEquipmentLevels(nextCount, current))
     } else if (!isTroopLikeBuilding) {
       setEditingLevels((current) => normalizeBuildingLevels(nextCount, current))
     }
@@ -1185,15 +1188,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
                       </div>
                     )}
                     <div className={styles.levelLabel}>
-                      Lvl {(() => {
-                        if (!isEquipmentBuilding) return level.level
-                        const levelBs = Number(level.blacksmith_level_unlocked ?? level.level ?? 0)
-                        const buildingBs = Number(dynamicData.blacksmith_level_unlocked ?? staticData.blacksmith_level_unlocked ?? editingBlacksmithLevelUnlocked ?? 0)
-                        if (levelBs === 0 || buildingBs === 0) {
-                          if (Number(level.level) === 1) return 0
-                        }
-                        return level.level
-                      })()}:
+                      Lvl {level.level}:
                     </div>
                     {isEquipmentBuilding ? (
                       <div className={styles.equipmentCostBreakdown}>
@@ -1252,7 +1247,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
                           type="number"
                           value={editingLevelCount}
                           onChange={(e) => handleEditingLevelCountChange(e.target.value)}
-                          min="0"
+                          min="1"
                           className={styles.headingCountInput}
                         />
                       </>
@@ -1312,7 +1307,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
                 )}
                 {!isTroopLikeBuilding && !isEditing && (
                   <span style={{ fontSize: '0.75rem', color: 'var(--muted)', marginLeft: '8px' }}>
-                    {levelCountLabel}: {dynamicData.levels?.length || 0}
+                    {levelCountLabel}: {Math.max(1, Number(dynamicData.levels?.length || 0))}
                   </span>
                 )}
               </div>
@@ -1373,15 +1368,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
                           </div>
                         )}
                         <div className={styles.levelLabel}>
-                          Lvl {(() => {
-                            if (!isEquipmentBuilding) return level.level
-                            const levelBs = Number(level.blacksmith_level_unlocked ?? level.level ?? 0)
-                            const buildingBs = Number(dynamicData.blacksmith_level_unlocked ?? staticData.blacksmith_level_unlocked ?? editingBlacksmithLevelUnlocked ?? 0)
-                            if (levelBs === 0 || buildingBs === 0) {
-                              if (Number(level.level) === 1) return 0
-                            }
-                            return level.level
-                          })()}:
+                          Lvl {level.level}:
                         </div>
                         {isEquipmentBuilding ? (
                           <div className={styles.equipmentCostBreakdown}>
@@ -1450,15 +1437,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
                           })()}
                         </div>
                       )}
-                      <span className={styles.levelLabel}>Lvl {(() => {
-                        if (!isEquipmentBuilding) return level.level
-                        const levelBs = Number(level.blacksmith_level_unlocked ?? level.level ?? 0)
-                        const buildingBs = Number(dynamicData.blacksmith_level_unlocked ?? staticData.blacksmith_level_unlocked ?? editingBlacksmithLevelUnlocked ?? 0)
-                        if (levelBs === 0 || buildingBs === 0) {
-                          if (Number(level.level) === 1) return 0
-                        }
-                        return level.level
-                      })()}:</span>
+                      <span className={styles.levelLabel}>Lvl {level.level}:</span>
                       {!isEquipmentBuilding && (
                         <div className={styles.costInputGroup}>
                           <input
