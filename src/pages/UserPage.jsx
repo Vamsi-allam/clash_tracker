@@ -3058,6 +3058,9 @@ export default function UserPage({ username, onLogout, userId }) {
     const rowsColumnStyle = {
       gridRow: `1 / span ${rowCount}`,
     }
+    const upgradeListClassName = activeLoadedTab === 'equipment'
+      ? `${styles.readOnlyUpgradeList} ${styles.readOnlyUpgradeListEquipment}`
+      : styles.readOnlyUpgradeList
 
     if (readOnly) {
             if ((activeLoadedTab === 'troops' && TROOP_BUILDING_IDS.has(String(building?.id || ''))) || (activeLoadedTab === 'dark_troops' && DARK_TROOP_BUILDING_IDS.has(String(building?.id || ''))) || (activeLoadedTab === 'spells' && SPELL_BUILDING_IDS.has(String(building?.id || '')))) {
@@ -3554,7 +3557,7 @@ export default function UserPage({ username, onLogout, userId }) {
 
                         {rowState.allRemainingNextLevels.length > 0 ? (
                           <>
-                            <div className={styles.readOnlyUpgradeList}>
+                            <div className={upgradeListClassName}>
                               {rowState.allRemainingNextLevels.filter((levelInfo) => !(activeLoadedTab === 'equipment' && Number(levelInfo.level) === 1)).map((levelInfo) => (
                                 <div key={`${building.id}-${rowState.rowIndex}-pending-lvl-${levelInfo.level}`} className={styles.readOnlyUpgradeItem}>
                                   <span className={styles.readOnlyUpgradeResourceLabel}>
@@ -3649,7 +3652,7 @@ export default function UserPage({ username, onLogout, userId }) {
                           </>
                         ) : rowState.labRequirementLevel != null ? (
                           <>
-                            <div className={styles.readOnlyUpgradeList}>
+                            <div className={upgradeListClassName}>
                               {rowState.labLockedNextLevels.filter((levelInfo) => !(activeLoadedTab === 'equipment' && Number(levelInfo.level) === 1)).map((levelInfo) => (
                                 <div key={`${building.id}-${rowState.rowIndex}-locked-lvl-${levelInfo.level}`} className={styles.readOnlyUpgradeItem}>
                                   <span className={styles.readOnlyUpgradeResourceLabel}>
@@ -3698,7 +3701,7 @@ export default function UserPage({ username, onLogout, userId }) {
                       </div>
                     ) : rowState.allRemainingNextLevels.length > 0 ? (
                       <>
-                        <div className={styles.readOnlyUpgradeList}>
+                        <div className={upgradeListClassName}>
                           {rowState.allRemainingNextLevels.filter((levelInfo) => !(activeLoadedTab === 'equipment' && Number(levelInfo.level) === 1)).map((levelInfo) => (
                             <div key={`${building.id}-${rowState.rowIndex}-lvl-${levelInfo.level}`} className={styles.readOnlyUpgradeItem}>
                               <span className={styles.readOnlyUpgradeResourceLabel}>
@@ -3793,7 +3796,7 @@ export default function UserPage({ username, onLogout, userId }) {
                       </>
                     ) : rowState.labRequirementLevel != null ? (
                       <>
-                        <div className={styles.readOnlyUpgradeList}>
+                        <div className={upgradeListClassName}>
                           {rowState.labLockedNextLevels.map((levelInfo) => (
                             <div key={`${building.id}-${rowState.rowIndex}-locked-lvl-${levelInfo.level}`} className={styles.readOnlyUpgradeItem}>
                               <span className={styles.readOnlyUpgradeResourceLabel}>
@@ -4585,19 +4588,13 @@ export default function UserPage({ username, onLogout, userId }) {
                             </div>
                             <div className={styles.readOnlyLoadedList}>
                               {Object.entries(equipmentByHero).map(([heroName, equipmentList]) => (
-                                <div key={heroName} style={{ marginBottom: '20px' }}>
-                                  <div style={{
-                                    textAlign: 'center',
-                                    padding: '10px',
-                                    borderRadius: '6px',
-                                    marginBottom: '12px',
-                                    fontSize: '16px',
-                                    fontWeight: 'bold',
-                                    color: '#fff'
-                                  }}>
+                                <div key={heroName} className={styles.equipmentHeroGroup}>
+                                  <div className={styles.equipmentHeroGroupHeader}>
                                     {heroName}
                                   </div>
-                                  {equipmentList.map((building, index) => renderStructureCard(building, `tab-equipment-${heroName}-${building.id}-${index}`, { readOnly: true }))}
+                                  <div className={styles.equipmentHeroRows}>
+                                    {equipmentList.map((building, index) => renderStructureCard(building, `tab-equipment-${heroName}-${building.id}-${index}`, { readOnly: true }))}
+                                  </div>
                                 </div>
                               ))}
                             </div>
