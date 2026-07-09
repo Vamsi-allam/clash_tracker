@@ -119,6 +119,7 @@ export default function AdminPage({ username, onLogout }) {
   const { townhallLevel } = useParams()
   const showTrapsTab = Number(townhallLevel) >= 3
   const showSpellsTab = Number(townhallLevel) >= 5
+  const showDarkSpellsTab = Number(townhallLevel) >= 8
   const showDarkTroopsTab = Number(townhallLevel) >= 7
   const showHeroesTab = Number(townhallLevel) >= 4
   const showEquipmentTab = Number(townhallLevel) >= 8
@@ -207,6 +208,12 @@ export default function AdminPage({ username, onLogout }) {
       setActiveTab('defenses')
     }
   }, [activeTab, showSpellsTab])
+
+  useEffect(() => {
+    if (!showDarkSpellsTab && activeTab === 'dark_spells') {
+      setActiveTab('defenses')
+    }
+  }, [activeTab, showDarkSpellsTab])
 
   useEffect(() => {
     if (!showDarkTroopsTab && activeTab === 'dark_troops') {
@@ -418,7 +425,7 @@ export default function AdminPage({ username, onLogout }) {
             )}
 
             <div className={styles.tabsContainer}>
-              {['defenses', ...(showTrapsTab ? ['traps'] : []), 'army', 'resources', 'troops', ...(showSpellsTab ? ['spells'] : []), ...(showDarkTroopsTab ? ['dark_troops'] : []), ...(showHeroesTab ? ['heroes'] : []), ...(showEquipmentTab ? ['equipment'] : []), 'walls'].map((tab) => (
+              {['defenses', ...(showTrapsTab ? ['traps'] : []), 'army', 'resources', 'troops', ...(showSpellsTab ? ['spells'] : []), ...(showDarkSpellsTab ? ['dark_spells'] : []), ...(showDarkTroopsTab ? ['dark_troops'] : []), ...(showHeroesTab ? ['heroes'] : []), ...(showEquipmentTab ? ['equipment'] : []), 'walls'].map((tab) => (
                 <button
                   key={tab}
                   className={`${styles.tab} ${activeTab === tab ? styles.tabActive : ''}`}
@@ -441,6 +448,7 @@ export default function AdminPage({ username, onLogout }) {
                 const barracksLevelNeeded = Number(buildingData?.barracks_level_unlocked ?? staticDefaults[building.id]?.barracks_level_unlocked ?? 1) || 1
                 const darkBarracksLevelNeeded = Number(buildingData?.dark_barracks_level_unlocked ?? staticDefaults[building.id]?.dark_barracks_level_unlocked ?? 1) || 1
                 const spellFactoryLevelNeeded = Number(buildingData?.spell_factory_level_unlocked ?? staticDefaults[building.id]?.spell_factory_level_unlocked ?? 1) || 1
+                const darkSpellFactoryLevelNeeded = Number(buildingData?.dark_spell_factory_level_unlocked ?? staticDefaults[building.id]?.dark_spell_factory_level_unlocked ?? 1) || 1
                 const heroHallLevelNeeded = Number(buildingData?.hero_hall_level_unlocked ?? staticDefaults[building.id]?.hero_hall_level_unlocked ?? 1) || 1
                 const equipmentUnlockSource = String(buildingData?.unlock_source || staticDefaults[building.id]?.unlock_source || 'blacksmith').trim().toLowerCase()
                 const equipmentUnlockLevel = Number(buildingData?.blacksmith_level_unlocked ?? staticDefaults[building.id]?.blacksmith_level_unlocked ?? 0) || 0
@@ -456,10 +464,12 @@ export default function AdminPage({ username, onLogout }) {
                   if (building.id === 'canon') return `18_${maxLevel}`
                   if (building.id === 'bomb') return `27_${maxLevel}`
                   if (building.id === 'giant_bomb') return `28_${maxLevel}`
+                  if (building.id === 'skeleton_trap') return `64_${maxLevel}`
                   if (building.id === 'air_bomb') return `26_${maxLevel}`
                   if (building.id === 'seeking_air_mine') return `29_${maxLevel}`
                   if (building.id === 'spring_trap') return `30_${maxLevel}`
                   if (building.id === 'mortar') return `23_${maxLevel}`
+                  if (building.id === 'bomb_tower') return `17_${maxLevel}`
                   if (building.id === 'wizard_tower') return `24_${maxLevel}`
                   if (building.id === 'air_defense') return `14_${maxLevel}`
                   if (building.id === 'air_sweeper') return `15_${maxLevel}`
@@ -489,11 +499,18 @@ export default function AdminPage({ username, onLogout }) {
                   if (building.id === 'wizard') return `37_${maxLevel}`
                   if (building.id === 'healer') return `38_${maxLevel}`
                   if (building.id === 'dragon') return `39_${maxLevel}`
+                  if (building.id === 'pekka') return `40_${maxLevel}`
                   if (building.id === 'minion') return `53_${maxLevel}`
                   if (building.id === 'hog_rider') return `54_${maxLevel}`
+                  if (building.id === 'valkyrie') return `55_${maxLevel}`
+                  if (building.id === 'golem') return `56_${maxLevel}`
                   if (building.id === 'lightning_spell') return '43'
                   if (building.id === 'healing_spell') return '44'
                   if (building.id === 'rage_spell') return '45'
+                  if (building.id === 'jump_spell') return '46'
+                  if (building.id === 'freeze_spell') return '47'
+                  if (building.id === 'poison_spell') return '49'
+                  if (building.id === 'earthquake_spell') return '50'
                   if (building.id === 'barbarian_king') return '61'
                   if (building.id === 'archer_queen') return '62'
                   if (building.id === 'grand_warden') return '63'
@@ -541,7 +558,7 @@ export default function AdminPage({ username, onLogout }) {
                             Level Count: {levelCountValue}
                           </p>
                         )}
-                        {buildingData?.buildings_unlocked != null && activeTab !== 'troops' && activeTab !== 'dark_troops' && activeTab !== 'spells' && activeTab !== 'heroes' && (
+                        {buildingData?.buildings_unlocked != null && activeTab !== 'troops' && activeTab !== 'dark_troops' && activeTab !== 'spells' && activeTab !== 'dark_spells' && activeTab !== 'heroes' && (
                           <p className={styles.buildingItemCount}>
                             Count: {buildingData.buildings_unlocked}
                           </p>
@@ -563,10 +580,24 @@ export default function AdminPage({ username, onLogout }) {
                             </p>
                           </>
                         )}
+                        {activeTab === 'dark_troops' && (
+                          <>
+                            <p className={styles.buildingItemCount}>
+                              Dark Barracks level needed: {darkBarracksLevelNeeded}
+                            </p>
+                          </>
+                        )}
                         {activeTab === 'spells' && (
                           <>
                             <p className={styles.buildingItemCount}>
                               Spell Factory level needed: {spellFactoryLevelNeeded}
+                            </p>
+                          </>
+                        )}
+                        {activeTab === 'dark_spells' && (
+                          <>
+                            <p className={styles.buildingItemCount}>
+                              Dark Spell Factory level needed: {darkSpellFactoryLevelNeeded}
                             </p>
                           </>
                         )}
@@ -652,7 +683,7 @@ export default function AdminPage({ username, onLogout }) {
                                     Lab Lvl: {Number(level.lab_level_unlocked ?? 0)}
                                   </span>
                                 )}
-                                {activeTab === 'spells' && (
+                                {(activeTab === 'spells' || activeTab === 'dark_spells') && (
                                   <span className={styles.levelNumber}>
                                     Lab Lvl: {Number(level.lab_level_unlocked ?? 0)}
                                   </span>

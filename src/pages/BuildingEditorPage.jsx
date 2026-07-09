@@ -5,7 +5,7 @@ import { supabase } from '../supabaseClient'
 import Header from '../components/Header'
 import ToastNotification from '../components/ToastNotification'
 import { getTownhallSnapshotForLevel } from '../utils/townhallSnapshot'
-import { ALL_BUILDINGS, BUILDING_SECTIONS, getBuildingCategory, getDefaultBuildingData } from '../data/buildings'
+import { ALL_BUILDINGS, BUILDING_SECTIONS, DARK_SPELL_BUILDING_IDS, getBuildingCategory, getDefaultBuildingData } from '../data/buildings'
 import { formatResourceCostBreakdown, getLevelResourceOptions, normalizeResourceCosts } from '../utils/resourceCosts'
 
 const EQUIPMENT_RESOURCE_KEYS = ['shiny_ore', 'glowy_ore', 'starry_ore']
@@ -329,8 +329,10 @@ export default function BuildingEditorPage({ username, onLogout }) {
   const isEditingRef = useRef(false)
   const isWallBuilding = buildingId === 'walls'
   const isDarkTroopBuilding = BUILDING_SECTIONS.dark_troops.some((building) => building.id === buildingId)
+  const isDarkSpellBuilding = DARK_SPELL_BUILDING_IDS.has(buildingId)
   const isTroopBuilding = BUILDING_SECTIONS.troops.some((building) => building.id === buildingId) || isDarkTroopBuilding
-  const isSpellBuilding = BUILDING_SECTIONS.spells.some((building) => building.id === buildingId)
+  const isSpellBuilding = BUILDING_SECTIONS.spells.some((building) => building.id === buildingId) || isDarkSpellBuilding
+  const spellFactoryUnlockKey = isDarkSpellBuilding ? 'dark_spell_factory_level_unlocked' : 'spell_factory_level_unlocked'
   const isTroopLikeBuilding = isTroopBuilding || isSpellBuilding
   const isHeroBuilding = BUILDING_SECTIONS.heroes.some((building) => building.id === buildingId)
   const equipmentMeta = EQUIPMENT_BUILDINGS[buildingId]
@@ -441,7 +443,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
         const initialBarracksLevelUnlocked = isDarkTroopBuilding
           ? Number(buildingData?.dark_barracks_level_unlocked ?? staticBuildingData.dark_barracks_level_unlocked ?? 1) || 1
           : Number(buildingData?.barracks_level_unlocked ?? staticBuildingData.barracks_level_unlocked ?? 1) || 1
-        const initialSpellFactoryLevelUnlocked = Number(buildingData?.spell_factory_level_unlocked ?? staticBuildingData.spell_factory_level_unlocked ?? 1) || 1
+        const initialSpellFactoryLevelUnlocked = Number(buildingData?.[spellFactoryUnlockKey] ?? staticBuildingData[spellFactoryUnlockKey] ?? 1) || 1
         const initialHeroHallLevelUnlocked = Number(buildingData?.hero_hall_level_unlocked ?? staticBuildingData.hero_hall_level_unlocked ?? 1) || 1
         const initialBlacksmithLevelUnlocked = Number(buildingData?.blacksmith_level_unlocked ?? staticBuildingData.blacksmith_level_unlocked ?? 0) || 0
         const initialEquipmentUnlockSource = String(buildingData?.unlock_source ?? staticBuildingData.unlock_source ?? 'blacksmith').trim().toLowerCase() || 'blacksmith'
@@ -503,7 +505,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
                     ? { dark_barracks_level_unlocked: Number(staticBuildingData.dark_barracks_level_unlocked ?? 1) || 1 }
                     : { barracks_level_unlocked: Number(staticBuildingData.barracks_level_unlocked ?? 1) || 1 })
                 : {}),
-              ...(isSpellBuilding ? { spell_factory_level_unlocked: Number(staticBuildingData.spell_factory_level_unlocked ?? 1) || 1 } : {}),
+              ...(isSpellBuilding ? { [spellFactoryUnlockKey]: Number(staticBuildingData[spellFactoryUnlockKey] ?? 1) || 1 } : {}),
               ...(isHeroBuilding ? { hero_hall_level_unlocked: Number(staticBuildingData.hero_hall_level_unlocked ?? 1) || 1 } : {}),
               ...(isEquipmentBuilding ? {
                 blacksmith_level_unlocked: Number(staticBuildingData.blacksmith_level_unlocked ?? 1) || 1,
@@ -531,7 +533,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
                 ? Number(staticBuildingData.dark_barracks_level_unlocked ?? 1) || 1
                 : Number(staticBuildingData.barracks_level_unlocked ?? 1) || 1
             )
-            setEditingSpellFactoryLevelUnlocked(Number(staticBuildingData.spell_factory_level_unlocked ?? 1) || 1)
+            setEditingSpellFactoryLevelUnlocked(Number(staticBuildingData[spellFactoryUnlockKey] ?? 1) || 1)
             setEditingHeroHallLevelUnlocked(Number(staticBuildingData.hero_hall_level_unlocked ?? 1) || 1)
             setEditingBlacksmithLevelUnlocked(Number(staticBuildingData.blacksmith_level_unlocked ?? 1) || 1)
             setEditingEquipmentUnlockSource(String(staticBuildingData.unlock_source ?? 'blacksmith').trim().toLowerCase() || 'blacksmith')
@@ -551,7 +553,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
     }
 
     fetchData()
-  }, [townhallLevel, buildingId, isDarkTroopBuilding])
+  }, [townhallLevel, buildingId, isDarkTroopBuilding, spellFactoryUnlockKey])
 
   const isLevelMatching = (staticLevel, dynamicLevel) => {
     if (!staticLevel || !dynamicLevel) return false
@@ -602,7 +604,8 @@ export default function BuildingEditorPage({ username, onLogout }) {
   }
 
   const handleEditingBuildingCountChange = (value) => {
-    const nextCount = Math.max(0, parseInt(value) || 0)
+    const minimumCount = isSpellBuilding || (!isTroopLikeBuilding && !isWallBuilding && !isHeroBuilding && !isEquipmentBuilding) ? 1 : 0
+    const nextCount = Math.max(minimumCount, parseInt(value) || 0)
     setEditingBuildingCount(nextCount)
     setEditingCopyUnlocks((current) => normalizeCopyUnlocks(nextCount, current, current[0] ?? true))
     if (isTroopBuilding) {
@@ -764,7 +767,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
               ? { dark_barracks_level_unlocked: editingBarracksLevelUnlocked }
               : { barracks_level_unlocked: editingBarracksLevelUnlocked })
           : {}),
-        ...(isSpellBuilding ? { spell_factory_level_unlocked: editingSpellFactoryLevelUnlocked } : {}),
+        ...(isSpellBuilding ? { [spellFactoryUnlockKey]: editingSpellFactoryLevelUnlocked } : {}),
         ...(isHeroBuilding ? { hero_hall_level_unlocked: editingHeroHallLevelUnlocked } : {}),
         ...(isEquipmentBuilding ? {
           hero: editingEquipmentHero || staticData.hero || equipmentMeta?.hero || '',
@@ -828,7 +831,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
               ? { dark_barracks_level_unlocked: editingBarracksLevelUnlocked }
               : { barracks_level_unlocked: editingBarracksLevelUnlocked })
           : {}),
-        ...(isSpellBuilding ? { spell_factory_level_unlocked: editingSpellFactoryLevelUnlocked } : {}),
+        ...(isSpellBuilding ? { [spellFactoryUnlockKey]: editingSpellFactoryLevelUnlocked } : {}),
         ...(isHeroBuilding ? { hero_hall_level_unlocked: editingHeroHallLevelUnlocked } : {}),
         ...(isEquipmentBuilding ? {
           hero: editingEquipmentHero || staticData.hero || equipmentMeta?.hero || '',
@@ -889,7 +892,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
     )
     : 0
   const spellFactoryUnlockLevel = isSpellBuilding
-    ? Number(dynamicData.spell_factory_level_unlocked || staticData.spell_factory_level_unlocked || 1)
+    ? Number(dynamicData[spellFactoryUnlockKey] || staticData[spellFactoryUnlockKey] || 1)
     : 0
   const heroHallUnlockLevel = isHeroBuilding
     ? Number(dynamicData.hero_hall_level_unlocked || staticData.hero_hall_level_unlocked || 1)
@@ -922,7 +925,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
     if (isTroopBuilding && Number(editingBarracksLevelUnlocked) !== Number(isDarkTroopBuilding ? (dynamicData.dark_barracks_level_unlocked || 1) : (dynamicData.barracks_level_unlocked || 1))) {
       return true
     }
-    if (isSpellBuilding && Number(editingSpellFactoryLevelUnlocked) !== Number(dynamicData.spell_factory_level_unlocked || 1)) {
+    if (isSpellBuilding && Number(editingSpellFactoryLevelUnlocked) !== Number(dynamicData[spellFactoryUnlockKey] || 1)) {
       return true
     }
     if (isHeroBuilding && Number(editingHeroHallLevelUnlocked) !== Number(dynamicData.hero_hall_level_unlocked || 1)) {
@@ -982,10 +985,12 @@ export default function BuildingEditorPage({ username, onLogout }) {
                 if (defence.id === 'canon') return `18_${maxLevel}`
                 if (defence.id === 'bomb') return `27_${maxLevel}`
                 if (defence.id === 'giant_bomb') return `28_${maxLevel}`
+                if (defence.id === 'skeleton_trap') return `64_${maxLevel}`
                 if (defence.id === 'air_bomb') return `26_${maxLevel}`
                 if (defence.id === 'seeking_air_mine') return `29_${maxLevel}`
                 if (defence.id === 'spring_trap') return `30_${maxLevel}`
                 if (defence.id === 'mortar') return `23_${maxLevel}`
+                if (defence.id === 'bomb_tower') return `17_${maxLevel}`
                 if (defence.id === 'wizard_tower') return `24_${maxLevel}`
                 if (defence.id === 'air_defense') return `14_${maxLevel}`
                 if (defence.id === 'air_sweeper') return `15_${maxLevel}`
@@ -1014,12 +1019,19 @@ export default function BuildingEditorPage({ username, onLogout }) {
                 if (defence.id === 'wizard') return `37_${maxLevel}`
                 if (defence.id === 'healer') return `38_${maxLevel}`
                 if (defence.id === 'dragon') return `39_${maxLevel}`
+                if (defence.id === 'pekka') return `40_${maxLevel}`
                 if (defence.id === 'minion') return `53_${maxLevel}`
                 if (defence.id === 'hog_rider') return `54_${maxLevel}`
+                if (defence.id === 'valkyrie') return `55_${maxLevel}`
+                if (defence.id === 'golem') return `56_${maxLevel}`
                 if (defence.id === 'blacksmith') return `152_${maxLevel}`
                 if (defence.id === 'lightning_spell') return '43'
                 if (defence.id === 'healing_spell') return '44'
                 if (defence.id === 'rage_spell') return '45'
+                if (defence.id === 'jump_spell') return '46'
+                if (defence.id === 'freeze_spell') return '47'
+                if (defence.id === 'poison_spell') return '49'
+                if (defence.id === 'earthquake_spell') return '50'
                 if (defence.id === 'barbarian_king') return '61'
                 if (defence.id === 'archer_queen') return '62'
                 if (defence.id === 'grand_warden') return '63'
@@ -1230,7 +1242,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
                           type="number"
                           value={editingBuildingCount}
                           onChange={(e) => handleEditingBuildingCountChange(e.target.value)}
-                          min="0"
+                          min={isSpellBuilding || (!isTroopLikeBuilding && !isWallBuilding && !isHeroBuilding && !isEquipmentBuilding) ? '1' : '0'}
                           className={styles.headingCountInput}
                         />
                       </>
@@ -1261,7 +1273,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
                     )}
                     {isSpellBuilding && Number(townhallLevel) >= 5 && (
                       <>
-                        <span style={{ fontSize: '0.75rem', color: 'var(--muted)', marginLeft: '12px' }}>Spell Factory level:</span>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--muted)', marginLeft: '12px' }}>{isDarkSpellBuilding ? 'Dark Spell Factory level:' : 'Spell Factory level:'}</span>
                         <input
                           type="number"
                           value={editingSpellFactoryLevelUnlocked}
@@ -1292,7 +1304,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
                 )}
                 {isSpellBuilding && (
                   <span style={{ fontSize: '0.75rem', color: 'var(--muted)', marginLeft: '8px' }}>
-                    Spell Factory level needed: {spellFactoryUnlockLevel}
+                    {isDarkSpellBuilding ? 'Dark Spell Factory' : 'Spell Factory'} level needed: {spellFactoryUnlockLevel}
                   </span>
                 )}
                 {isHeroBuilding && (

@@ -18,7 +18,7 @@ import Header from '../components/Header'
 import ToastNotification from '../components/ToastNotification'
 import { supabase } from '../supabaseClient'
 import { getTownhallSnapshotForLevel } from '../utils/townhallSnapshot'
-import { BUILDING_SECTIONS, TROOP_BARRACKS_REQUIREMENTS, TROOP_BUILDING_IDS, DARK_TROOP_BARRACKS_REQUIREMENTS, DARK_TROOP_BUILDING_IDS, SPELL_FACTORY_REQUIREMENTS, SPELL_BUILDING_IDS, HERO_BUILDING_IDS, EQUIPMENT_BUILDING_IDS, getDefaultBuildingData } from '../data/buildings'
+import { BUILDING_SECTIONS, TROOP_BARRACKS_REQUIREMENTS, TROOP_BUILDING_IDS, DARK_TROOP_BARRACKS_REQUIREMENTS, DARK_TROOP_BUILDING_IDS, SPELL_FACTORY_REQUIREMENTS, DARK_SPELL_FACTORY_REQUIREMENTS, SPELL_BUILDING_IDS, DARK_SPELL_BUILDING_IDS, HERO_BUILDING_IDS, EQUIPMENT_BUILDING_IDS, getDefaultBuildingData } from '../data/buildings'
 
 // Convert API asset URL to proxied URL
 const getProxiedAssetUrl = (assetUrl) => {
@@ -185,6 +185,11 @@ const getSpellFactoryRequirement = (building) => {
   return Math.max(fallbackRequirement, Number(building?.spell_factory_level_unlocked) || 0)
 }
 
+const getDarkSpellFactoryRequirement = (building) => {
+  const fallbackRequirement = DARK_SPELL_FACTORY_REQUIREMENTS[String(building?.id || '').toLowerCase()] || 1
+  return Math.max(fallbackRequirement, Number(building?.dark_spell_factory_level_unlocked) || 0)
+}
+
 const getCurrentBarracksLevel = (structureLevels = {}) => {
   const barracksLevels = Array.isArray(structureLevels?.barracks) ? structureLevels.barracks : []
   return barracksLevels.reduce((highest, value) => Math.max(highest, Number(value) || 0), 0)
@@ -208,6 +213,11 @@ const getCurrentHeroHallLevel = (structureLevels = {}) => {
 const getCurrentSpellFactoryLevel = (structureLevels = {}) => {
   const spellFactoryLevels = Array.isArray(structureLevels?.spell_factory) ? structureLevels.spell_factory : []
   return spellFactoryLevels.reduce((highest, value) => Math.max(highest, Number(value) || 0), 0)
+}
+
+const getCurrentDarkSpellFactoryLevel = (structureLevels = {}) => {
+  const darkSpellFactoryLevels = Array.isArray(structureLevels?.dark_spell_factory) ? structureLevels.dark_spell_factory : []
+  return darkSpellFactoryLevels.reduce((highest, value) => Math.max(highest, Number(value) || 0), 0)
 }
 
 const getCurrentBlacksmithLevel = (structureLevels = {}) => {
@@ -359,12 +369,14 @@ const clearTownhallSnapshotCache = (villageId) => {
 
 const canonImages = import.meta.glob('../assets/Defences/canon/*.png', { eager: true, import: 'default' })
 const mortarImages = import.meta.glob('../assets/Defences/mortar/*.png', { eager: true, import: 'default' })
+const bombTowerImages = import.meta.glob('../assets/Defences/Bomb_tower/*.png', { eager: true, import: 'default' })
 const airDefenseImages = import.meta.glob('../assets/Defences/air_defense/*.png', { eager: true, import: 'default' })
 const airSweeperImages = import.meta.glob('../assets/Defences/air_sweeper/*.png', { eager: true, import: 'default' })
 const hiddenTeslaImages = import.meta.glob('../assets/Defences/hidden_tesla/*.png', { eager: true, import: 'default' })
 const wizardTowerImages = import.meta.glob('../assets/Defences/wizard_tower/*.png', { eager: true, import: 'default' })
 const bombImages = import.meta.glob('../assets/Traps/Bomb/*.png', { eager: true, import: 'default' })
 const giantBombImages = import.meta.glob('../assets/Traps/Gaint_Bomb/*.png', { eager: true, import: 'default' })
+const skeletonTrapImages = import.meta.glob('../assets/Traps/Skeleton_Trap/*.png', { eager: true, import: 'default' })
 const airBombImages = import.meta.glob('../assets/Traps/Air_Bomb/*.png', { eager: true, import: 'default' })
 const seekingAirMineImages = import.meta.glob('../assets/Traps/Seeking_Air_Mine/*.png', { eager: true, import: 'default' })
 const springTrapImages = import.meta.glob('../assets/Traps/Spring_Trap/*.png', { eager: true, import: 'default' })
@@ -393,11 +405,18 @@ const balloonTroopImages = import.meta.glob('../assets/Troops/Ballon/*.png', { e
 const wizardTroopImages = import.meta.glob('../assets/Troops/wizard/*.png', { eager: true, import: 'default' })
 const healerTroopImages = import.meta.glob('../assets/Troops/Healer/*.png', { eager: true, import: 'default' })
 const dragonTroopImages = import.meta.glob('../assets/Troops/Dragon/*.png', { eager: true, import: 'default' })
+const pekkaTroopImages = import.meta.glob('../assets/Troops/P.E.K.K.A/*.png', { eager: true, import: 'default' })
 const minionDarkTroopImages = import.meta.glob('../assets/Dark_Troops/Minion/*.png', { eager: true, import: 'default' })
 const hogRiderDarkTroopImages = import.meta.glob('../assets/Dark_Troops/Hog_rider/*.png', { eager: true, import: 'default' })
+const valkyrieDarkTroopImages = import.meta.glob('../assets/Dark_Troops/Valkyrie/*.png', { eager: true, import: 'default' })
+const golemDarkTroopImages = import.meta.glob('../assets/Dark_Troops/Golem/*.png', { eager: true, import: 'default' })
 const lightningSpellImages = import.meta.glob('../assets/spells/Lightning_Spell/*.png', { eager: true, import: 'default' })
 const healingSpellImages = import.meta.glob('../assets/spells/Healing_Spell/*.png', { eager: true, import: 'default' })
 const rageSpellImages = import.meta.glob('../assets/spells/Rage_Spell/*.png', { eager: true, import: 'default' })
+const jumpSpellImages = import.meta.glob('../assets/spells/Jump_Spell/*.png', { eager: true, import: 'default' })
+const freezeSpellImages = import.meta.glob('../assets/spells/Freeze_Spell/*.png', { eager: true, import: 'default' })
+const poisonSpellImages = import.meta.glob('../assets/spells/Poison_Spell/*.png', { eager: true, import: 'default' })
+const earthquakeSpellImages = import.meta.glob('../assets/spells/Earthquake_Spell/*.png', { eager: true, import: 'default' })
 const barbarianKingImages = import.meta.glob('../assets/Heros/Barbarian_King/*.png', { eager: true, import: 'default' })
 const archerQueenImages = import.meta.glob('../assets/Heros/Archer_Queen/*.png', { eager: true, import: 'default' })
 const grandWardenImages = import.meta.glob('../assets/Heros/Grand_Warden/*.png', { eager: true, import: 'default' })
@@ -451,6 +470,7 @@ export default function UserPage({ username, onLogout, userId }) {
   const currentDarkBarracksLevel = getCurrentDarkBarracksLevel(structureLevels)
   const currentLabLevel = getCurrentLabLevel(structureLevels)
   const currentSpellFactoryLevel = getCurrentSpellFactoryLevel(structureLevels)
+  const currentDarkSpellFactoryLevel = getCurrentDarkSpellFactoryLevel(structureLevels)
   const currentHeroHallLevel = getCurrentHeroHallLevel(structureLevels)
   const currentBlacksmithLevel = getCurrentBlacksmithLevel(structureLevels)
   const showTrapsTab = Number(activeVillage?.townhall_level || 0) >= 3
@@ -1656,7 +1676,21 @@ export default function UserPage({ username, onLogout, userId }) {
   const editArmyBuildings = [...(structureCatalog.army || [])]
     .filter((building) => ['army_camp', 'lab', 'hero_hall', 'blacksmith'].includes(building.id))
   const visibleSpellBuildings = activeLoadedTab === 'spells'
-    ? (structureCatalog.spells || [])
+    ? (() => {
+      const spellBuildings = (structureCatalog.spells || []).filter((building) => building?.id)
+      const normalSpells = []
+      const darkSpells = []
+
+      spellBuildings.forEach((building) => {
+        if (DARK_SPELL_BUILDING_IDS.has(String(building.id || ''))) {
+          darkSpells.push(building)
+        } else {
+          normalSpells.push(building)
+        }
+      })
+
+      return [...normalSpells, ...darkSpells]
+    })()
     : []
   const visibleDarkTroopBuildings = activeLoadedTab === 'dark_troops'
     ? (structureCatalog.dark_troops || [])
@@ -2365,9 +2399,16 @@ export default function UserPage({ username, onLogout, userId }) {
         return
       }
 
-      if (SPELL_BUILDING_IDS.has(String(building.id || '')) && Number(currentSpellFactoryLevel || 0) < getSpellFactoryRequirement(building)) {
-        showToast(`Spell Factory level ${getSpellFactoryRequirement(building)} is required to unlock this spell.`, 'error')
-        return
+      if (SPELL_BUILDING_IDS.has(String(building.id || ''))) {
+        const isDarkSpell = DARK_SPELL_BUILDING_IDS.has(String(building.id || ''))
+        const spellRequirement = isDarkSpell ? getDarkSpellFactoryRequirement(building) : getSpellFactoryRequirement(building)
+        const currentFactoryLevel = isDarkSpell ? Number(currentDarkSpellFactoryLevel || 0) : Number(currentSpellFactoryLevel || 0)
+        const factoryLabel = isDarkSpell ? 'Dark Spell Factory' : 'Spell Factory'
+
+        if (currentFactoryLevel < spellRequirement) {
+          showToast(`${factoryLabel} level ${spellRequirement} is required to unlock this spell.`, 'error')
+          return
+        }
       }
 
       if (HERO_BUILDING_IDS.has(String(building.id || '')) && rowState.labRequirementLevel != null && rowState.visibleNextLevels.length === 0) {
@@ -2579,8 +2620,10 @@ export default function UserPage({ username, onLogout, userId }) {
     let count = 0
 
     buildings.forEach((building) => {
-      const spellRequirement = getSpellFactoryRequirement(building)
-      if (currentSpellFactoryLevel < spellRequirement) {
+      const isDarkSpell = DARK_SPELL_BUILDING_IDS.has(String(building?.id || ''))
+      const spellRequirement = isDarkSpell ? getDarkSpellFactoryRequirement(building) : getSpellFactoryRequirement(building)
+      const currentFactoryLevel = isDarkSpell ? Number(currentDarkSpellFactoryLevel || 0) : Number(currentSpellFactoryLevel || 0)
+      if (currentFactoryLevel < spellRequirement) {
         count += 1
         return
       }
@@ -2936,11 +2979,13 @@ export default function UserPage({ username, onLogout, userId }) {
     const imageMap = {
       canon: (imageLevel) => canonImages[`../assets/Defences/canon/18_${imageLevel}.png`] || '',
       mortar: (imageLevel) => mortarImages[`../assets/Defences/mortar/23_${imageLevel}.png`] || '',
+      bomb_tower: (imageLevel) => bombTowerImages[`../assets/Defences/Bomb_tower/17_${imageLevel}.png`] || '',
       air_defense: (imageLevel) => airDefenseImages[`../assets/Defences/air_defense/14_${imageLevel}.png`] || '',
       air_sweeper: (imageLevel) => airSweeperImages[`../assets/Defences/air_sweeper/15_${imageLevel}.png`] || '',
       hidden_tesla: (imageLevel) => hiddenTeslaImages[`../assets/Defences/hidden_tesla/21_${imageLevel}.png`] || '',
       bomb: (imageLevel) => bombImages[`../assets/Traps/Bomb/27_${imageLevel}.png`] || '',
       giant_bomb: (imageLevel) => giantBombImages[`../assets/Traps/Gaint_Bomb/28_${imageLevel}.png`] || '',
+      skeleton_trap: (imageLevel) => skeletonTrapImages[`../assets/Traps/Skeleton_Trap/64_${imageLevel}.png`] || '',
       air_bomb: (imageLevel) => airBombImages[`../assets/Traps/Air_Bomb/26_${imageLevel}.png`] || '',
       seeking_air_mine: (imageLevel) => seekingAirMineImages[`../assets/Traps/Seeking_Air_Mine/29_${imageLevel}.png`] || '',
       spring_trap: (imageLevel) => springTrapImages[`../assets/Traps/Spring_Trap/30_${imageLevel}.png`] || '',
@@ -2970,11 +3015,18 @@ export default function UserPage({ username, onLogout, userId }) {
       wizard: (imageLevel) => wizardTroopImages[`../assets/Troops/wizard/37_${imageLevel}.png`] || '',
       healer: (imageLevel) => healerTroopImages[`../assets/Troops/Healer/38_${imageLevel}.png`] || '',
       dragon: (imageLevel) => dragonTroopImages[`../assets/Troops/Dragon/39_${imageLevel}.png`] || '',
+      pekka: (imageLevel) => pekkaTroopImages[`../assets/Troops/P.E.K.K.A/40_${imageLevel}.png`] || '',
       minion: (imageLevel) => minionDarkTroopImages[`../assets/Dark_Troops/Minion/53_${imageLevel}.png`] || '',
       hog_rider: (imageLevel) => hogRiderDarkTroopImages[`../assets/Dark_Troops/Hog_rider/54_${imageLevel}.png`] || '',
+      valkyrie: (imageLevel) => valkyrieDarkTroopImages[`../assets/Dark_Troops/Valkyrie/55_${imageLevel}.png`] || '',
+      golem: (imageLevel) => golemDarkTroopImages[`../assets/Dark_Troops/Golem/56_${imageLevel}.png`] || '',
       lightning_spell: (imageLevel) => imageLevel === 0 ? (lightningSpellImages['../assets/spells/Lightning_Spell/43_0.png'] || '') : (lightningSpellImages['../assets/spells/Lightning_Spell/43.png'] || ''),
       healing_spell: (imageLevel) => imageLevel === 0 ? (healingSpellImages['../assets/spells/Healing_Spell/44_0.png'] || '') : (healingSpellImages['../assets/spells/Healing_Spell/44.png'] || ''),
       rage_spell: (imageLevel) => imageLevel === 0 ? (rageSpellImages['../assets/spells/Rage_Spell/45_0.png'] || '') : (rageSpellImages['../assets/spells/Rage_Spell/45.png'] || ''),
+      jump_spell: (imageLevel) => imageLevel === 0 ? (jumpSpellImages['../assets/spells/Jump_Spell/46_0.png'] || '') : (jumpSpellImages['../assets/spells/Jump_Spell/46.png'] || ''),
+      freeze_spell: (imageLevel) => imageLevel === 0 ? (freezeSpellImages['../assets/spells/Freeze_Spell/47_0.png'] || '') : (freezeSpellImages['../assets/spells/Freeze_Spell/47.png'] || ''),
+      poison_spell: (imageLevel) => imageLevel === 0 ? (poisonSpellImages['../assets/spells/Poison_Spell/49_0.png'] || '') : (poisonSpellImages['../assets/spells/Poison_Spell/49.png'] || ''),
+      earthquake_spell: (imageLevel) => imageLevel === 0 ? (earthquakeSpellImages['../assets/spells/Earthquake_Spell/50_0.png'] || '') : (earthquakeSpellImages['../assets/spells/Earthquake_Spell/50.png'] || ''),
       barbarian_king: (imageLevel) => imageLevel === 0 ? (barbarianKingImages['../assets/Heros/Barbarian_King/61_0.png'] || '') : (barbarianKingImages['../assets/Heros/Barbarian_King/61.png'] || ''),
       archer_queen: (imageLevel) => imageLevel === 0 ? (archerQueenImages['../assets/Heros/Archer_Queen/62_0.png'] || '') : (archerQueenImages['../assets/Heros/Archer_Queen/62.png'] || ''),
       grand_warden: (imageLevel) => imageLevel === 0 ? (grandWardenImages['../assets/Heros/Grand_Warden/63_0.png'] || '') : (grandWardenImages['../assets/Heros/Grand_Warden/63.png'] || ''),
@@ -3030,6 +3082,7 @@ export default function UserPage({ username, onLogout, userId }) {
     const maxLevel = Math.max(...(building.levels || []).map((level) => level.level), 0)
     const troopBarracksRequirement = getTroopBarracksRequirement(building)
     const spellFactoryRequirement = getSpellFactoryRequirement(building)
+    const darkSpellFactoryRequirement = getDarkSpellFactoryRequirement(building)
     const heroHallRequirement = getHeroHallUnlockRequirement(building)
     const getMinimumLevel = (rowIndex) => getDefaultRowLevel(building, rowIndex, isCopyUnlocked(building, rowIndex))
     const clampLevel = (value, rowIndex) => Math.min(Math.max(Number(value || 0), getMinimumLevel(rowIndex)), maxLevel)
@@ -3136,11 +3189,14 @@ export default function UserPage({ username, onLogout, userId }) {
     if (readOnly) {
             if ((activeLoadedTab === 'troops' && TROOP_BUILDING_IDS.has(String(building?.id || ''))) || (activeLoadedTab === 'dark_troops' && DARK_TROOP_BUILDING_IDS.has(String(building?.id || ''))) || (activeLoadedTab === 'spells' && SPELL_BUILDING_IDS.has(String(building?.id || '')))) {
               const troopRowState = rowStates[0] || null
+              const isDarkSpellBuilding = SPELL_BUILDING_IDS.has(String(building?.id || '')) && DARK_SPELL_BUILDING_IDS.has(String(building?.id || ''))
               const troopUnlocked = activeLoadedTab === 'troops'
                 ? currentBarracksLevel >= troopBarracksRequirement
                 : activeLoadedTab === 'dark_troops'
                   ? currentDarkBarracksLevel >= getDarkTroopBarracksRequirement(building)
-                  : currentSpellFactoryLevel >= spellFactoryRequirement
+                  : isDarkSpellBuilding
+                    ? currentDarkSpellFactoryLevel >= darkSpellFactoryRequirement
+                    : currentSpellFactoryLevel >= spellFactoryRequirement
               const troopRowLevel = troopUnlocked ? Number(troopRowState?.rowLevel || 0) : 0
               const troopRowImageLevel = troopRowLevel
 
@@ -3188,7 +3244,9 @@ export default function UserPage({ username, onLogout, userId }) {
                                   ? `Requires Barracks level ${troopBarracksRequirement} to unlock`
                                   : activeLoadedTab === 'dark_troops'
                                     ? `Requires Dark Barracks level ${getDarkTroopBarracksRequirement(building)} to unlock`
-                                  : `Requires Spell Factory level ${spellFactoryRequirement} to unlock`}
+                                  : isDarkSpellBuilding
+                                    ? `Requires Dark Spell Factory level ${darkSpellFactoryRequirement} to unlock`
+                                    : `Requires Spell Factory level ${spellFactoryRequirement} to unlock`}
                               </span>
                             </div>
                           </div>
@@ -4129,8 +4187,10 @@ export default function UserPage({ username, onLogout, userId }) {
       const maxLevel = Math.max(...(building.levels || []).map((level) => Number(level.level || 0)), 0)
       if (maxLevel <= 0) return false
 
-      const spellRequirement = getSpellFactoryRequirement(building)
-      if (currentSpellFactoryLevel < spellRequirement) return false
+      const isDarkSpell = DARK_SPELL_BUILDING_IDS.has(String(building?.id || ''))
+      const spellRequirement = isDarkSpell ? getDarkSpellFactoryRequirement(building) : getSpellFactoryRequirement(building)
+      const currentFactoryLevel = isDarkSpell ? Number(currentDarkSpellFactoryLevel || 0) : Number(currentSpellFactoryLevel || 0)
+      if (currentFactoryLevel < spellRequirement) return false
 
       const rowLevels = structureLevels[building.id] || []
       const rowCount = getStructureRowCount(building, rowLevels)
