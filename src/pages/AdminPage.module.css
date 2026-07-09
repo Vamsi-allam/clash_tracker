@@ -610,6 +610,12 @@
   gap: 4px;
 }
 
+.buildingItemLevelsTwoColumns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px 18px;
+}
+
 .buildingLevelRow {
   display: flex;
   align-items: center;

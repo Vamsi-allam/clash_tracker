@@ -674,7 +674,7 @@ export default function AdminPage({ username, onLogout }) {
                         )}
                         </div>
                         {levels.length > 0 ? (
-                          <div className={styles.buildingItemLevels}>
+                          <div className={`${styles.buildingItemLevels} ${activeTab === 'heroes' ? styles.buildingItemLevelsTwoColumns : ''}`}>
                           {levels.map((level, idx) => {
                             const resourceIcons = {
                               gold: '/src/assets/magic-items/gold.png',
