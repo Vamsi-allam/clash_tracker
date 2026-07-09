@@ -995,6 +995,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
                 if (defence.id === 'air_defense') return `14_${maxLevel}`
                 if (defence.id === 'air_sweeper') return `15_${maxLevel}`
                 if (defence.id === 'hidden_tesla') return `21_${maxLevel}`
+                if (defence.id === 'x_bow') return `25_${maxLevel}`
                 if (defence.id === 'lab') return `13_${maxLevel}`
                 if (defence.id === 'hero_hall') return `202_${maxLevel}`
                 if (defence.id === 'army_camp') return `10_${maxLevel}`

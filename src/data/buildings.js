@@ -751,6 +751,20 @@ export const getDefaultBuildingData = (townhallLevel) => {
     }
   }
 
+  if (Number(townhallLevel) === 9) {
+    return {
+      x_bow: {
+        id: 'x_bow',
+        image_path: '/src/assets/Defences/x-bow/25_',
+        buildings_unlocked: 1,
+        copy_unlocks: createCopyUnlocks(1, 1),
+        levels: [
+          { level: 1, cost: 0, resource: 'gold', time: '0sec' },
+        ],
+      },
+    }
+  }
+
   if (Number(townhallLevel) !== 2) return {}
 
   return {

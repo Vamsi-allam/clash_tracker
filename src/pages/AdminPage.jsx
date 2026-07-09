@@ -535,6 +535,7 @@ export default function AdminPage({ username, onLogout }) {
                   if (building.id === 'air_defense') return `14_${maxLevel}`
                   if (building.id === 'air_sweeper') return `15_${maxLevel}`
                   if (building.id === 'hidden_tesla') return `21_${maxLevel}`
+                  if (building.id === 'x_bow') return `25_${maxLevel}`
                   if (building.id === 'lab') return `13_${maxLevel}`
                   if (building.id === 'hero_hall') return `202_${maxLevel}`
                   if (building.id === 'blacksmith') return `152_${maxLevel}`
