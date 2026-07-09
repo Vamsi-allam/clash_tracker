@@ -479,6 +479,7 @@ export default function UserPage({ username, onLogout, userId }) {
   const showDarkTroopsTab = Number(activeVillage?.townhall_level || 0) >= 7
   const showHeroesTab = Number(activeVillage?.townhall_level || 0) >= 4
   const showEquipmentTab = Number(activeVillage?.townhall_level || 0) >= 8
+  const showLabAssistBox = Number(activeVillage?.townhall_level || 0) >= 9
   const displayedLoadedTab = !showTrapsTab && activeLoadedTab === 'traps'
     ? 'defences'
     : !showSpellsTab && activeLoadedTab === 'spells'
@@ -4594,6 +4595,22 @@ export default function UserPage({ username, onLogout, userId }) {
                 </div>
               </div>
 
+              {showLabAssistBox && (
+                <div className={styles.labAssistBox}>
+                  <div className={styles.labAssistLine}>
+                    <span className={styles.labAssistLabel}>Lab Assistant:</span>
+                    <span className={styles.labAssistStatus}>Now</span>
+                  </div>
+                  <button
+                    type="button"
+                    className={styles.labAssistUnlockBtn}
+                    onClick={() => showToast('Lab Assist unlock coming soon.', 'success')}
+                  >
+                    Unlock
+                  </button>
+                </div>
+              )}
+
                 <div className={styles.upgradeKeyBox}>
                   <span className={styles.upgradeKeyLabel}>Key:</span>
                   <div className={styles.upgradeKeyItem}>
@@ -5277,6 +5294,7 @@ export default function UserPage({ username, onLogout, userId }) {
                         </div>
                       </div>
                     </div>
+
                   </div>
                 </div>
             </div>

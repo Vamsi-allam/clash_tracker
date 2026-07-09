@@ -545,6 +545,55 @@
 
 .switchBuilderBtn { padding:8px 14px; background: linear-gradient(180deg,#4d88db,#3f79c8); color:#fff; border:none; border-radius:0px; font-weight:600; font-size:0.85rem; cursor: pointer; width: 100%; text-align: center }
 
+.labAssistBox {
+  margin-top: 12px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.82);
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.labAssistLabel {
+  color: #4d88db;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.labAssistLine {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.labAssistStatus {
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.labAssistUnlockBtn {
+  width: auto;
+  min-width: 86px;
+  padding: 5px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.82);
+  background: #4d88db;
+  color: #ffffff;
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1.1;
+  cursor: pointer;
+}
+
+.labAssistUnlockBtn:hover {
+  filter: brightness(1.06);
+}
+
 .upgradeKeyBox {
   margin-top: 10px;
   padding: 16px 0 16px 30px;
