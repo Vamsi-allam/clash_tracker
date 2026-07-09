@@ -732,7 +732,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
         ? normalizedLevels.map((levelInfo) => Number(levelInfo.level || 0) >= 5
           ? {
             ...levelInfo,
-            resource: 'gold',
+            resource: 'goldelixir',
             resource_options: ['gold', 'elixir'],
           }
           : isEquipmentBuilding
@@ -1175,7 +1175,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
                               <img
                                 src="/src/assets/magic-items/goldelxir.png"
                                 alt="Gold or Elixir"
-                                className={styles.resourceIcon}
+                                className={`${styles.resourceIcon} ${styles.resourceDualIcon}`}
                               />
                             )
                           }
@@ -1355,7 +1355,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
                                   <img
                                     src="/src/assets/magic-items/goldelxir.png"
                                     alt="Gold or Elixir"
-                                    className={styles.resourceIcon}
+                                    className={`${styles.resourceIcon} ${styles.resourceDualIcon}`}
                                   />
                                 )
                               }
@@ -1425,7 +1425,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
                                 <img
                                   src="/src/assets/magic-items/goldelxir.png"
                                   alt="Gold or Elixir"
-                                  className={styles.resourceIcon}
+                                  className={`${styles.resourceIcon} ${styles.resourceDualIcon}`}
                                 />
                               )
                             }

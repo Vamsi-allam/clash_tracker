@@ -657,6 +657,11 @@
   object-fit: contain;
 }
 
+.levelResourceDualIcon {
+  width: 20px;
+  height: 20px;
+}
+
 .levelResourceIcons {
   display: inline-flex;
   align-items: center;

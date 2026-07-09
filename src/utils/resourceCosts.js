@@ -1,5 +1,8 @@
 const normalizeResourceKey = (resource, fallbackResource = '') => {
   const normalized = String(resource ?? fallbackResource).trim().toLowerCase()
+  if (normalized === 'goldelixir' || normalized === 'gold_elixir' || normalized === 'goldorelixir' || normalized === 'gold_or_elixir') {
+    return 'goldelixir'
+  }
   return normalized || String(fallbackResource || '').trim().toLowerCase()
 }
 
@@ -40,10 +43,20 @@ export const normalizeResourceCosts = (levelInfo, fallbackResource = 'gold') => 
 
 export const getLevelResourceOptions = (levelInfo, { isWallLevel = false, isEquipmentLevel = false, fallbackResource = 'gold' } = {}) => {
   const normalizedResourceCosts = normalizeResourceCosts(levelInfo, isEquipmentLevel ? 'glowy_ore' : fallbackResource)
-  if (Array.isArray(levelInfo?.resource_costs) && normalizedResourceCosts.length > 0) {
+  if (Array.isArray(levelInfo?.resource_costs) && levelInfo.resource_costs.length > 0 && normalizedResourceCosts.length > 0) {
     return normalizedResourceCosts
       .map((entry) => entry.resource)
       .filter((resource, index, collection) => Boolean(resource) && collection.indexOf(resource) === index)
+  }
+
+  if (normalizeResourceKey(levelInfo?.resource, fallbackResource) === 'goldelixir') {
+    return ['gold', 'elixir']
+  }
+
+  // Walls level 5+ can always be paid with either gold or elixir.
+  // Prefer the dual-resource presentation even if older saved rows only carry a single resource field.
+  if (isWallLevel && Number(levelInfo?.level || 0) >= 5) {
+    return ['gold', 'elixir']
   }
 
   const normalizedFromOptions = Array.isArray(levelInfo?.resource_options)
@@ -53,10 +66,6 @@ export const getLevelResourceOptions = (levelInfo, { isWallLevel = false, isEqui
     : []
 
   if (normalizedFromOptions.length > 0) return normalizedFromOptions
-
-  if (isWallLevel && Number(levelInfo?.level || 0) >= 5) {
-    return ['gold', 'elixir']
-  }
 
   return [normalizeResourceKey(levelInfo?.resource, fallbackResource) || fallbackResource]
 }

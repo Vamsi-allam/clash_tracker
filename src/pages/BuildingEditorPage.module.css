@@ -287,6 +287,11 @@
   display: block;
 }
 
+.resourceDualIcon {
+  width: 18px;
+  height: 18px;
+}
+
 .resourceIconsWrap {
   display: inline-flex;
   align-items: center;

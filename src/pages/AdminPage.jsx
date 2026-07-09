@@ -699,7 +699,7 @@ export default function AdminPage({ username, onLogout }) {
                                     <img
                                       src="/src/assets/magic-items/goldelxir.png"
                                       alt="Gold or Elixir"
-                                      className={styles.levelResourceIcon}
+                                      className={`${styles.levelResourceIcon} ${styles.levelResourceDualIcon}`}
                                     />
                                   ) : (
                                     resourceOptions.map((resourceKey) => (
