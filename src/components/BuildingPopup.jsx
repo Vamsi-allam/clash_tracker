@@ -125,6 +125,16 @@ export default function BuildingPopup({
   const [showAddResource, setShowAddResource] = useState(false)
   const [showAddTroop, setShowAddTroop] = useState(false)
   const [showAddWall, setShowAddWall] = useState(false)
+  const [toast, setToast] = useState({ open: false, message: '', severity: 'success' })
+
+  const showToast = (message, severity = 'success') => {
+    setToast({ open: true, message, severity })
+  }
+
+  const closeToast = (_, reason) => {
+    if (reason === 'clickaway') return
+    setToast((current) => ({ ...current, open: false }))
+  }
   
   // Set expanded Canon for TH2 on load
   useEffect(() => {
@@ -140,16 +150,6 @@ export default function BuildingPopup({
         [defenceId]: {
           buildings_unlocked: 1,
           levels: [
-      const [toast, setToast] = useState({ open: false, message: '', severity: 'success' })
-
-      const showToast = (message, severity = 'success') => {
-        setToast({ open: true, message, severity })
-      }
-
-      const closeToast = (_, reason) => {
-        if (reason === 'clickaway') return
-        setToast((current) => ({ ...current, open: false }))
-      }
             { level: 1, cost: 100, resource: 'gold', time: '1h' },
           ],
         },
