@@ -483,6 +483,15 @@
   gap: 12px;
 }
 
+.equipmentHeroGroupLabel {
+  margin: 10px 0 2px;
+  color: var(--accent-2);
+  font-size: 0.9rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
 .buildingItem {
   display: flex;
   align-items: center;

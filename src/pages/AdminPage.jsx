@@ -329,6 +329,66 @@ export default function AdminPage({ username, onLogout }) {
   // Show buildings page if townhallLevel is in URL
   if (townhallLevel) {
     const selectedTownhall = parseInt(townhallLevel)
+    const staticDefaults = getDefaultBuildingData(townhallLevel)
+    const getEquipmentHeroName = (building) => {
+      if (!building?.id) return 'Other'
+      const dynamicHero = dynamicData?.[building.id]?.hero
+      const staticHero = staticDefaults?.[building.id]?.hero
+      return String(dynamicHero || staticHero || building.hero || 'Other')
+    }
+    const equipmentHeroSortOrder = {
+      'Barbarian King': 0,
+      'Archer Queen': 1,
+      'Grand Warden': 2,
+      'Royal Champion': 3,
+      'Minion Prince': 4,
+      'Dragon Duke': 5,
+      Other: 99,
+    }
+    const equipmentPriorityById = {
+      barbarian_puppet: 1,
+      rage_vial: 2,
+      earthquake_boots: 3,
+      giant_gauntlet: 4,
+      spiky_ball: 5,
+      snake_bracelet: 6,
+      stick_horse: 7,
+      archer_puppet: 1,
+      invisibility_vial: 2,
+      frozen_arrow: 3,
+      magic_mirror: 4,
+      action_figure: 5,
+      monolith_arrow: 6,
+    }
+    const getEquipmentPriority = (building) => {
+      const buildingId = building?.id
+      if (!buildingId) return 999
+
+      const dynamicPriority = Number(dynamicData?.[buildingId]?.priority)
+      if (Number.isFinite(dynamicPriority) && dynamicPriority > 0) return dynamicPriority
+
+      const staticPriority = Number(staticDefaults?.[buildingId]?.priority)
+      if (Number.isFinite(staticPriority) && staticPriority > 0) return staticPriority
+
+      return equipmentPriorityById[buildingId] ?? 999
+    }
+    const buildingsForActiveTab = (ADMIN_BUILDINGS_BY_CATEGORY[activeTab] || [])
+      .filter((building) => dynamicData[building.id] || staticDefaults[building.id])
+      .sort((left, right) => {
+        if (activeTab !== 'equipment') return 0
+        const leftHero = getEquipmentHeroName(left)
+        const rightHero = getEquipmentHeroName(right)
+        const leftOrder = equipmentHeroSortOrder[leftHero] ?? 98
+        const rightOrder = equipmentHeroSortOrder[rightHero] ?? 98
+        if (leftOrder !== rightOrder) return leftOrder - rightOrder
+        const leftPriority = getEquipmentPriority(left)
+        const rightPriority = getEquipmentPriority(right)
+        if (leftPriority !== rightPriority) return leftPriority - rightPriority
+        const heroCompare = leftHero.localeCompare(rightHero)
+        if (heroCompare !== 0) return heroCompare
+        return (left.name || '').localeCompare(right.name || '')
+      })
+
     return (
       <>
         <Header username={username} onLogout={onLogout} />
@@ -437,10 +497,8 @@ export default function AdminPage({ username, onLogout }) {
             </div>
 
             <div className={styles.buildingsList}>
-              {(ADMIN_BUILDINGS_BY_CATEGORY[activeTab] || [])
-                .filter((building) => dynamicData[building.id] || getDefaultBuildingData(townhallLevel)[building.id])
-                .map((building) => {
-                const staticDefaults = getDefaultBuildingData(townhallLevel)
+              {buildingsForActiveTab
+                .map((building, index, buildings) => {
                 const buildingData = dynamicData[building.id] || staticDefaults[building.id]
                 const levels = buildingData?.levels || []
                 const maxLevel = levels.length > 0 ? Math.max(...levels.map(l => l.level)) : 3
@@ -457,6 +515,9 @@ export default function AdminPage({ username, onLogout }) {
                   : 'Gems'
                 const equipmentType = normalizeEquipmentType(buildingData?.equipment_type ?? staticDefaults[building.id]?.equipment_type)
                 const equipmentRarity = normalizeEquipmentRarity(buildingData?.equipment_rarity ?? staticDefaults[building.id]?.equipment_rarity)
+                const equipmentHeroName = getEquipmentHeroName(building)
+                const previousEquipmentHeroName = index > 0 ? getEquipmentHeroName(buildings[index - 1]) : ''
+                const showEquipmentHeroHeading = activeTab === 'equipment' && (index === 0 || equipmentHeroName !== previousEquipmentHeroName)
                 
                 const getImagePath = () => {
                   if (activeTab === 'equipment') return ''
@@ -525,24 +586,27 @@ export default function AdminPage({ username, onLogout }) {
                   : `${building.image}/${getImagePath()}.png`
 
                 return (
-                  <div
-                    key={building.id}
-                    className={styles.buildingItem}
-                    onClick={() => handleBuildingClick(building.id)}
-                  >
-                    <img
-                      src={imageSource}
-                      alt={building.name}
-                      className={`${styles.buildingItemImage} ${activeTab === 'traps' ? styles.trapBuildingItemImage : ''}`}
-                    />
-                    <div className={styles.buildingItemInfo}>
-                      <div className={styles.buildingItemHeader}>
-                        <p className={styles.buildingItemName}>{building.name}</p>
-                        {activeTab === 'equipment' && building.hero && (
-                                  <p className={styles.buildingItemCount}>
-                                    Hero: {building.hero}
-                                  </p>
-                                )}
+                  <div key={building.id}>
+                    {showEquipmentHeroHeading && (
+                      <p className={styles.equipmentHeroGroupLabel}>{equipmentHeroName}</p>
+                    )}
+                    <div
+                      className={styles.buildingItem}
+                      onClick={() => handleBuildingClick(building.id)}
+                    >
+                      <img
+                        src={imageSource}
+                        alt={building.name}
+                        className={`${styles.buildingItemImage} ${activeTab === 'traps' ? styles.trapBuildingItemImage : ''}`}
+                      />
+                      <div className={styles.buildingItemInfo}>
+                        <div className={styles.buildingItemHeader}>
+                          <p className={styles.buildingItemName}>{building.name}</p>
+                          {activeTab === 'equipment' && equipmentHeroName && (
+                            <p className={styles.buildingItemCount}>
+                              Hero: {equipmentHeroName}
+                            </p>
+                          )}
                         {activeTab === 'equipment' && (
                           <div className={styles.equipmentMetaControls}>
                             <span className={styles.equipmentMetaLabel}>
@@ -608,9 +672,9 @@ export default function AdminPage({ username, onLogout }) {
                             </p>
                           </>
                         )}
-                      </div>
-                      {levels.length > 0 ? (
-                        <div className={styles.buildingItemLevels}>
+                        </div>
+                        {levels.length > 0 ? (
+                          <div className={styles.buildingItemLevels}>
                           {levels.map((level, idx) => {
                             const resourceIcons = {
                               gold: '/src/assets/magic-items/gold.png',
@@ -701,12 +765,13 @@ export default function AdminPage({ username, onLogout }) {
                               </div>
                             )
                           })}
-                        </div>
-                      ) : (
-                        <p className={styles.buildingItemAction}>Click to manage</p>
-                      )}
+                          </div>
+                        ) : (
+                          <p className={styles.buildingItemAction}>Click to manage</p>
+                        )}
+                      </div>
+                      <div className={styles.buildingItemArrow}>→</div>
                     </div>
-                    <div className={styles.buildingItemArrow}>→</div>
                   </div>
                 )
               })}
