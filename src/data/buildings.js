@@ -57,6 +57,7 @@ export const BUILDING_SECTIONS = {
     { id: 'dragon', name: 'Dragon', image: '/src/assets/Troops/Dragon' },
     { id: 'pekka', name: 'P.E.K.K.A', image: '/src/assets/Troops/P.E.K.K.A' },
     { id: 'baby_dragon', name: 'Baby Dragon', image: '/src/assets/Troops/Baby_Dragon' },
+    { id: 'miner', name: 'Miner', image: '/src/assets/Troops/Miner' },
   ],
   spells: [
     { id: 'lightning_spell', name: 'Lightning Spell', image: '/src/assets/spells/Lightning_Spell' },
@@ -64,12 +65,14 @@ export const BUILDING_SECTIONS = {
     { id: 'rage_spell', name: 'Rage Spell', image: '/src/assets/spells/Rage_Spell' },
     { id: 'jump_spell', name: 'Jump Spell', image: '/src/assets/spells/Jump_Spell' },
     { id: 'freeze_spell', name: 'Freeze Spell', image: '/src/assets/spells/Freeze_Spell' },
+    { id: 'clone_spell', name: 'Clone Spell', image: '/src/assets/spells/Clone_Spell' },
   ],
   dark_spells: [
     { id: 'poison_spell', name: 'Poison Spell', image: '/src/assets/spells/Poison_Spell' },
     { id: 'earthquake_spell', name: 'Earthquake Spell', image: '/src/assets/spells/Earthquake_Spell' },
     { id: 'haste_spell', name: 'Haste Spell', image: '/src/assets/spells/Haste_Spell' },
     { id: 'skeleton_spell', name: 'Skeleton Spell', image: '/src/assets/spells/Skeleton_Spell' },
+    { id: 'bat_spell', name: 'Bat Spell', image: '/src/assets/spells/Bat_spell' },
   ],
   dark_troops: [
     { id: 'minion', name: 'Minion', image: '/src/assets/Dark_Troops/Minion' },
@@ -78,6 +81,7 @@ export const BUILDING_SECTIONS = {
     { id: 'golem', name: 'Golem', image: '/src/assets/Dark_Troops/Golem' },
     { id: 'witch', name: 'Witch', image: '/src/assets/Dark_Troops/Witch' },
     { id: 'lava_hound', name: 'Lava Hound', image: '/src/assets/Dark_Troops/Lava_Hound' },
+    { id: 'bowler', name: 'Bowler', image: '/src/assets/Dark_Troops/Bowler' },
   ],
   heroes: [
     { id: 'barbarian_king', name: 'Barbarian King', image: '/src/assets/Heros/Barbarian_King' },
@@ -104,6 +108,8 @@ export const BUILDING_SECTIONS = {
     { id: 'monolith_arrow', name: 'Monolith Arrow', hero: 'Archer Queen', image: '/src/assets/Equipment/Archer_Queen/Monolith_Arrow/280.png', levelCount: 1, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1, equipment_type: 'active', equipment_rarity: 'epic' },
     { id: 'dark_orb', name: 'Dark Orb', hero: 'Minion Prince', image: '/src/assets/Equipment/Minion_Prince/Dark_Orb/209.png', levelCount: 1, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1, equipment_type: 'active', equipment_rarity: 'common' },
     { id: 'henchmen_puppet', name: 'Henchmen Puppet', hero: 'Minion Prince', image: '/src/assets/Equipment/Minion_Prince/Henchmen_Puppet/210.png', levelCount: 1, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1, equipment_type: 'active', equipment_rarity: 'common' },
+    { id: 'metal_pants', name: 'Metal Pants', hero: 'Minion Prince', image: '/src/assets/Equipment/Minion_Prince/Metal_pants/216_0.png', levelCount: 1, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1, equipment_type: 'passive', equipment_rarity: 'common' },
+    { id: 'noble_iron', name: 'Noble Iron', hero: 'Minion Prince', image: '/src/assets/Equipment/Minion_Prince/Noble_Iron/219_0.png', levelCount: 1, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1, equipment_type: 'passive', equipment_rarity: 'common' },
     { id: 'dark_crown', name: 'Dark Crown', hero: 'Minion Prince', image: '/src/assets/Equipment/Minion_Prince/Dark_Crown/222.png', levelCount: 1, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1, equipment_type: 'passive', equipment_rarity: 'common' },
     { id: 'meteor_staff', name: 'Meteor Staff', hero: 'Minion Prince', image: '/src/assets/Equipment/Minion_Prince/Meteor_Staff/238.png', levelCount: 1, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1, equipment_type: 'active', equipment_rarity: 'epic' },
   ],
@@ -935,6 +941,88 @@ export const getDefaultBuildingData = (townhallLevel) => {
       },
     }
   }
+  if (Number(townhallLevel) === 10) {
+    return {
+      inferno_tower: {
+        id: 'inferno_tower',
+        image_path: '/src/assets/Defences/Inferno_tower/22_',
+        buildings_unlocked: 1,
+        copy_unlocks: createCopyUnlocks(1, 1),
+        levels: [
+          { level: 1, cost: 0, resource: 'gold', time: '0sec' },
+        ],
+      },
+      miner: {
+        id: 'miner',
+        image_path: '/src/assets/Troops/Miner/42_',
+        copy_unlocks: [true],
+        barracks_level_unlocked: 12,
+        levels: [
+          { level: 1, cost: 0, resource: 'elixir', time: '0sec', lab_level_unlocked: 1 },
+        ],
+      },
+      clone_spell: {
+        id: 'clone_spell',
+        image_path: '/src/assets/spells/Clone_Spell/48_',
+        buildings_unlocked: 1,
+        copy_unlocks: createCopyUnlocks(1, 1),
+        spell_factory_level_unlocked: 6,
+        levels: [
+          { level: 1, cost: 0, resource: 'elixir', time: '0sec', lab_level_unlocked: 1 },
+        ],
+      },
+      bat_spell: {
+        id: 'bat_spell',
+        image_path: '/src/assets/spells/Bat_spell/110_',
+        buildings_unlocked: 1,
+        copy_unlocks: createCopyUnlocks(1, 1),
+        dark_spell_factory_level_unlocked: 5,
+        levels: [
+          { level: 1, cost: 0, resource: 'dark_elixir', time: '0sec', lab_level_unlocked: 1 },
+        ],
+      },
+      bowler: {
+        id: 'bowler',
+        image_path: '/src/assets/Dark_Troops/Bowler/59_',
+        copy_unlocks: [true],
+        dark_barracks_level_unlocked: 7,
+        levels: [
+          { level: 1, cost: 0, resource: 'dark_elixir', time: '0sec', lab_level_unlocked: 1 },
+        ],
+      },
+      metal_pants: {
+        id: 'metal_pants',
+        image_path: '/src/assets/Equipment/Minion_Prince/Metal_pants/216_0.png',
+        hero: 'Minion Prince',
+        priority: 5,
+        buildings_unlocked: 1,
+        copy_unlocks: [true],
+        unlock_source: 'blacksmith',
+        blacksmith_level_unlocked: 1,
+        equipment_type: 'passive',
+        equipment_rarity: 'common',
+        levels: [
+          { level: 1, cost: 0, resource: 'glowy_ore', resource_options: ['glowy_ore'], resource_costs: createEquipmentResourceCosts(['glowy_ore', 0]), time: '0sec' },
+        ],
+      },
+      noble_iron: {
+        id: 'noble_iron',
+        image_path: '/src/assets/Equipment/Minion_Prince/Noble_Iron/219_0.png',
+        hero: 'Minion Prince',
+        priority: 6,
+        buildings_unlocked: 1,
+        copy_unlocks: [true],
+        unlock_source: 'blacksmith',
+        blacksmith_level_unlocked: 1,
+        equipment_type: 'passive',
+        equipment_rarity: 'common',
+        levels: [
+          { level: 1, cost: 0, resource: 'glowy_ore', resource_options: ['glowy_ore'], resource_costs: createEquipmentResourceCosts(['glowy_ore', 0]), time: '0sec' },
+        ],
+      },
+    }
+  }
+
 
   if (Number(townhallLevel) !== 2) return {}
 

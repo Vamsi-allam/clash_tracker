@@ -541,6 +541,7 @@ export default function AdminPage({ username, onLogout }) {
                   if (building.id === 'air_sweeper') return `15_${maxLevel}`
                   if (building.id === 'hidden_tesla') return `21_${maxLevel}`
                   if (building.id === 'x_bow') return `25_${maxLevel}`
+                  if (building.id === 'inferno_tower') return `22_${maxLevel}`
                   if (building.id === 'lab') return `13_${maxLevel}`
                   if (building.id === 'hero_hall') return `202_${maxLevel}`
                   if (building.id === 'blacksmith') return `152_${maxLevel}`
@@ -569,21 +570,25 @@ export default function AdminPage({ username, onLogout }) {
                   if (building.id === 'dragon') return `39_${maxLevel}`
                   if (building.id === 'pekka') return `40_${maxLevel}`
                   if (building.id === 'baby_dragon') return `41_${maxLevel}`
+                  if (building.id === 'miner') return `42_${maxLevel}`
                   if (building.id === 'minion') return `53_${maxLevel}`
                   if (building.id === 'hog_rider') return `54_${maxLevel}`
                   if (building.id === 'valkyrie') return `55_${maxLevel}`
                   if (building.id === 'golem') return `56_${maxLevel}`
                   if (building.id === 'witch') return `57_${maxLevel}`
                   if (building.id === 'lava_hound') return `58_${maxLevel}`
+                  if (building.id === 'bowler') return `59_${maxLevel}`
                   if (building.id === 'lightning_spell') return '43'
                   if (building.id === 'healing_spell') return '44'
                   if (building.id === 'rage_spell') return '45'
                   if (building.id === 'jump_spell') return '46'
                   if (building.id === 'freeze_spell') return '47'
+                  if (building.id === 'clone_spell') return '48'
                   if (building.id === 'poison_spell') return '49'
                   if (building.id === 'earthquake_spell') return '50'
                   if (building.id === 'haste_spell') return '51'
                   if (building.id === 'skeleton_spell') return '52'
+                  if (building.id === 'bat_spell') return '110'
                   if (building.id === 'barbarian_king') return '61'
                   if (building.id === 'archer_queen') return '62'
                   if (building.id === 'grand_warden') return '63'

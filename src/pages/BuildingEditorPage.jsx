@@ -996,6 +996,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
                 if (defence.id === 'air_sweeper') return `15_${maxLevel}`
                 if (defence.id === 'hidden_tesla') return `21_${maxLevel}`
                 if (defence.id === 'x_bow') return `25_${maxLevel}`
+                if (defence.id === 'inferno_tower') return `22_${maxLevel}`
                 if (defence.id === 'lab') return `13_${maxLevel}`
                 if (defence.id === 'hero_hall') return `202_${maxLevel}`
                 if (defence.id === 'army_camp') return `10_${maxLevel}`
@@ -1023,22 +1024,26 @@ export default function BuildingEditorPage({ username, onLogout }) {
                 if (defence.id === 'dragon') return `39_${maxLevel}`
                 if (defence.id === 'pekka') return `40_${maxLevel}`
                 if (defence.id === 'baby_dragon') return `41_${maxLevel}`
+                if (defence.id === 'miner') return `42_${maxLevel}`
                 if (defence.id === 'minion') return `53_${maxLevel}`
                 if (defence.id === 'hog_rider') return `54_${maxLevel}`
                 if (defence.id === 'valkyrie') return `55_${maxLevel}`
                 if (defence.id === 'golem') return `56_${maxLevel}`
                 if (defence.id === 'witch') return `57_${maxLevel}`
                 if (defence.id === 'lava_hound') return `58_${maxLevel}`
+                if (defence.id === 'bowler') return `59_${maxLevel}`
                 if (defence.id === 'blacksmith') return `152_${maxLevel}`
                 if (defence.id === 'lightning_spell') return '43'
                 if (defence.id === 'healing_spell') return '44'
                 if (defence.id === 'rage_spell') return '45'
                 if (defence.id === 'jump_spell') return '46'
                 if (defence.id === 'freeze_spell') return '47'
+                if (defence.id === 'clone_spell') return '48'
                 if (defence.id === 'poison_spell') return '49'
                 if (defence.id === 'earthquake_spell') return '50'
                 if (defence.id === 'haste_spell') return '51'
                 if (defence.id === 'skeleton_spell') return '52'
+                if (defence.id === 'bat_spell') return '110'
                 if (defence.id === 'barbarian_king') return '61'
                 if (defence.id === 'archer_queen') return '62'
                 if (defence.id === 'grand_warden') return '63'
