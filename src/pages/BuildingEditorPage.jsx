@@ -1011,6 +1011,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
                 if (defence.id === 'gold_storage') return `5_${maxLevel}`
                 if (defence.id === 'elixir_storage') return `6_${maxLevel}`
                 if (defence.id === 'dark_elixir_storage') return `7_${maxLevel}`
+                if (defence.id === 'helper_hut') return `206_${maxLevel}`
                 if (defence.id === 'barbarian') return `31_${maxLevel}`
                 if (defence.id === 'archer') return `32_${maxLevel}`
                 if (defence.id === 'giant') return `33_${maxLevel}`

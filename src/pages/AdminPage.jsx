@@ -557,6 +557,7 @@ export default function AdminPage({ username, onLogout }) {
                   if (building.id === 'gold_storage') return `5_${maxLevel}`
                   if (building.id === 'elixir_storage') return `6_${maxLevel}`
                   if (building.id === 'dark_elixir_storage') return `7_${maxLevel}`
+                  if (building.id === 'helper_hut') return `206_${maxLevel}`
                   if (building.id === 'barbarian') return `31_${maxLevel}`
                   if (building.id === 'archer') return `32_${maxLevel}`
                   if (building.id === 'giant') return `33_${maxLevel}`

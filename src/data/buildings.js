@@ -43,6 +43,7 @@ export const BUILDING_SECTIONS = {
     { id: 'elixir_storage', name: 'Elixir Storage', image: '/src/assets/Resources/elixi_storage' },
     { id: 'dark_elixir_driller', name: 'Dark Elixir Drill', image: '/src/assets/Resources/dark_elixir_driller' },
     { id: 'dark_elixir_storage', name: 'Dark Elixir Storage', image: '/src/assets/Resources/dark_elixir_storage' },
+    { id: 'helper_hut', name: 'Helper Hut', image: '/src/assets/Resources/Helper_hut' },
   ],
   troops: [
     { id: 'barbarian', name: 'Barbarian', image: '/src/assets/Troops/Barbarian' },
@@ -763,6 +764,15 @@ export const getDefaultBuildingData = (townhallLevel) => {
 
   if (Number(townhallLevel) === 9) {
     return {
+      helper_hut:{
+        id: 'helper_hut',
+        image_path: '/src/assets/Resources/Helper_hut/206_',
+        buildings_unlocked: 1,
+        copy_unlocks: createCopyUnlocks(1, 1),
+        levels: [
+          { level: 1, cost: 0, resource: 'elixir', time: '0sec' },
+        ],
+      },
       x_bow: {
         id: 'x_bow',
         image_path: '/src/assets/Defences/x-bow/25_',
