@@ -182,12 +182,20 @@ const getHeroHallUnlockRequirement = (building) => {
 
 const getSpellFactoryRequirement = (building) => {
   const fallbackRequirement = SPELL_FACTORY_REQUIREMENTS[String(building?.id || '').toLowerCase()] || 1
-  return Math.max(fallbackRequirement, Number(building?.spell_factory_level_unlocked) || 0)
+  const configuredRequirement = Number(building?.spell_factory_level_unlocked)
+  if (Number.isFinite(configuredRequirement) && configuredRequirement > 0) {
+    return configuredRequirement
+  }
+  return fallbackRequirement
 }
 
 const getDarkSpellFactoryRequirement = (building) => {
   const fallbackRequirement = DARK_SPELL_FACTORY_REQUIREMENTS[String(building?.id || '').toLowerCase()] || 1
-  return Math.max(fallbackRequirement, Number(building?.dark_spell_factory_level_unlocked) || 0)
+  const configuredRequirement = Number(building?.dark_spell_factory_level_unlocked)
+  if (Number.isFinite(configuredRequirement) && configuredRequirement > 0) {
+    return configuredRequirement
+  }
+  return fallbackRequirement
 }
 
 const getCurrentBarracksLevel = (structureLevels = {}) => {
