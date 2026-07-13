@@ -1021,10 +1021,13 @@ export default function BuildingEditorPage({ username, onLogout }) {
                 if (defence.id === 'healer') return `38_${maxLevel}`
                 if (defence.id === 'dragon') return `39_${maxLevel}`
                 if (defence.id === 'pekka') return `40_${maxLevel}`
+                if (defence.id === 'baby_dragon') return `41_${maxLevel}`
                 if (defence.id === 'minion') return `53_${maxLevel}`
                 if (defence.id === 'hog_rider') return `54_${maxLevel}`
                 if (defence.id === 'valkyrie') return `55_${maxLevel}`
                 if (defence.id === 'golem') return `56_${maxLevel}`
+                if (defence.id === 'witch') return `57_${maxLevel}`
+                if (defence.id === 'lava_hound') return `58_${maxLevel}`
                 if (defence.id === 'blacksmith') return `152_${maxLevel}`
                 if (defence.id === 'lightning_spell') return '43'
                 if (defence.id === 'healing_spell') return '44'
@@ -1033,6 +1036,8 @@ export default function BuildingEditorPage({ username, onLogout }) {
                 if (defence.id === 'freeze_spell') return '47'
                 if (defence.id === 'poison_spell') return '49'
                 if (defence.id === 'earthquake_spell') return '50'
+                if (defence.id === 'haste_spell') return '51'
+                if (defence.id === 'skeleton_spell') return '52'
                 if (defence.id === 'barbarian_king') return '61'
                 if (defence.id === 'archer_queen') return '62'
                 if (defence.id === 'grand_warden') return '63'

@@ -407,10 +407,12 @@ const wizardTroopImages = import.meta.glob('../assets/Troops/wizard/*.png', { ea
 const healerTroopImages = import.meta.glob('../assets/Troops/Healer/*.png', { eager: true, import: 'default' })
 const dragonTroopImages = import.meta.glob('../assets/Troops/Dragon/*.png', { eager: true, import: 'default' })
 const pekkaTroopImages = import.meta.glob('../assets/Troops/P.E.K.K.A/*.png', { eager: true, import: 'default' })
+const babyDragonTroopImages = import.meta.glob('../assets/Troops/Baby_Dragon/*.png', { eager: true, import: 'default' })
 const minionDarkTroopImages = import.meta.glob('../assets/Dark_Troops/Minion/*.png', { eager: true, import: 'default' })
 const hogRiderDarkTroopImages = import.meta.glob('../assets/Dark_Troops/Hog_rider/*.png', { eager: true, import: 'default' })
 const valkyrieDarkTroopImages = import.meta.glob('../assets/Dark_Troops/Valkyrie/*.png', { eager: true, import: 'default' })
 const golemDarkTroopImages = import.meta.glob('../assets/Dark_Troops/Golem/*.png', { eager: true, import: 'default' })
+const witchDarkTroopImages = import.meta.glob('../assets/Dark_Troops/Witch/*.png', { eager: true, import: 'default' })
 const lightningSpellImages = import.meta.glob('../assets/spells/Lightning_Spell/*.png', { eager: true, import: 'default' })
 const healingSpellImages = import.meta.glob('../assets/spells/Healing_Spell/*.png', { eager: true, import: 'default' })
 const rageSpellImages = import.meta.glob('../assets/spells/Rage_Spell/*.png', { eager: true, import: 'default' })
@@ -418,6 +420,8 @@ const jumpSpellImages = import.meta.glob('../assets/spells/Jump_Spell/*.png', { 
 const freezeSpellImages = import.meta.glob('../assets/spells/Freeze_Spell/*.png', { eager: true, import: 'default' })
 const poisonSpellImages = import.meta.glob('../assets/spells/Poison_Spell/*.png', { eager: true, import: 'default' })
 const earthquakeSpellImages = import.meta.glob('../assets/spells/Earthquake_Spell/*.png', { eager: true, import: 'default' })
+const hasteSpellImages = import.meta.glob('../assets/spells/Haste_Spell/*.png', { eager: true, import: 'default' })
+const skeletonSpellImages = import.meta.glob('../assets/spells/Skeleton_Spell/*.png', { eager: true, import: 'default' })
 const barbarianKingImages = import.meta.glob('../assets/Heros/Barbarian_King/*.png', { eager: true, import: 'default' })
 const archerQueenImages = import.meta.glob('../assets/Heros/Archer_Queen/*.png', { eager: true, import: 'default' })
 const grandWardenImages = import.meta.glob('../assets/Heros/Grand_Warden/*.png', { eager: true, import: 'default' })
@@ -1702,12 +1706,66 @@ export default function UserPage({ username, onLogout, userId }) {
     ? (structureCatalog.equipment || [])
     : []
 
+  const equipmentHeroSortOrder = {
+    'Barbarian King': 0,
+    'Archer Queen': 1,
+    'Grand Warden': 3,
+    'Royal Champion': 4,
+    'Minion Prince': 2,
+    'Dragon Duke': 5,
+    Other: 99,
+  }
+
+  const equipmentPriorityById = {
+    barbarian_puppet: 1,
+    rage_vial: 2,
+    earthquake_boots: 3,
+    giant_gauntlet: 4,
+    spiky_ball: 5,
+    snake_bracelet: 6,
+    stick_horse: 7,
+    archer_puppet: 1,
+    invisibility_vial: 2,
+    giant_arrow: 3,
+    frozen_arrow: 4,
+    magic_mirror: 5,
+    action_figure: 6,
+    monolith_arrow: 7,
+    dark_orb: 1,
+    henchmen_puppet: 2,
+    dark_crown: 3,
+    meteor_staff: 4,
+  }
+
+  const getEquipmentPriority = (building) => {
+    if (!building?.id) return 999
+    const directPriority = Number(building?.priority)
+    if (Number.isFinite(directPriority) && directPriority > 0) return directPriority
+    return equipmentPriorityById[building.id] ?? 999
+  }
+
   const equipmentByHero = visibleEquipmentBuildings.reduce((acc, building) => {
     const heroName = building?.hero || 'Other'
     if (!acc[heroName]) acc[heroName] = []
     acc[heroName].push(building)
     return acc
   }, {})
+
+  Object.keys(equipmentByHero).forEach((heroName) => {
+    equipmentByHero[heroName].sort((left, right) => {
+      const leftPriority = getEquipmentPriority(left)
+      const rightPriority = getEquipmentPriority(right)
+      if (leftPriority !== rightPriority) return leftPriority - rightPriority
+      return (left.name || formatStructureName(left.id)).localeCompare(right.name || formatStructureName(right.id))
+    })
+  })
+
+  const sortedEquipmentByHeroEntries = Object.entries(equipmentByHero).sort(([leftHero], [rightHero]) => {
+    const leftOrder = equipmentHeroSortOrder[leftHero] ?? 98
+    const rightOrder = equipmentHeroSortOrder[rightHero] ?? 98
+    if (leftOrder !== rightOrder) return leftOrder - rightOrder
+    return leftHero.localeCompare(rightHero)
+  })
 
   const activeLoadedTabBuildings = activeLoadedTab === 'defences'
     ? visibleDefenseBuildings
@@ -3019,10 +3077,13 @@ export default function UserPage({ username, onLogout, userId }) {
       healer: (imageLevel) => healerTroopImages[`../assets/Troops/Healer/38_${imageLevel}.png`] || '',
       dragon: (imageLevel) => dragonTroopImages[`../assets/Troops/Dragon/39_${imageLevel}.png`] || '',
       pekka: (imageLevel) => pekkaTroopImages[`../assets/Troops/P.E.K.K.A/40_${imageLevel}.png`] || '',
+      baby_dragon: (imageLevel) => babyDragonTroopImages[`../assets/Troops/Baby_Dragon/41_${imageLevel}.png`] || '',
       minion: (imageLevel) => minionDarkTroopImages[`../assets/Dark_Troops/Minion/53_${imageLevel}.png`] || '',
       hog_rider: (imageLevel) => hogRiderDarkTroopImages[`../assets/Dark_Troops/Hog_rider/54_${imageLevel}.png`] || '',
       valkyrie: (imageLevel) => valkyrieDarkTroopImages[`../assets/Dark_Troops/Valkyrie/55_${imageLevel}.png`] || '',
       golem: (imageLevel) => golemDarkTroopImages[`../assets/Dark_Troops/Golem/56_${imageLevel}.png`] || '',
+      witch: (imageLevel) => witchDarkTroopImages[`../assets/Dark_Troops/Witch/57_${imageLevel}.png`] || '',
+      lava_hound: (imageLevel) => lavaHoundDarkTroopImages[`../assets/Dark_Troops/Lava_Hound/58_${imageLevel}.png`] || '',
       lightning_spell: (imageLevel) => imageLevel === 0 ? (lightningSpellImages['../assets/spells/Lightning_Spell/43_0.png'] || '') : (lightningSpellImages['../assets/spells/Lightning_Spell/43.png'] || ''),
       healing_spell: (imageLevel) => imageLevel === 0 ? (healingSpellImages['../assets/spells/Healing_Spell/44_0.png'] || '') : (healingSpellImages['../assets/spells/Healing_Spell/44.png'] || ''),
       rage_spell: (imageLevel) => imageLevel === 0 ? (rageSpellImages['../assets/spells/Rage_Spell/45_0.png'] || '') : (rageSpellImages['../assets/spells/Rage_Spell/45.png'] || ''),
@@ -3030,6 +3091,8 @@ export default function UserPage({ username, onLogout, userId }) {
       freeze_spell: (imageLevel) => imageLevel === 0 ? (freezeSpellImages['../assets/spells/Freeze_Spell/47_0.png'] || '') : (freezeSpellImages['../assets/spells/Freeze_Spell/47.png'] || ''),
       poison_spell: (imageLevel) => imageLevel === 0 ? (poisonSpellImages['../assets/spells/Poison_Spell/49_0.png'] || '') : (poisonSpellImages['../assets/spells/Poison_Spell/49.png'] || ''),
       earthquake_spell: (imageLevel) => imageLevel === 0 ? (earthquakeSpellImages['../assets/spells/Earthquake_Spell/50_0.png'] || '') : (earthquakeSpellImages['../assets/spells/Earthquake_Spell/50.png'] || ''),
+      haste_spell: (imageLevel) => imageLevel === 0 ? (hasteSpellImages['../assets/spells/Haste_Spell/51_0.png'] || '') : (hasteSpellImages['../assets/spells/Haste_Spell/51.png'] || ''),
+      skeleton_spell: (imageLevel) => imageLevel === 0 ? (skeletonSpellImages['../assets/spells/Skeleton_Spell/52_0.png'] || '') : (skeletonSpellImages['../assets/spells/Skeleton_Spell/52.png'] || ''),
       barbarian_king: (imageLevel) => imageLevel === 0 ? (barbarianKingImages['../assets/Heros/Barbarian_King/61_0.png'] || '') : (barbarianKingImages['../assets/Heros/Barbarian_King/61.png'] || ''),
       archer_queen: (imageLevel) => imageLevel === 0 ? (archerQueenImages['../assets/Heros/Archer_Queen/62_0.png'] || '') : (archerQueenImages['../assets/Heros/Archer_Queen/62.png'] || ''),
       grand_warden: (imageLevel) => imageLevel === 0 ? (grandWardenImages['../assets/Heros/Grand_Warden/63_0.png'] || '') : (grandWardenImages['../assets/Heros/Grand_Warden/63.png'] || ''),
@@ -4756,7 +4819,7 @@ export default function UserPage({ username, onLogout, userId }) {
                               <span>Upgrades</span>
                             </div>
                             <div className={styles.readOnlyLoadedList}>
-                              {Object.entries(equipmentByHero).map(([heroName, equipmentList]) => (
+                              {sortedEquipmentByHeroEntries.map(([heroName, equipmentList]) => (
                                 <div key={heroName} className={styles.equipmentHeroGroup}>
                                   <div className={styles.equipmentHeroGroupHeader}>
                                     {heroName}

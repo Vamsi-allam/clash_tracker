@@ -339,9 +339,9 @@ export default function AdminPage({ username, onLogout }) {
     const equipmentHeroSortOrder = {
       'Barbarian King': 0,
       'Archer Queen': 1,
-      'Grand Warden': 2,
-      'Royal Champion': 3,
-      'Minion Prince': 4,
+      'Grand Warden': 3,
+      'Royal Champion': 4,
+      'Minion Prince': 2,
       'Dragon Duke': 5,
       Other: 99,
     }
@@ -355,10 +355,15 @@ export default function AdminPage({ username, onLogout }) {
       stick_horse: 7,
       archer_puppet: 1,
       invisibility_vial: 2,
-      frozen_arrow: 3,
-      magic_mirror: 4,
-      action_figure: 5,
-      monolith_arrow: 6,
+      giant_arrow: 3,
+      frozen_arrow: 4,
+      magic_mirror: 5,
+      action_figure: 6,
+      monolith_arrow: 7,
+      dark_orb: 1,
+      henchmen_puppet: 2,
+      dark_crown: 3,
+      meteor_staff: 4,
     }
     const getEquipmentPriority = (building) => {
       const buildingId = building?.id
@@ -562,10 +567,13 @@ export default function AdminPage({ username, onLogout }) {
                   if (building.id === 'healer') return `38_${maxLevel}`
                   if (building.id === 'dragon') return `39_${maxLevel}`
                   if (building.id === 'pekka') return `40_${maxLevel}`
+                  if (building.id === 'baby_dragon') return `41_${maxLevel}`
                   if (building.id === 'minion') return `53_${maxLevel}`
                   if (building.id === 'hog_rider') return `54_${maxLevel}`
                   if (building.id === 'valkyrie') return `55_${maxLevel}`
                   if (building.id === 'golem') return `56_${maxLevel}`
+                  if (building.id === 'witch') return `57_${maxLevel}`
+                  if (building.id === 'lava_hound') return `58_${maxLevel}`
                   if (building.id === 'lightning_spell') return '43'
                   if (building.id === 'healing_spell') return '44'
                   if (building.id === 'rage_spell') return '45'
@@ -573,6 +581,8 @@ export default function AdminPage({ username, onLogout }) {
                   if (building.id === 'freeze_spell') return '47'
                   if (building.id === 'poison_spell') return '49'
                   if (building.id === 'earthquake_spell') return '50'
+                  if (building.id === 'haste_spell') return '51'
+                  if (building.id === 'skeleton_spell') return '52'
                   if (building.id === 'barbarian_king') return '61'
                   if (building.id === 'archer_queen') return '62'
                   if (building.id === 'grand_warden') return '63'
