@@ -1735,10 +1735,11 @@ export default function UserPage({ username, onLogout, userId }) {
     barbarian_puppet: 1,
     rage_vial: 2,
     earthquake_boots: 3,
-    giant_gauntlet: 4,
-    spiky_ball: 5,
-    snake_bracelet: 6,
-    stick_horse: 7,
+    vampstache: 4,
+    giant_gauntlet: 5,
+    spiky_ball: 6,
+    snake_bracelet: 7,
+    stick_horse: 8,
     archer_puppet: 1,
     invisibility_vial: 2,
     giant_arrow: 3,
@@ -1748,8 +1749,9 @@ export default function UserPage({ username, onLogout, userId }) {
     monolith_arrow: 7,
     dark_orb: 1,
     henchmen_puppet: 2,
-    dark_crown: 3,
-    meteor_staff: 4,
+    metal_pants:3,
+    dark_crown: 4,
+    meteor_staff: 5,
   }
 
   const getEquipmentPriority = (building) => {
