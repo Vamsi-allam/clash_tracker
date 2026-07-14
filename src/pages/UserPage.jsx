@@ -3198,7 +3198,7 @@ export default function UserPage({ username, onLogout, userId }) {
         : upgradeSummary.nextLevels
       const equipmentUsesBlacksmithRequirement = allRemainingNextLevels.some((levelInfo) => Number(levelInfo?.blacksmith_level_unlocked ?? building?.blacksmith_level_unlocked ?? 0) > 0)
       const blacksmithLockedNextLevels = equipmentUsesBlacksmithRequirement
-        ? allRemainingNextLevels.filter((levelInfo) => Number(levelInfo.blacksmith_level_unlocked ?? 0) > Number(currentBlacksmithLevel || 0))
+        ? allRemainingNextLevels.filter((levelInfo) => Number(levelInfo.blacksmith_level_unlocked ?? building?.blacksmith_level_unlocked ?? 0) > Number(currentBlacksmithLevel || 0))
         : []
       const labLockedNextLevels = (TROOP_BUILDING_IDS.has(String(building?.id || '')) || DARK_TROOP_BUILDING_IDS.has(String(building?.id || '')) || SPELL_BUILDING_IDS.has(String(building?.id || '')))
         ? allRemainingNextLevels.filter((levelInfo) => Number(levelInfo.lab_level_unlocked ?? 0) > Number(currentLabLevel || 0))
@@ -3218,7 +3218,7 @@ export default function UserPage({ username, onLogout, userId }) {
                   : Number(levelInfo.hero_hall_level_unlocked || 0) || 0
           ))
         : blacksmithLockedNextLevels.length > 0
-          ? Math.min(...blacksmithLockedNextLevels.map((levelInfo) => Number(levelInfo.blacksmith_level_unlocked || 0) || 0))
+          ? Math.min(...blacksmithLockedNextLevels.map((levelInfo) => Number(levelInfo.blacksmith_level_unlocked ?? building?.blacksmith_level_unlocked ?? 0) || 0))
         : null
       const labRequirementLabel = (TROOP_BUILDING_IDS.has(String(building?.id || '')) || DARK_TROOP_BUILDING_IDS.has(String(building?.id || '')) || SPELL_BUILDING_IDS.has(String(building?.id || '')))
         ? 'Lab'
@@ -3267,6 +3267,23 @@ export default function UserPage({ username, onLogout, userId }) {
       }
     })
 
+    const isUpgradeLevelLocked = (rowState, levelInfo) => {
+      if (rowState?.labRequirementLabel === 'Lab') {
+        return Number(levelInfo?.lab_level_unlocked ?? 0) > Number(currentLabLevel || 0)
+      }
+
+      if (rowState?.labRequirementLabel === 'Hero Hall') {
+        return Number(levelInfo?.hero_hall_level_unlocked ?? 0) > Number(currentHeroHallLevel || 0)
+      }
+
+      if (rowState?.labRequirementLabel === 'Blacksmith') {
+        const requiredBlacksmithLevel = Number(levelInfo?.blacksmith_level_unlocked ?? building?.blacksmith_level_unlocked ?? rowState?.labRequirementLevel ?? 0)
+        return requiredBlacksmithLevel > Number(currentBlacksmithLevel || 0)
+      }
+
+      return false
+    }
+
     const tableRowStyle = {
       gridTemplateRows: `repeat(${rowCount}, minmax(0, auto))`,
     }
@@ -3276,22 +3293,45 @@ export default function UserPage({ username, onLogout, userId }) {
     const upgradeListClassName = activeLoadedTab === 'equipment'
       ? `${styles.readOnlyUpgradeList} ${styles.readOnlyUpgradeListEquipment}`
       : styles.readOnlyUpgradeList
+    const hideLevelOneInUpgradeList = ['troops', 'dark_troops', 'spells', 'dark_spells', 'equipment'].includes(activeLoadedTab)
+    const getVisibleUpgradeLevels = (levels = []) => (
+      hideLevelOneInUpgradeList
+        ? levels.filter((levelInfo) => Number(levelInfo?.level) !== 1)
+        : levels
+    )
 
     if (readOnly) {
-            if ((activeLoadedTab === 'troops' && TROOP_BUILDING_IDS.has(String(building?.id || ''))) || (activeLoadedTab === 'dark_troops' && DARK_TROOP_BUILDING_IDS.has(String(building?.id || ''))) || (activeLoadedTab === 'spells' && SPELL_BUILDING_IDS.has(String(building?.id || '')))) {
+            const isTroopTabCard = activeLoadedTab === 'troops' && TROOP_BUILDING_IDS.has(String(building?.id || ''))
+            const isDarkTroopTabCard = activeLoadedTab === 'dark_troops' && DARK_TROOP_BUILDING_IDS.has(String(building?.id || ''))
+            const isSpellTabCard = (activeLoadedTab === 'spells' || activeLoadedTab === 'dark_spells') && SPELL_BUILDING_IDS.has(String(building?.id || ''))
+
+            if (isTroopTabCard || isDarkTroopTabCard || isSpellTabCard) {
               const troopRowState = rowStates[0] || null
               const isDarkSpellBuilding = SPELL_BUILDING_IDS.has(String(building?.id || '')) && DARK_SPELL_BUILDING_IDS.has(String(building?.id || ''))
-              const troopUnlocked = activeLoadedTab === 'troops'
+              const troopUnlocked = isTroopTabCard
                 ? currentBarracksLevel >= troopBarracksRequirement
-                : activeLoadedTab === 'dark_troops'
+                : isDarkTroopTabCard
                   ? currentDarkBarracksLevel >= getDarkTroopBarracksRequirement(building)
                   : isDarkSpellBuilding
                     ? currentDarkSpellFactoryLevel >= darkSpellFactoryRequirement
                     : currentSpellFactoryLevel >= spellFactoryRequirement
               const troopRowLevel = troopUnlocked ? Number(troopRowState?.rowLevel || 0) : 0
               const troopRowImageLevel = troopRowLevel
+              const troopDisplayMaxLevel = Math.max(1, Number(maxLevel || 0))
+              const troopUnlockRequirementLabel = isTroopTabCard
+                ? `Requires Barracks level ${troopBarracksRequirement} to unlock`
+                : isDarkTroopTabCard
+                  ? `Requires Dark Barracks level ${getDarkTroopBarracksRequirement(building)} to unlock`
+                  : isDarkSpellBuilding
+                    ? `Requires Dark Spell Factory level ${darkSpellFactoryRequirement} to unlock`
+                    : `Requires Spell Factory level ${spellFactoryRequirement} to unlock`
 
               if (!troopUnlocked) {
+                const lockedPreviewLevels = getVisibleUpgradeLevels(getNextUpgradeLevels(building, 0))
+                const lockedPreviewTotalCost = lockedPreviewLevels.reduce((total, levelInfo) => total + Number(levelInfo.cost || 0), 0)
+                const lockedPreviewTotalSeconds = lockedPreviewLevels.reduce((total, levelInfo) => total + getTimeSeconds(levelInfo.time), 0)
+                const lockedPreviewResource = lockedPreviewLevels[0]?.resource || 'gold'
+
                 return (
                   <section key={cardKey} className={`${styles.defenceCard} ${styles.readOnlyBuildingBlock}`}>
                     <div className={styles.readOnlyCardGrid} style={tableRowStyle}>
@@ -3323,22 +3363,53 @@ export default function UserPage({ username, onLogout, userId }) {
                             )}
 
                             <div className={styles.readOnlyTroopLevelMeta}>
-                              <div className={styles.readOnlyLevelValue}>{troopRowLevel}/1</div>
+                              <div className={styles.readOnlyLevelValue}>{troopRowLevel}/{troopDisplayMaxLevel}</div>
                               <LockOutlinedIcon className={`${styles.readOnlyActionIcon} ${styles.readOnlyTroopStateIconLocked}`} />
                             </div>
                           </div>
 
                           <div className={styles.readOnlyTroopDetails}>
-                            <div className={`${styles.readOnlyUpgradeSummary} ${styles.readOnlyTroopLockedSummary}`}>
-                              <span>
-                                {activeLoadedTab === 'troops'
-                                  ? `Requires Barracks level ${troopBarracksRequirement} to unlock`
-                                  : activeLoadedTab === 'dark_troops'
-                                    ? `Requires Dark Barracks level ${getDarkTroopBarracksRequirement(building)} to unlock`
-                                  : isDarkSpellBuilding
-                                    ? `Requires Dark Spell Factory level ${darkSpellFactoryRequirement} to unlock`
-                                    : `Requires Spell Factory level ${spellFactoryRequirement} to unlock`}
-                              </span>
+                            <div className={styles.readOnlyUpgradeProgressBlock}>
+                              {lockedPreviewLevels.length > 0 && (
+                                <>
+                                  <div className={styles.readOnlyUpgradeList}>
+                                    {lockedPreviewLevels.map((levelInfo) => (
+                                      <div key={`${building.id}-locked-preview-lvl-${levelInfo.level}`} className={styles.readOnlyUpgradeItem}>
+                                        <span className={styles.readOnlyUpgradeResourceLabel}>
+                                          {upgradeResourceIcons[String(levelInfo.resource || '').trim().toLowerCase()] ? (
+                                            <img
+                                              src={upgradeResourceIcons[String(levelInfo.resource || '').trim().toLowerCase()]}
+                                              alt={getUpgradeResourceLabel(levelInfo.resource)}
+                                              className={styles.readOnlyUpgradeResourceIcon}
+                                            />
+                                          ) : null}
+                                        </span>
+                                        <span className={`${styles.readOnlyUpgradeLevel} ${Number(levelInfo.lab_level_unlocked ?? 0) > Number(currentLabLevel || 0) ? styles.readOnlyUpgradeLevelLocked : ''}`}>
+                                          Lvl {levelInfo.level}:
+                                        </span>
+                                        <span className={`${styles.readOnlyUpgradeCost} ${getUpgradeResourceClass(levelInfo.resource)}`}>
+                                          {formatNumberShort(levelInfo.cost)}
+                                        </span>
+                                        <span className={styles.readOnlyUpgradeTime}>{formatUpgradeTime(levelInfo.time)}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+
+                                  <div className={styles.readOnlyUpgradeSummary}>
+                                    <span>{lockedPreviewLevels.length} Levels</span>
+                                    <span>-</span>
+                                    <span className={`${styles.readOnlyUpgradeCost} ${getUpgradeResourceClass(lockedPreviewResource)}`}>
+                                      {formatNumberShort(lockedPreviewTotalCost)}
+                                    </span>
+                                    <span>-</span>
+                                    <span>{formatSeconds(lockedPreviewTotalSeconds)}</span>
+                                  </div>
+                                </>
+                              )}
+
+                              <div className={`${styles.readOnlyUpgradeSummary} ${styles.readOnlyTroopLockedSummary}`}>
+                                <span>{troopUnlockRequirementLabel}</span>
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -3786,7 +3857,7 @@ export default function UserPage({ username, onLogout, userId }) {
                         {rowState.allRemainingNextLevels.length > 0 ? (
                           <>
                             <div className={upgradeListClassName}>
-                              {rowState.allRemainingNextLevels.filter((levelInfo) => !(activeLoadedTab === 'equipment' && Number(levelInfo.level) === 1)).map((levelInfo) => (
+                              {getVisibleUpgradeLevels(rowState.allRemainingNextLevels).map((levelInfo) => (
                                 <div key={`${building.id}-${rowState.rowIndex}-pending-lvl-${levelInfo.level}`} className={styles.readOnlyUpgradeItem}>
                                   <span className={styles.readOnlyUpgradeResourceLabel}>
                                     {upgradeResourceIcons[String(levelInfo.resource || '').trim().toLowerCase()] ? (
@@ -3797,11 +3868,7 @@ export default function UserPage({ username, onLogout, userId }) {
                                       />
                                     ) : null}
                                   </span>
-                                  <span className={`${styles.readOnlyUpgradeLevel} ${(['Lab', 'Hero Hall', 'Blacksmith'].includes(rowState.labRequirementLabel) && (
-                                    (rowState.labRequirementLabel === 'Lab' && Number(levelInfo.lab_level_unlocked ?? 0) > Number(currentLabLevel || 0)) ||
-                                    (rowState.labRequirementLabel === 'Hero Hall' && Number(levelInfo.hero_hall_level_unlocked ?? 0) > Number(currentHeroHallLevel || 0)) ||
-                                    (rowState.labRequirementLabel === 'Blacksmith' && Number(currentBlacksmithLevel || 0) < Number(rowState.labRequirementLevel || 0))
-                                  )) ? styles.readOnlyUpgradeLevelLocked : ''}`}>Lvl {levelInfo.level}:</span>
+                                  <span className={`${styles.readOnlyUpgradeLevel} ${isUpgradeLevelLocked(rowState, levelInfo) ? styles.readOnlyUpgradeLevelLocked : ''}`}>Lvl {levelInfo.level}:</span>
                                   {activeLoadedTab === 'equipment' && Array.isArray(levelInfo.resource_costs) && levelInfo.resource_costs.length > 0 ? (
                                     <div className={styles.equipmentCostBreakdown}>
                                       {levelInfo.resource_costs.map(({ resource, cost }) => (
@@ -3825,11 +3892,11 @@ export default function UserPage({ username, onLogout, userId }) {
                               ))}
                             </div>
                             <div className={styles.readOnlyUpgradeSummary}>
-                              <span>{rowState.allRemainingNextLevels.filter((levelInfo) => !(activeLoadedTab === 'equipment' && Number(levelInfo.level) === 1)).length} Levels</span>
+                              <span>{getVisibleUpgradeLevels(rowState.allRemainingNextLevels).length} Levels</span>
                               <span>-</span>
                               {activeLoadedTab === 'equipment' ? (
                                 (() => {
-                                  const filtered = rowState.allRemainingNextLevels.filter((levelInfo) => !(activeLoadedTab === 'equipment' && Number(levelInfo.level) === 1))
+                                  const filtered = getVisibleUpgradeLevels(rowState.allRemainingNextLevels)
                                   const agg = filtered.reduce((acc, lvl) => {
                                     if (Array.isArray(lvl.resource_costs) && lvl.resource_costs.length > 0) {
                                       lvl.resource_costs.forEach(({ resource, cost }) => {
@@ -3860,13 +3927,13 @@ export default function UserPage({ username, onLogout, userId }) {
                                 })()
                               ) : (
                                 <span className={`${styles.readOnlyUpgradeCost} ${getUpgradeResourceClass(rowState.summaryResource)}`}>
-                                  {formatNumberShort(rowState.allRemainingNextLevels.filter((levelInfo) => !(activeLoadedTab === 'equipment' && Number(levelInfo.level) === 1)).reduce((total, level) => total + Number(level.cost || 0), 0))}
+                                  {formatNumberShort(getVisibleUpgradeLevels(rowState.allRemainingNextLevels).reduce((total, level) => total + Number(level.cost || 0), 0))}
                                 </span>
                               )}
                               {activeLoadedTab !== 'equipment' && (
                                 <>
                                   <span>-</span>
-                                  <span>{formatSeconds(rowState.allRemainingNextLevels.filter((levelInfo) => !(activeLoadedTab === 'equipment' && Number(levelInfo.level) === 1)).reduce((total, level) => total + getTimeSeconds(level.time), 0))}</span>
+                                  <span>{formatSeconds(getVisibleUpgradeLevels(rowState.allRemainingNextLevels).reduce((total, level) => total + getTimeSeconds(level.time), 0))}</span>
                                 </>
                               )}
                             </div>
@@ -3881,7 +3948,7 @@ export default function UserPage({ username, onLogout, userId }) {
                         ) : rowState.labRequirementLevel != null ? (
                           <>
                             <div className={upgradeListClassName}>
-                              {rowState.labLockedNextLevels.filter((levelInfo) => !(activeLoadedTab === 'equipment' && Number(levelInfo.level) === 1)).map((levelInfo) => (
+                              {getVisibleUpgradeLevels(rowState.labLockedNextLevels).map((levelInfo) => (
                                 <div key={`${building.id}-${rowState.rowIndex}-locked-lvl-${levelInfo.level}`} className={styles.readOnlyUpgradeItem}>
                                   <span className={styles.readOnlyUpgradeResourceLabel}>
                                     {upgradeResourceIcons[String(levelInfo.resource || '').trim().toLowerCase()] ? (
@@ -3892,11 +3959,7 @@ export default function UserPage({ username, onLogout, userId }) {
                                       />
                                     ) : null}
                                   </span>
-                                  <span className={`${styles.readOnlyUpgradeLevel} ${(['Lab', 'Hero Hall', 'Blacksmith'].includes(rowState.labRequirementLabel) && (
-                                    (rowState.labRequirementLabel === 'Lab' && Number(levelInfo.lab_level_unlocked ?? 0) > Number(currentLabLevel || 0)) ||
-                                    (rowState.labRequirementLabel === 'Hero Hall' && Number(levelInfo.hero_hall_level_unlocked ?? 0) > Number(currentHeroHallLevel || 0)) ||
-                                    (rowState.labRequirementLabel === 'Blacksmith' && Number(currentBlacksmithLevel || 0) < Number(rowState.labRequirementLevel || 0))
-                                  )) ? styles.readOnlyUpgradeLevelLocked : ''}`}>Lvl {levelInfo.level}:</span>
+                                  <span className={`${styles.readOnlyUpgradeLevel} ${isUpgradeLevelLocked(rowState, levelInfo) ? styles.readOnlyUpgradeLevelLocked : ''}`}>Lvl {levelInfo.level}:</span>
                                   {activeLoadedTab === 'equipment' && Array.isArray(levelInfo.resource_costs) && levelInfo.resource_costs.length > 0 ? (
                                     <div className={styles.equipmentCostBreakdown}>
                                       {levelInfo.resource_costs.map(({ resource, cost }) => (
@@ -3930,7 +3993,7 @@ export default function UserPage({ username, onLogout, userId }) {
                     ) : rowState.allRemainingNextLevels.length > 0 ? (
                       <>
                         <div className={upgradeListClassName}>
-                          {rowState.allRemainingNextLevels.filter((levelInfo) => !(activeLoadedTab === 'equipment' && Number(levelInfo.level) === 1)).map((levelInfo) => (
+                          {getVisibleUpgradeLevels(rowState.allRemainingNextLevels).map((levelInfo) => (
                             <div key={`${building.id}-${rowState.rowIndex}-lvl-${levelInfo.level}`} className={styles.readOnlyUpgradeItem}>
                               <span className={styles.readOnlyUpgradeResourceLabel}>
                                 {upgradeResourceIcons[String(levelInfo.resource || '').trim().toLowerCase()] ? (
@@ -3941,11 +4004,7 @@ export default function UserPage({ username, onLogout, userId }) {
                                   />
                                 ) : null}
                               </span>
-                              <span className={`${styles.readOnlyUpgradeLevel} ${(['Lab', 'Hero Hall', 'Blacksmith'].includes(rowState.labRequirementLabel) && (
-                                (rowState.labRequirementLabel === 'Lab' && Number(levelInfo.lab_level_unlocked ?? 0) > Number(currentLabLevel || 0)) ||
-                                (rowState.labRequirementLabel === 'Hero Hall' && Number(levelInfo.hero_hall_level_unlocked ?? 0) > Number(currentHeroHallLevel || 0)) ||
-                                (rowState.labRequirementLabel === 'Blacksmith' && Number(currentBlacksmithLevel || 0) < Number(rowState.labRequirementLevel || 0))
-                              )) ? styles.readOnlyUpgradeLevelLocked : ''}`}>Lvl {levelInfo.level}:</span>
+                              <span className={`${styles.readOnlyUpgradeLevel} ${isUpgradeLevelLocked(rowState, levelInfo) ? styles.readOnlyUpgradeLevelLocked : ''}`}>Lvl {levelInfo.level}:</span>
                               {activeLoadedTab === 'equipment' && Array.isArray(levelInfo.resource_costs) && levelInfo.resource_costs.length > 0 ? (
                                 <div className={styles.equipmentCostBreakdown}>
                                   {levelInfo.resource_costs.map(({ resource, cost }) => (
@@ -3969,11 +4028,11 @@ export default function UserPage({ username, onLogout, userId }) {
                           ))}
                         </div>
                         <div className={styles.readOnlyUpgradeSummary}>
-                          <span>{rowState.allRemainingNextLevels.filter((levelInfo) => !(activeLoadedTab === 'equipment' && Number(levelInfo.level) === 1)).length} Levels</span>
+                          <span>{getVisibleUpgradeLevels(rowState.allRemainingNextLevels).length} Levels</span>
                           <span>-</span>
                           {activeLoadedTab === 'equipment' ? (
                             (() => {
-                              const filtered = rowState.allRemainingNextLevels.filter((levelInfo) => !(activeLoadedTab === 'equipment' && Number(levelInfo.level) === 1))
+                              const filtered = getVisibleUpgradeLevels(rowState.allRemainingNextLevels)
                               const agg = filtered.reduce((acc, lvl) => {
                                 if (Array.isArray(lvl.resource_costs) && lvl.resource_costs.length > 0) {
                                   lvl.resource_costs.forEach(({ resource, cost }) => {
@@ -4004,13 +4063,13 @@ export default function UserPage({ username, onLogout, userId }) {
                             })()
                           ) : (
                             <span className={`${styles.readOnlyUpgradeCost} ${getUpgradeResourceClass(rowState.summaryResource)}`}>
-                              {formatNumberShort(rowState.allRemainingNextLevels.filter((levelInfo) => !(activeLoadedTab === 'equipment' && Number(levelInfo.level) === 1)).reduce((total, level) => total + Number(level.cost || 0), 0))}
+                              {formatNumberShort(getVisibleUpgradeLevels(rowState.allRemainingNextLevels).reduce((total, level) => total + Number(level.cost || 0), 0))}
                             </span>
                           )}
                           {activeLoadedTab !== 'equipment' && (
                             <>
                               <span>-</span>
-                              <span>{formatSeconds(rowState.allRemainingNextLevels.filter((levelInfo) => !(activeLoadedTab === 'equipment' && Number(levelInfo.level) === 1)).reduce((total, level) => total + getTimeSeconds(level.time), 0))}</span>
+                              <span>{formatSeconds(getVisibleUpgradeLevels(rowState.allRemainingNextLevels).reduce((total, level) => total + getTimeSeconds(level.time), 0))}</span>
                             </>
                           )}
                         </div>
@@ -4025,7 +4084,7 @@ export default function UserPage({ username, onLogout, userId }) {
                     ) : rowState.labRequirementLevel != null ? (
                       <>
                         <div className={upgradeListClassName}>
-                          {rowState.labLockedNextLevels.map((levelInfo) => (
+                          {getVisibleUpgradeLevels(rowState.labLockedNextLevels).map((levelInfo) => (
                             <div key={`${building.id}-${rowState.rowIndex}-locked-lvl-${levelInfo.level}`} className={styles.readOnlyUpgradeItem}>
                               <span className={styles.readOnlyUpgradeResourceLabel}>
                                 {upgradeResourceIcons[String(levelInfo.resource || '').trim().toLowerCase()] ? (
@@ -4036,11 +4095,7 @@ export default function UserPage({ username, onLogout, userId }) {
                                   />
                                 ) : null}
                               </span>
-                              <span className={`${styles.readOnlyUpgradeLevel} ${(['Lab', 'Hero Hall', 'Blacksmith'].includes(rowState.labRequirementLabel) && (
-                                (rowState.labRequirementLabel === 'Lab' && Number(levelInfo.lab_level_unlocked ?? 0) > Number(currentLabLevel || 0)) ||
-                                (rowState.labRequirementLabel === 'Hero Hall' && Number(levelInfo.hero_hall_level_unlocked ?? 0) > Number(currentHeroHallLevel || 0)) ||
-                                (rowState.labRequirementLabel === 'Blacksmith' && Number(currentBlacksmithLevel || 0) < Number(rowState.labRequirementLevel || 0))
-                              )) ? styles.readOnlyUpgradeLevelLocked : ''}`}>Lvl {levelInfo.level}:</span>
+                              <span className={`${styles.readOnlyUpgradeLevel} ${isUpgradeLevelLocked(rowState, levelInfo) ? styles.readOnlyUpgradeLevelLocked : ''}`}>Lvl {levelInfo.level}:</span>
                               {activeLoadedTab === 'equipment' && Array.isArray(levelInfo.resource_costs) && levelInfo.resource_costs.length > 0 ? (
                                 <div className={styles.equipmentCostBreakdown}>
                                   {levelInfo.resource_costs.map(({ resource, cost }) => (
