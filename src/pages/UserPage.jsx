@@ -3483,6 +3483,30 @@ export default function UserPage({ username, onLogout, userId }) {
               const equipmentRowLevel = equipmentUnlocked ? Number(equipmentRowState?.rowLevel || 0) : 0
 
               if (!equipmentUnlocked && !isGemUnlock) {
+                const equipmentLockedPreviewLevels = getVisibleUpgradeLevels(getNextUpgradeLevels(building, 0))
+                const equipmentLockedTotalSeconds = equipmentLockedPreviewLevels.reduce((total, levelInfo) => total + getTimeSeconds(levelInfo.time), 0)
+                const equipmentLockedRequirementLevel = Math.max(
+                  equipmentBlacksmithRequired,
+                  ...equipmentLockedPreviewLevels.map((levelInfo) => Number(levelInfo?.blacksmith_level_unlocked ?? building?.blacksmith_level_unlocked ?? 0) || 0),
+                )
+                const equipmentLockedAgg = equipmentLockedPreviewLevels.reduce((acc, levelInfo) => {
+                  if (Array.isArray(levelInfo.resource_costs) && levelInfo.resource_costs.length > 0) {
+                    levelInfo.resource_costs.forEach(({ resource, cost }) => {
+                      const key = String(resource || '').trim().toLowerCase()
+                      if (!key) return
+                      acc[key] = (acc[key] || 0) + Number(cost || 0)
+                    })
+                    return acc
+                  }
+
+                  const key = String(levelInfo.resource || 'gold').trim().toLowerCase()
+                  acc[key] = (acc[key] || 0) + Number(levelInfo.cost || 0)
+                  return acc
+                }, {})
+                const equipmentLockedPreferredKeys = equipmentResourceOrder.filter((resourceKey) => Number(equipmentLockedAgg[resourceKey] || 0) > 0)
+                const equipmentLockedFallbackKeys = Object.keys(equipmentLockedAgg).filter((resourceKey) => !equipmentResourceOrder.includes(resourceKey) && Number(equipmentLockedAgg[resourceKey] || 0) > 0)
+                const equipmentLockedKeys = [...equipmentLockedPreferredKeys, ...equipmentLockedFallbackKeys]
+
                 return (
                   <section key={cardKey} className={`${styles.defenceCard} ${styles.readOnlyBuildingBlock}`}>
                     <div className={styles.readOnlyCardGrid} style={tableRowStyle}>
@@ -3527,8 +3551,74 @@ export default function UserPage({ username, onLogout, userId }) {
                           </div>
 
                           <div className={styles.readOnlyTroopDetails}>
+                            <div className={styles.readOnlyUpgradeProgressBlock}>
+                              {equipmentLockedPreviewLevels.length > 0 && (
+                                <>
+                                  <div className={upgradeListClassName}>
+                                    {equipmentLockedPreviewLevels.map((levelInfo) => (
+                                      <div key={`${building.id}-equipment-locked-preview-lvl-${levelInfo.level}`} className={styles.readOnlyUpgradeItem}>
+                                        <span className={styles.readOnlyUpgradeResourceLabel}>
+                                          {upgradeResourceIcons[String(levelInfo.resource || '').trim().toLowerCase()] ? (
+                                            <img
+                                              src={upgradeResourceIcons[String(levelInfo.resource || '').trim().toLowerCase()]}
+                                              alt={getUpgradeResourceLabel(levelInfo.resource)}
+                                              className={styles.readOnlyUpgradeResourceIcon}
+                                            />
+                                          ) : null}
+                                        </span>
+                                        <span className={`${styles.readOnlyUpgradeLevel} ${Number(levelInfo?.blacksmith_level_unlocked ?? building?.blacksmith_level_unlocked ?? 0) > Number(currentBlacksmithLevel || 0) ? styles.readOnlyUpgradeLevelLocked : ''}`}>
+                                          Lvl {levelInfo.level}:
+                                        </span>
+                                        {Array.isArray(levelInfo.resource_costs) && levelInfo.resource_costs.length > 0 ? (
+                                          <div className={styles.equipmentCostBreakdown}>
+                                            {levelInfo.resource_costs.map(({ resource, cost }) => (
+                                              <span key={`${levelInfo.level}-${resource}`} className={styles.equipmentCostItem}>
+                                                {equipmentResourceIcons[resource] ? (
+                                                  <img src={equipmentResourceIcons[resource]} alt={resource} className={styles.equipmentCostIcon} />
+                                                ) : null}
+                                                <span className={styles.equipmentCostValue}>{formatNumberShort(cost)}</span>
+                                              </span>
+                                            ))}
+                                          </div>
+                                        ) : (
+                                          <span className={`${styles.readOnlyUpgradeCost} ${getUpgradeResourceClass(levelInfo.resource)}`}>
+                                            {formatNumberShort(levelInfo.cost)}
+                                          </span>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+
+                                  <div className={styles.readOnlyUpgradeSummary}>
+                                    <span>{equipmentLockedPreviewLevels.length} Levels</span>
+                                    <span>-</span>
+                                    {equipmentLockedKeys.length > 0 ? (
+                                      <div className={styles.equipmentCostBreakdown}>
+                                        {equipmentLockedKeys.map((resourceKey) => (
+                                          <span key={`${building.id}-equipment-locked-summary-${resourceKey}`} className={styles.equipmentCostItem}>
+                                            {equipmentResourceIcons[resourceKey] ? (
+                                              <img src={equipmentResourceIcons[resourceKey]} alt={resourceKey} className={styles.equipmentCostIcon} />
+                                            ) : null}
+                                            <span className={styles.equipmentCostValue}>{formatNumberShort(equipmentLockedAgg[resourceKey])}</span>
+                                          </span>
+                                        ))}
+                                      </div>
+                                    ) : (
+                                      <span className={`${styles.readOnlyUpgradeCost} ${getUpgradeResourceClass('gold')}`}>{formatNumberShort(0)}</span>
+                                    )}
+                                    {activeLoadedTab !== 'equipment' && (
+                                      <>
+                                        <span>-</span>
+                                        <span>{formatSeconds(equipmentLockedTotalSeconds)}</span>
+                                      </>
+                                    )}
+                                  </div>
+                                </>
+                              )}
+
                               <div className={`${styles.readOnlyUpgradeSummary} ${styles.readOnlyTroopLockedSummary}`}>
-                              <span>Requires Blacksmith level {equipmentBlacksmithRequired} to unlock</span>
+                                <span>Requires Blacksmith level {equipmentLockedRequirementLevel} to unlock</span>
+                              </div>
                             </div>
                           </div>
                         </div>
