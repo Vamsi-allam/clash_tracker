@@ -364,6 +364,12 @@ export default function AdminPage({ username, onLogout }) {
       henchmen_puppet: 2,
       dark_crown: 3,
       meteor_staff: 4,
+      eternal_tome: 1,
+      life_gem: 2,
+      heroic_torch: 3,
+      fireball: 4,
+      lavaloon_puppet: 5,
+      rage_gem: 6,
     }
     const getEquipmentPriority = (building) => {
       const buildingId = building?.id
@@ -534,6 +540,7 @@ export default function AdminPage({ username, onLogout }) {
                   if (building.id === 'air_bomb') return `26_${maxLevel}`
                   if (building.id === 'seeking_air_mine') return `29_${maxLevel}`
                   if (building.id === 'spring_trap') return `30_${maxLevel}`
+                  if (building.id === 'tornado_trap') return `108_${maxLevel}`
                   if (building.id === 'mortar') return `23_${maxLevel}`
                   if (building.id === 'bomb_tower') return `17_${maxLevel}`
                   if (building.id === 'wizard_tower') return `24_${maxLevel}`
@@ -542,6 +549,7 @@ export default function AdminPage({ username, onLogout }) {
                   if (building.id === 'hidden_tesla') return `21_${maxLevel}`
                   if (building.id === 'x_bow') return `25_${maxLevel}`
                   if (building.id === 'inferno_tower') return `22_${maxLevel}`
+                  if (building.id === 'eagle_artillery') return `20_${maxLevel}`
                   if (building.id === 'lab') return `13_${maxLevel}`
                   if (building.id === 'hero_hall') return `202_${maxLevel}`
                   if (building.id === 'blacksmith') return `152_${maxLevel}`
@@ -571,6 +579,7 @@ export default function AdminPage({ username, onLogout }) {
                   if (building.id === 'pekka') return `40_${maxLevel}`
                   if (building.id === 'baby_dragon') return `41_${maxLevel}`
                   if (building.id === 'miner') return `42_${maxLevel}`
+                  if (building.id === 'electro_dragon') return `103_${maxLevel}`
                   if (building.id === 'minion') return `53_${maxLevel}`
                   if (building.id === 'hog_rider') return `54_${maxLevel}`
                   if (building.id === 'valkyrie') return `55_${maxLevel}`
@@ -578,6 +587,7 @@ export default function AdminPage({ username, onLogout }) {
                   if (building.id === 'witch') return `57_${maxLevel}`
                   if (building.id === 'lava_hound') return `58_${maxLevel}`
                   if (building.id === 'bowler') return `59_${maxLevel}`
+                  if (building.id === 'ice_golem') return `111_${maxLevel}`
                   if (building.id === 'lightning_spell') return '43'
                   if (building.id === 'healing_spell') return '44'
                   if (building.id === 'rage_spell') return '45'
@@ -589,6 +599,7 @@ export default function AdminPage({ username, onLogout }) {
                   if (building.id === 'haste_spell') return '51'
                   if (building.id === 'skeleton_spell') return '52'
                   if (building.id === 'bat_spell') return '110'
+                  if (building.id === 'invisibility_spell') return '124'
                   if (building.id === 'barbarian_king') return '61'
                   if (building.id === 'archer_queen') return '62'
                   if (building.id === 'grand_warden') return '63'

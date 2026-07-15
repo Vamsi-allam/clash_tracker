@@ -24,6 +24,7 @@ export const BUILDING_SECTIONS = {
     { id: 'air_bomb', name: 'Air Bomb', image: '/src/assets/Traps/Air_Bomb' },
     { id: 'seeking_air_mine', name: 'Seeking Air Mine', image: '/src/assets/Traps/Seeking_Air_Mine' },
     { id: 'spring_trap', name: 'Spring Trap', image: '/src/assets/Traps/Spring_Trap' },
+    { id: 'tornado_trap', name: 'Tornado Trap', image: '/src/assets/Traps/Tornado_Trap' },
   ],
   army: [
     { id: 'army_camp', name: 'Army Camp', image: '/src/assets/Army/Army_Camp' },
@@ -58,6 +59,7 @@ export const BUILDING_SECTIONS = {
     { id: 'pekka', name: 'P.E.K.K.A', image: '/src/assets/Troops/P.E.K.K.A' },
     { id: 'baby_dragon', name: 'Baby Dragon', image: '/src/assets/Troops/Baby_Dragon' },
     { id: 'miner', name: 'Miner', image: '/src/assets/Troops/Miner' },
+    { id: 'electro_dragon', name: 'Electro Dragon', image: '/src/assets/Troops/Electro_Dragon' },
   ],
   spells: [
     { id: 'lightning_spell', name: 'Lightning Spell', image: '/src/assets/spells/Lightning_Spell' },
@@ -66,6 +68,7 @@ export const BUILDING_SECTIONS = {
     { id: 'jump_spell', name: 'Jump Spell', image: '/src/assets/spells/Jump_Spell' },
     { id: 'freeze_spell', name: 'Freeze Spell', image: '/src/assets/spells/Freeze_Spell' },
     { id: 'clone_spell', name: 'Clone Spell', image: '/src/assets/spells/Clone_Spell' },
+    { id: 'invisibility_spell', name: 'Invisibility Spell', image: '/src/assets/spells/Invisibility_Spell' },
   ],
   dark_spells: [
     { id: 'poison_spell', name: 'Poison Spell', image: '/src/assets/spells/Poison_Spell' },
@@ -82,6 +85,7 @@ export const BUILDING_SECTIONS = {
     { id: 'witch', name: 'Witch', image: '/src/assets/Dark_Troops/Witch' },
     { id: 'lava_hound', name: 'Lava Hound', image: '/src/assets/Dark_Troops/Lava_Hound' },
     { id: 'bowler', name: 'Bowler', image: '/src/assets/Dark_Troops/Bowler' },
+    { id: 'ice_golem', name: 'Ice Golem', image: '/src/assets/Dark_Troops/Ice_Golem' },
   ],
   heroes: [
     { id: 'barbarian_king', name: 'Barbarian King', image: '/src/assets/Heros/Barbarian_King' },
@@ -113,6 +117,12 @@ export const BUILDING_SECTIONS = {
     { id: 'noble_iron', name: 'Noble Iron', hero: 'Minion Prince', image: '/src/assets/Equipment/Minion_Prince/Noble_Iron/219_0.png', levelCount: 1, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1, equipment_type: 'passive', equipment_rarity: 'common' },
     { id: 'dark_crown', name: 'Dark Crown', hero: 'Minion Prince', image: '/src/assets/Equipment/Minion_Prince/Dark_Crown/222.png', levelCount: 1, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1, equipment_type: 'passive', equipment_rarity: 'common' },
     { id: 'meteor_staff', name: 'Meteor Staff', hero: 'Minion Prince', image: '/src/assets/Equipment/Minion_Prince/Meteor_Staff/238.png', levelCount: 1, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1, equipment_type: 'active', equipment_rarity: 'epic' },
+    { id: 'eternal_tome', name: 'Eternal Tome', hero: 'Grand Warden', image: '/src/assets/Equipment/Grand_Warden/Eternal_Tome/165.png', levelCount: 1, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1, equipment_type: 'active', equipment_rarity: 'common' },
+    { id: 'life_gem', name: 'Life Gem', hero: 'Grand Warden', image: '/src/assets/Equipment/Grand_Warden/Life_Gem/166.png', levelCount: 1, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1, equipment_type: 'passive', equipment_rarity: 'common' },
+    { id: 'heroic_torch', name: 'Heroic Torch', hero: 'Grand Warden', image: '/src/assets/Equipment/Grand_Warden/Heroic_Torch/237.png', levelCount: 1, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1, equipment_type: 'active', equipment_rarity: 'epic' },
+    { id: 'fireball', name: 'Fireball', hero: 'Grand Warden', image: '/src/assets/Equipment/Grand_Warden/Fireball/176.png', levelCount: 1, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1, equipment_type: 'active', equipment_rarity: 'epic' },
+    { id: 'lavaloon_puppet', name: 'Lavaloon Puppet', hero: 'Grand Warden', image: '/src/assets/Equipment/Grand_Warden/Lavaloon_Puppet/199.png', levelCount: 1, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1, equipment_type: 'active', equipment_rarity: 'epic' },
+    { id: 'rage_gem', name: 'Rage Gem', hero: 'Grand Warden', image: '/src/assets/Equipment/Grand_Warden/Rage_Gem/168.png', levelCount: 1, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1, equipment_type: 'passive', equipment_rarity: 'common' },
   ],
   walls: [
     { id: 'walls', name: 'Walls', image: '/src/assets/Walls' },
@@ -1011,6 +1021,156 @@ export const getDefaultBuildingData = (townhallLevel) => {
         image_path: '/src/assets/Equipment/Barbarian_King/Vampstache/160.png',
         hero: 'Barbarian King',
         priority: 3,
+        buildings_unlocked: 1,
+        copy_unlocks: [true],
+        unlock_source: 'blacksmith',
+        blacksmith_level_unlocked: 1,
+        equipment_type: 'passive',
+        equipment_rarity: 'common',
+        levels: [
+          { level: 1, cost: 0, resource: 'glowy_ore', resource_options: ['glowy_ore'], resource_costs: createEquipmentResourceCosts(['glowy_ore', 0]), time: '0sec' },
+        ],
+      },
+    }
+  }
+
+  if (Number(townhallLevel) === 11) {
+    return {
+      eagle_artillery: {
+        id: 'eagle_artillery',
+        image_path: '/src/assets/Defences/Eagle_Artillery/20_',
+        buildings_unlocked: 1,
+        copy_unlocks: createCopyUnlocks(1, 1),
+        levels: [
+          { level: 1, cost: 0, resource: 'gold', time: '0sec' },
+        ],
+      },
+      tornado_trap: {
+        id: 'tornado_trap',
+        image_path: '/src/assets/Traps/Tornado_Trap/108_',
+        buildings_unlocked: 1,
+        copy_unlocks: createCopyUnlocks(1, 1),
+        levels: [
+          { level: 1, cost: 0, resource: 'gold', time: '0sec' },
+        ],
+      },
+      electro_dragon: {
+        id: 'electro_dragon',
+        image_path: '/src/assets/Troops/Electro_Dragon/103_',
+        copy_unlocks: [true],
+        barracks_level_unlocked: 13,
+        levels: [
+          { level: 1, cost: 0, resource: 'elixir', time: '0sec', lab_level_unlocked: 1 },
+        ],
+      },
+      ice_golem: {
+        id: 'ice_golem',
+        image_path: '/src/assets/Dark_Troops/Ice_Golem/111_',
+        copy_unlocks: [true],
+        dark_barracks_level_unlocked: 8,
+        levels: [
+          { level: 1, cost: 0, resource: 'dark_elixir', time: '0sec', lab_level_unlocked: 1 },
+        ],
+      },
+      invisibility_spell: {
+        id: 'invisibility_spell',
+        image_path: '/src/assets/spells/Invisibility_Spell/124_',
+        buildings_unlocked: 1,
+        copy_unlocks: createCopyUnlocks(1, 1),
+        spell_factory_level_unlocked: 7,
+        levels: [
+          { level: 1, cost: 0, resource: 'elixir', time: '0sec', lab_level_unlocked: 1 },
+        ],
+      },
+      grand_warden: {
+        id: 'grand_warden',
+        image_path: '/src/assets/Heros/Grand_Warden/63_',
+        copy_unlocks: [true],
+        hero_hall_level_unlocked: 2,
+        levels: [
+          { level: 1, cost: 0, resource: 'elixir', time: '0sec', hero_hall_level_unlocked: 2 },
+        ],
+      },
+      eternal_tome: {
+        id: 'eternal_tome',
+        image_path: '/src/assets/Equipment/Grand_Warden/Eternal_Tome/165.png',
+        hero: 'Grand Warden',
+        priority: 1,
+        buildings_unlocked: 1,
+        copy_unlocks: [true],
+        unlock_source: 'blacksmith',
+        blacksmith_level_unlocked: 1,
+        equipment_type: 'active',
+        equipment_rarity: 'common',
+        levels: [
+          { level: 1, cost: 0, resource: 'glowy_ore', resource_options: ['glowy_ore'], resource_costs: createEquipmentResourceCosts(['glowy_ore', 0]), time: '0sec' },
+        ],
+      },
+      life_gem: {
+        id: 'life_gem',
+        image_path: '/src/assets/Equipment/Grand_Warden/Life_Gem/166.png',
+        hero: 'Grand Warden',
+        priority: 2,
+        buildings_unlocked: 1,
+        copy_unlocks: [true],
+        unlock_source: 'blacksmith',
+        blacksmith_level_unlocked: 1,
+        equipment_type: 'passive',
+        equipment_rarity: 'common',
+        levels: [
+          { level: 1, cost: 0, resource: 'glowy_ore', resource_options: ['glowy_ore'], resource_costs: createEquipmentResourceCosts(['glowy_ore', 0]), time: '0sec' },
+        ],
+      },
+      heroic_torch: {
+        id: 'heroic_torch',
+        image_path: '/src/assets/Equipment/Grand_Warden/Heroic_Torch/237.png',
+        hero: 'Grand Warden',
+        priority: 3,
+        buildings_unlocked: 1,
+        copy_unlocks: [true],
+        unlock_source: 'blacksmith',
+        blacksmith_level_unlocked: 1,
+        equipment_type: 'active',
+        equipment_rarity: 'epic',
+        levels: [
+          { level: 1, cost: 0, resource: 'glowy_ore', resource_options: ['glowy_ore'], resource_costs: createEquipmentResourceCosts(['glowy_ore', 0]), time: '0sec' },
+        ],
+      },
+      fireball: {
+        id: 'fireball',
+        image_path: '/src/assets/Equipment/Grand_Warden/Fireball/176.png',
+        hero: 'Grand Warden',
+        priority: 4,
+        buildings_unlocked: 1,
+        copy_unlocks: [true],
+        unlock_source: 'blacksmith',
+        blacksmith_level_unlocked: 1,
+        equipment_type: 'active',
+        equipment_rarity: 'epic',
+        levels: [
+          { level: 1, cost: 0, resource: 'glowy_ore', resource_options: ['glowy_ore'], resource_costs: createEquipmentResourceCosts(['glowy_ore', 0]), time: '0sec' },
+        ],
+      },
+      lavaloon_puppet: {
+        id: 'lavaloon_puppet',
+        image_path: '/src/assets/Equipment/Grand_Warden/Lavaloon_Puppet/199.png',
+        hero: 'Grand Warden',
+        priority: 5,
+        buildings_unlocked: 1,
+        copy_unlocks: [true],
+        unlock_source: 'blacksmith',
+        blacksmith_level_unlocked: 1,
+        equipment_type: 'active',
+        equipment_rarity: 'epic',
+        levels: [
+          { level: 1, cost: 0, resource: 'glowy_ore', resource_options: ['glowy_ore'], resource_costs: createEquipmentResourceCosts(['glowy_ore', 0]), time: '0sec' },
+        ],
+      },
+      rage_gem: {
+        id: 'rage_gem',
+        image_path: '/src/assets/Equipment/Grand_Warden/Rage_Gem/168.png',
+        hero: 'Grand Warden',
+        priority: 6,
         buildings_unlocked: 1,
         copy_unlocks: [true],
         unlock_source: 'blacksmith',

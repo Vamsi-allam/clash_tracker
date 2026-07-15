@@ -989,6 +989,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
                 if (defence.id === 'air_bomb') return `26_${maxLevel}`
                 if (defence.id === 'seeking_air_mine') return `29_${maxLevel}`
                 if (defence.id === 'spring_trap') return `30_${maxLevel}`
+                if (defence.id === 'tornado_trap') return `108_${maxLevel}`
                 if (defence.id === 'mortar') return `23_${maxLevel}`
                 if (defence.id === 'bomb_tower') return `17_${maxLevel}`
                 if (defence.id === 'wizard_tower') return `24_${maxLevel}`
@@ -996,6 +997,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
                 if (defence.id === 'air_sweeper') return `15_${maxLevel}`
                 if (defence.id === 'hidden_tesla') return `21_${maxLevel}`
                 if (defence.id === 'x_bow') return `25_${maxLevel}`
+                if (defence.id === 'eagle_artillery') return `20_${maxLevel}`
                 if (defence.id === 'inferno_tower') return `22_${maxLevel}`
                 if (defence.id === 'lab') return `13_${maxLevel}`
                 if (defence.id === 'hero_hall') return `202_${maxLevel}`
@@ -1025,6 +1027,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
                 if (defence.id === 'pekka') return `40_${maxLevel}`
                 if (defence.id === 'baby_dragon') return `41_${maxLevel}`
                 if (defence.id === 'miner') return `42_${maxLevel}`
+                if (defence.id === 'electro_dragon') return `103_${maxLevel}`
                 if (defence.id === 'minion') return `53_${maxLevel}`
                 if (defence.id === 'hog_rider') return `54_${maxLevel}`
                 if (defence.id === 'valkyrie') return `55_${maxLevel}`
@@ -1032,6 +1035,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
                 if (defence.id === 'witch') return `57_${maxLevel}`
                 if (defence.id === 'lava_hound') return `58_${maxLevel}`
                 if (defence.id === 'bowler') return `59_${maxLevel}`
+                if (defence.id === 'ice_golem') return `111_${maxLevel}`
                 if (defence.id === 'blacksmith') return `152_${maxLevel}`
                 if (defence.id === 'lightning_spell') return '43'
                 if (defence.id === 'healing_spell') return '44'
@@ -1044,6 +1048,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
                 if (defence.id === 'haste_spell') return '51'
                 if (defence.id === 'skeleton_spell') return '52'
                 if (defence.id === 'bat_spell') return '110'
+                if (defence.id === 'invisibility_spell') return '124'
                 if (defence.id === 'barbarian_king') return '61'
                 if (defence.id === 'archer_queen') return '62'
                 if (defence.id === 'grand_warden') return '63'
