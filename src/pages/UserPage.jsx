@@ -4830,17 +4830,33 @@ export default function UserPage({ username, onLogout, userId }) {
 
               {showLabAssistBox && (
                 <div className={styles.labAssistBox}>
-                  <div className={styles.labAssistLine}>
-                    <span className={styles.labAssistLabel}>Lab Assistant:</span>
-                    <span className={styles.labAssistStatus}>Now</span>
+                  <div className={styles.labAssistItem}>
+                    <div className={styles.labAssistLine}>
+                      <span className={styles.labAssistLabel}>Lab Assistant:</span>
+                      <span className={styles.labAssistStatus}>Now</span>
+                    </div>
+                    <button
+                      type="button"
+                      className={styles.labAssistUnlockBtn}
+                      onClick={() => showToast('Lab Assist unlock coming soon.', 'success')}
+                    >
+                      Unlock
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    className={styles.labAssistUnlockBtn}
-                    onClick={() => showToast('Lab Assist unlock coming soon.', 'success')}
-                  >
-                    Unlock
-                  </button>
+
+                  <div className={styles.labAssistItem}>
+                    <div className={styles.labAssistLine}>
+                      <span className={styles.labAssistLabel}>Builder's Apprentice:</span>
+                      <span className={styles.labAssistStatus}>Now</span>
+                    </div>
+                    <button
+                      type="button"
+                      className={styles.labAssistUnlockBtn}
+                      onClick={() => showToast("Builder's Apprentice unlock coming soon.", 'success')}
+                    >
+                      Unlock
+                    </button>
+                  </div>
                 </div>
               )}
 
