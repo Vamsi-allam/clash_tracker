@@ -10,6 +10,7 @@ import { formatResourceCostBreakdown, getLevelResourceOptions, normalizeResource
 
 const EQUIPMENT_RESOURCE_KEYS = ['shiny_ore', 'glowy_ore', 'starry_ore']
 const EQUIPMENT_HERO_OPTIONS = BUILDING_SECTIONS.heroes.map((building) => building.name)
+const EQUIPMENT_LEVELS_CLIPBOARD_KEY = 'clash_tracker_equipment_levels_clipboard'
 
 const RESOURCE_ICONS = {
   gold: '/src/assets/magic-items/gold.png',
@@ -281,6 +282,53 @@ const normalizeEquipmentLevels = (count, sourceLevels = []) =>
     return createEquipmentLevelDraft(levelNumber, source || fallback)
   })
 
+const serializeEquipmentLevelsForClipboard = (levels = []) =>
+  (Array.isArray(levels) ? levels : []).map((levelInfo, index) => {
+    const normalizedLevel = createEquipmentLevelDraft(
+      Number(levelInfo?.level ?? index + 1) || (index + 1),
+      levelInfo || {},
+    )
+
+    return {
+      level: Number(normalizedLevel.level || index + 1) || (index + 1),
+      cost: Number(normalizedLevel.cost ?? 0),
+      costDisplay: Number(normalizedLevel.costDisplay ?? normalizedLevel.cost ?? 0),
+      costMagnitude: normalizedLevel.costMagnitude || '',
+      resource: String(normalizedLevel.resource || 'glowy_ore').trim().toLowerCase() || 'glowy_ore',
+      resource_options: Array.isArray(normalizedLevel.resource_options) ? [...normalizedLevel.resource_options] : [],
+      resource_costs: normalizeResourceCosts(normalizedLevel, 'glowy_ore'),
+      blacksmith_level_unlocked: Number(normalizedLevel.blacksmith_level_unlocked ?? 0),
+      time: '0sec',
+    }
+  })
+
+const readEquipmentLevelsClipboard = () => {
+  if (typeof window === 'undefined') return null
+
+  try {
+    const rawValue = window.localStorage.getItem(EQUIPMENT_LEVELS_CLIPBOARD_KEY)
+    if (!rawValue) return null
+
+    const parsedValue = JSON.parse(rawValue)
+    if (!Array.isArray(parsedValue?.levels) || parsedValue.levels.length === 0) return null
+
+    return {
+      sourceBuildingId: String(parsedValue.sourceBuildingId || '').trim(),
+      sourceBuildingName: String(parsedValue.sourceBuildingName || '').trim(),
+      levels: serializeEquipmentLevelsForClipboard(parsedValue.levels),
+      copiedAt: parsedValue.copiedAt || null,
+    }
+  } catch {
+    return null
+  }
+}
+
+const writeEquipmentLevelsClipboard = (payload) => {
+  if (typeof window === 'undefined') return
+
+  window.localStorage.setItem(EQUIPMENT_LEVELS_CLIPBOARD_KEY, JSON.stringify(payload))
+}
+
 const getDefaultEquipmentData = (buildingId) => {
   const equipment = EQUIPMENT_BUILDINGS[buildingId]
   if (!equipment) return {}
@@ -353,6 +401,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
   const [editingEquipmentType, setEditingEquipmentType] = useState('active')
   const [editingEquipmentRarity, setEditingEquipmentRarity] = useState('common')
   const [editingBlacksmithLevelUnlocked, setEditingBlacksmithLevelUnlocked] = useState(1)
+  const [equipmentLevelsClipboard, setEquipmentLevelsClipboard] = useState(() => readEquipmentLevelsClipboard())
   const [savingLoading, setSavingLoading] = useState(false)
   const [toast, setToast] = useState({ open: false, message: '', severity: 'success' })
   const equipmentUnlockSource = isEquipmentBuilding
@@ -659,6 +708,41 @@ export default function BuildingEditorPage({ username, onLogout }) {
 
   const handleEditingEquipmentRarityChange = (value) => {
     setEditingEquipmentRarity(normalizeEquipmentRarity(value))
+  }
+
+  const handleCopyEquipmentLevels = () => {
+    const sourceLevels = serializeEquipmentLevelsForClipboard(editingLevels.length > 0 ? editingLevels : currentDynamicLevel)
+
+    if (sourceLevels.length === 0) {
+      showToast('No equipment levels available to copy.', 'error')
+      return
+    }
+
+    const clipboardPayload = {
+      sourceBuildingId: String(buildingId || '').trim(),
+      sourceBuildingName: String(defence?.name || buildingId || 'Equipment').trim(),
+      levels: sourceLevels,
+      copiedAt: new Date().toISOString(),
+    }
+
+    writeEquipmentLevelsClipboard(clipboardPayload)
+    setEquipmentLevelsClipboard(clipboardPayload)
+    showToast(`Copied ${sourceLevels.length} equipment levels from ${clipboardPayload.sourceBuildingName}.`, 'success')
+  }
+
+  const handlePasteEquipmentLevels = () => {
+    const clipboardPayload = readEquipmentLevelsClipboard()
+
+    if (!clipboardPayload?.levels?.length) {
+      showToast('No copied equipment levels found to paste.', 'error')
+      return
+    }
+
+    const normalizedClipboardLevels = normalizeEquipmentLevels(clipboardPayload.levels.length, clipboardPayload.levels)
+    setEditingLevelCount(normalizedClipboardLevels.length)
+    setEditingLevels(normalizedClipboardLevels)
+    setEquipmentLevelsClipboard(clipboardPayload)
+    showToast(`Pasted ${normalizedClipboardLevels.length} equipment levels from ${clipboardPayload.sourceBuildingName || 'clipboard'}.`, 'success')
   }
 
   const handleToggleCopyUnlock = (copyIndex) => {
@@ -1175,6 +1259,26 @@ export default function BuildingEditorPage({ username, onLogout }) {
                         className={styles.headingCountInput}
                       />
                     </>
+                  )}
+                  <button
+                    type="button"
+                    className={styles.levelClipboardBtn}
+                    onClick={handleCopyEquipmentLevels}
+                  >
+                    Copy Levels
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.levelClipboardBtn}
+                    onClick={handlePasteEquipmentLevels}
+                    disabled={!equipmentLevelsClipboard?.levels?.length}
+                  >
+                    Paste Levels
+                  </button>
+                  {equipmentLevelsClipboard?.levels?.length > 0 && (
+                    <span className={styles.levelClipboardMeta}>
+                      Source: {equipmentLevelsClipboard.sourceBuildingName || 'Copied equipment'} ({equipmentLevelsClipboard.levels.length} levels)
+                    </span>
                   )}
                 </div>
               )}

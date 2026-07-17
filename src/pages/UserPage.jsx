@@ -3311,7 +3311,7 @@ export default function UserPage({ username, onLogout, userId }) {
     const upgradeListClassName = activeLoadedTab === 'equipment'
       ? `${styles.readOnlyUpgradeList} ${styles.readOnlyUpgradeListEquipment}`
       : styles.readOnlyUpgradeList
-    const hideLevelOneInUpgradeList = ['troops', 'dark_troops', 'spells', 'dark_spells', 'equipment'].includes(activeLoadedTab)
+    const hideLevelOneInUpgradeList = ['troops', 'dark_troops', 'spells', 'dark_spells', 'heroes', 'equipment'].includes(activeLoadedTab)
     const getVisibleUpgradeLevels = (levels = []) => (
       hideLevelOneInUpgradeList
         ? levels.filter((levelInfo) => Number(levelInfo?.level) !== 1)
@@ -3445,6 +3445,11 @@ export default function UserPage({ username, onLogout, userId }) {
               const heroRowImageLevel = heroRowLevel
 
               if (!heroUnlocked) {
+                const heroLockedPreviewLevels = getVisibleUpgradeLevels(getNextUpgradeLevels(building, 0))
+                const heroLockedPreviewTotalCost = heroLockedPreviewLevels.reduce((total, levelInfo) => total + Number(levelInfo.cost || 0), 0)
+                const heroLockedPreviewTotalSeconds = heroLockedPreviewLevels.reduce((total, levelInfo) => total + getTimeSeconds(levelInfo.time), 0)
+                const heroLockedPreviewResource = heroLockedPreviewLevels[0]?.resource || 'dark_elixir'
+
                 return (
                   <section key={cardKey} className={`${styles.defenceCard} ${styles.readOnlyBuildingBlock}`}>
                     <div className={styles.readOnlyCardGrid} style={tableRowStyle}>
@@ -3482,8 +3487,47 @@ export default function UserPage({ username, onLogout, userId }) {
                           </div>
 
                           <div className={styles.readOnlyTroopDetails}>
-                            <div className={`${styles.readOnlyUpgradeSummary} ${styles.readOnlyTroopLockedSummary}`}>
-                              <span>Requires Hero Hall level {heroHallRequirement} to unlock</span>
+                            <div className={styles.readOnlyUpgradeProgressBlock}>
+                              {heroLockedPreviewLevels.length > 0 && (
+                                <>
+                                  <div className={styles.readOnlyUpgradeList}>
+                                    {heroLockedPreviewLevels.map((levelInfo) => (
+                                      <div key={`${building.id}-hero-locked-preview-lvl-${levelInfo.level}`} className={styles.readOnlyUpgradeItem}>
+                                        <span className={styles.readOnlyUpgradeResourceLabel}>
+                                          {upgradeResourceIcons[String(levelInfo.resource || '').trim().toLowerCase()] ? (
+                                            <img
+                                              src={upgradeResourceIcons[String(levelInfo.resource || '').trim().toLowerCase()]}
+                                              alt={getUpgradeResourceLabel(levelInfo.resource)}
+                                              className={styles.readOnlyUpgradeResourceIcon}
+                                            />
+                                          ) : null}
+                                        </span>
+                                        <span className={`${styles.readOnlyUpgradeLevel} ${Number(levelInfo.hero_hall_level_unlocked ?? 0) > Number(currentHeroHallLevel || 0) ? styles.readOnlyUpgradeLevelLocked : ''}`}>
+                                          Lvl {levelInfo.level}:
+                                        </span>
+                                        <span className={`${styles.readOnlyUpgradeCost} ${getUpgradeResourceClass(levelInfo.resource)}`}>
+                                          {formatNumberShort(levelInfo.cost)}
+                                        </span>
+                                        <span className={styles.readOnlyUpgradeTime}>{formatUpgradeTime(levelInfo.time)}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+
+                                  <div className={styles.readOnlyUpgradeSummary}>
+                                    <span>{heroLockedPreviewLevels.length} Levels</span>
+                                    <span>-</span>
+                                    <span className={`${styles.readOnlyUpgradeCost} ${getUpgradeResourceClass(heroLockedPreviewResource)}`}>
+                                      {formatNumberShort(heroLockedPreviewTotalCost)}
+                                    </span>
+                                    <span>-</span>
+                                    <span>{formatSeconds(heroLockedPreviewTotalSeconds)}</span>
+                                  </div>
+                                </>
+                              )}
+
+                              <div className={`${styles.readOnlyUpgradeSummary} ${styles.readOnlyTroopLockedSummary}`}>
+                                <span>Requires Hero Hall level {heroHallRequirement} to unlock</span>
+                              </div>
                             </div>
                           </div>
                         </div>
