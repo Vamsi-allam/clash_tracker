@@ -1230,6 +1230,24 @@ export const getDefaultBuildingData = (townhallLevel) => {
           { level: 1, cost: 0, resource: 'elixir', time: '0sec', lab_level_unlocked: 1 },
         ],
       },
+      battle_blimp: {
+        id: 'battle_blimp',
+        image_path: '/src/assets/Seige_machines/Battle_Blimp/106_',
+        copy_unlocks: [true],
+        workshop_level_unlocked: 2,
+        levels: [
+          { level: 1, cost: 0, resource: 'elixir', time: '0sec', lab_level_unlocked: 1 },
+        ],
+      },
+      stone_slammer: {
+        id: 'stone_slammer',
+        image_path: '/src/assets/Seige_machines/Stone_Slammer/109_',
+        copy_unlocks: [true],
+        workshop_level_unlocked: 3,
+        levels: [
+          { level: 1, cost: 0, resource: 'elixir', time: '0sec', lab_level_unlocked: 1 },
+        ],
+      },
     }
   }
 
