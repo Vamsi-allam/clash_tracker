@@ -377,10 +377,14 @@ export default function BuildingEditorPage({ username, onLogout }) {
   const isEditingRef = useRef(false)
   const isWallBuilding = buildingId === 'walls'
   const isDarkTroopBuilding = BUILDING_SECTIONS.dark_troops.some((building) => building.id === buildingId)
+  const isSiegeBuilding = BUILDING_SECTIONS.sieges.some((building) => building.id === buildingId)
   const isDarkSpellBuilding = DARK_SPELL_BUILDING_IDS.has(buildingId)
-  const isTroopBuilding = BUILDING_SECTIONS.troops.some((building) => building.id === buildingId) || isDarkTroopBuilding
+  const isTroopBuilding = BUILDING_SECTIONS.troops.some((building) => building.id === buildingId) || isDarkTroopBuilding || isSiegeBuilding
   const isSpellBuilding = BUILDING_SECTIONS.spells.some((building) => building.id === buildingId) || isDarkSpellBuilding
   const spellFactoryUnlockKey = isDarkSpellBuilding ? 'dark_spell_factory_level_unlocked' : 'spell_factory_level_unlocked'
+  const troopUnlockKey = isSiegeBuilding ? 'workshop_level_unlocked' : isDarkTroopBuilding ? 'dark_barracks_level_unlocked' : 'barracks_level_unlocked'
+  const troopUnlockSourceLabel = isSiegeBuilding ? 'Workshop' : isDarkTroopBuilding ? 'Dark Barracks' : 'Barracks'
+  const troopUnlockMinTownhall = isSiegeBuilding ? 12 : isDarkTroopBuilding ? 7 : 3
   const isTroopLikeBuilding = isTroopBuilding || isSpellBuilding
   const isHeroBuilding = BUILDING_SECTIONS.heroes.some((building) => building.id === buildingId)
   const equipmentMeta = EQUIPMENT_BUILDINGS[buildingId]
@@ -489,9 +493,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
           : isHeroBuilding || isEquipmentBuilding
             ? normalizeTroopLevelCount(resolvedLevels, resolvedLevels.length || 1)
             : Math.max(1, resolvedLevels.length || 1)
-        const initialBarracksLevelUnlocked = isDarkTroopBuilding
-          ? Number(buildingData?.dark_barracks_level_unlocked ?? staticBuildingData.dark_barracks_level_unlocked ?? 1) || 1
-          : Number(buildingData?.barracks_level_unlocked ?? staticBuildingData.barracks_level_unlocked ?? 1) || 1
+        const initialBarracksLevelUnlocked = Number(buildingData?.[troopUnlockKey] ?? staticBuildingData[troopUnlockKey] ?? 1) || 1
         const initialSpellFactoryLevelUnlocked = Number(buildingData?.[spellFactoryUnlockKey] ?? staticBuildingData[spellFactoryUnlockKey] ?? 1) || 1
         const initialHeroHallLevelUnlocked = Number(buildingData?.hero_hall_level_unlocked ?? staticBuildingData.hero_hall_level_unlocked ?? 1) || 1
         const initialBlacksmithLevelUnlocked = Number(buildingData?.blacksmith_level_unlocked ?? staticBuildingData.blacksmith_level_unlocked ?? 0) || 0
@@ -550,9 +552,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
                       ? normalizeEquipmentLevels(draftLevelCount, draftLevels)
                       : normalizeBuildingLevels(draftLevelCount, draftLevels),
               ...(isTroopBuilding
-                ? (isDarkTroopBuilding
-                    ? { dark_barracks_level_unlocked: Number(staticBuildingData.dark_barracks_level_unlocked ?? 1) || 1 }
-                    : { barracks_level_unlocked: Number(staticBuildingData.barracks_level_unlocked ?? 1) || 1 })
+                ? { [troopUnlockKey]: Number(staticBuildingData[troopUnlockKey] ?? 1) || 1 }
                 : {}),
               ...(isSpellBuilding ? { [spellFactoryUnlockKey]: Number(staticBuildingData[spellFactoryUnlockKey] ?? 1) || 1 } : {}),
               ...(isHeroBuilding ? { hero_hall_level_unlocked: Number(staticBuildingData.hero_hall_level_unlocked ?? 1) || 1 } : {}),
@@ -578,9 +578,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
             setEditingBuildingCount(draftCount)
             setEditingLevelCount(draftLevelCount)
             setEditingBarracksLevelUnlocked(
-              isDarkTroopBuilding
-                ? Number(staticBuildingData.dark_barracks_level_unlocked ?? 1) || 1
-                : Number(staticBuildingData.barracks_level_unlocked ?? 1) || 1
+              Number(staticBuildingData[troopUnlockKey] ?? 1) || 1
             )
             setEditingSpellFactoryLevelUnlocked(Number(staticBuildingData[spellFactoryUnlockKey] ?? 1) || 1)
             setEditingHeroHallLevelUnlocked(Number(staticBuildingData.hero_hall_level_unlocked ?? 1) || 1)
@@ -602,7 +600,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
     }
 
     fetchData()
-  }, [townhallLevel, buildingId, isDarkTroopBuilding, spellFactoryUnlockKey])
+  }, [townhallLevel, buildingId, troopUnlockKey, spellFactoryUnlockKey])
 
   const isLevelMatching = (staticLevel, dynamicLevel) => {
     if (!staticLevel || !dynamicLevel) return false
@@ -847,9 +845,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
         copy_unlocks: isTroopLikeBuilding ? createCopyUnlocks(1, 1) : normalizeCopyUnlocks(editingBuildingCount, editingCopyUnlocks, true),
         levels: normalizedLevelsWithWallResources,
         ...(isTroopBuilding
-          ? (isDarkTroopBuilding
-              ? { dark_barracks_level_unlocked: editingBarracksLevelUnlocked }
-              : { barracks_level_unlocked: editingBarracksLevelUnlocked })
+          ? { [troopUnlockKey]: editingBarracksLevelUnlocked }
           : {}),
         ...(isSpellBuilding ? { [spellFactoryUnlockKey]: editingSpellFactoryLevelUnlocked } : {}),
         ...(isHeroBuilding ? { hero_hall_level_unlocked: editingHeroHallLevelUnlocked } : {}),
@@ -872,6 +868,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
         troops: inheritedTownhallData.troops || [],
         spells: inheritedTownhallData.spells || [],
         dark_troops: inheritedTownhallData.dark_troops || [],
+        sieges: inheritedTownhallData.sieges || [],
         heroes: inheritedTownhallData.heroes || [],
         equipment: inheritedTownhallData.equipment || [],
         walls: inheritedTownhallData.walls || {},
@@ -911,9 +908,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
         copy_unlocks: isTroopLikeBuilding ? createCopyUnlocks(1, 1) : normalizeCopyUnlocks(editingBuildingCount, editingCopyUnlocks, true),
         levels: normalizedLevelsWithWallResources,
         ...(isTroopBuilding
-          ? (isDarkTroopBuilding
-              ? { dark_barracks_level_unlocked: editingBarracksLevelUnlocked }
-              : { barracks_level_unlocked: editingBarracksLevelUnlocked })
+          ? { [troopUnlockKey]: editingBarracksLevelUnlocked }
           : {}),
         ...(isSpellBuilding ? { [spellFactoryUnlockKey]: editingSpellFactoryLevelUnlocked } : {}),
         ...(isHeroBuilding ? { hero_hall_level_unlocked: editingHeroHallLevelUnlocked } : {}),
@@ -969,11 +964,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
   const troopCountLabel = isTroopLikeBuilding ? 'Level Count' : 'Count'
   const levelCountLabel = 'Level Count'
   const troopBarracksLevel = isTroopBuilding
-    ? Number(
-      isDarkTroopBuilding
-        ? (dynamicData.dark_barracks_level_unlocked || staticData.dark_barracks_level_unlocked || 1)
-        : (dynamicData.barracks_level_unlocked || staticData.barracks_level_unlocked || 1)
-    )
+    ? Number(dynamicData[troopUnlockKey] || staticData[troopUnlockKey] || 1)
     : 0
   const spellFactoryUnlockLevel = isSpellBuilding
     ? Number(dynamicData[spellFactoryUnlockKey] || staticData[spellFactoryUnlockKey] || 1)
@@ -1006,7 +997,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
     if (editingLevels.length !== (dynamicData.levels || []).length) {
       return true
     }
-    if (isTroopBuilding && Number(editingBarracksLevelUnlocked) !== Number(isDarkTroopBuilding ? (dynamicData.dark_barracks_level_unlocked || 1) : (dynamicData.barracks_level_unlocked || 1))) {
+    if (isTroopBuilding && Number(editingBarracksLevelUnlocked) !== Number(dynamicData[troopUnlockKey] || 1)) {
       return true
     }
     if (isSpellBuilding && Number(editingSpellFactoryLevelUnlocked) !== Number(dynamicData[spellFactoryUnlockKey] || 1)) {
@@ -1088,6 +1079,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
                 if (defence.id === 'army_camp') return `10_${maxLevel}`
                 if (defence.id === 'spell_factory') return `11_${maxLevel}`
                 if (defence.id === 'dark_spell_factory') return `12_${maxLevel}`
+                if (defence.id === 'workshop') return `104_${maxLevel}`
                 if (defence.id === 'barracks') return `8_${maxLevel}`
                 if (defence.id === 'dark_barracks') return `9_${maxLevel}`
                 if (defence.id === 'clan_castle') return `19_${maxLevel}`
@@ -1120,6 +1112,14 @@ export default function BuildingEditorPage({ username, onLogout }) {
                 if (defence.id === 'lava_hound') return `58_${maxLevel}`
                 if (defence.id === 'bowler') return `59_${maxLevel}`
                 if (defence.id === 'ice_golem') return `111_${maxLevel}`
+                if (defence.id === 'wall_wrecker') return `105_${maxLevel}`
+                if (defence.id === 'battle_blimp') return `106_${maxLevel}`
+                if (defence.id === 'stone_slammer') return `109_${maxLevel}`
+                if (defence.id === 'siege_barracks') return `120_${maxLevel}`
+                if (defence.id === 'log_launcher') return `125_${maxLevel}`
+                if (defence.id === 'flame_flinger') return `134_${maxLevel}`
+                if (defence.id === 'battle_drill') return `139_${maxLevel}`
+                if (defence.id === 'troop_launcher') return `215_${maxLevel}`
                 if (defence.id === 'blacksmith') return `152_${maxLevel}`
                 if (defence.id === 'lightning_spell') return '43'
                 if (defence.id === 'healing_spell') return '44'
@@ -1205,7 +1205,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
                 )}
                 {isTroopBuilding && (
                   <span style={{ fontSize: '0.75rem', color: 'var(--muted)', marginLeft: '8px' }}>
-                    {isDarkTroopBuilding ? 'Dark Barracks' : 'Barracks'} level needed: {troopBarracksLevel}
+                    {troopUnlockSourceLabel} level needed: {troopBarracksLevel}
                   </span>
                 )}
               </div>
@@ -1380,9 +1380,9 @@ export default function BuildingEditorPage({ username, onLogout }) {
                         />
                       </>
                     )}
-                    {isTroopBuilding && (isDarkTroopBuilding ? Number(townhallLevel) >= 7 : Number(townhallLevel) >= 3) && (
+                    {isTroopBuilding && Number(townhallLevel) >= troopUnlockMinTownhall && (
                       <>
-                        <span style={{ fontSize: '0.75rem', color: 'var(--muted)', marginLeft: '12px' }}>{isDarkTroopBuilding ? 'Dark Barracks level:' : 'Barracks level:'}</span>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--muted)', marginLeft: '12px' }}>{troopUnlockSourceLabel} level:</span>
                         <input
                           type="number"
                           value={editingBarracksLevelUnlocked}
@@ -1420,7 +1420,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
                 )}
                 {isTroopBuilding && (
                   <span style={{ fontSize: '0.75rem', color: 'var(--muted)', marginLeft: '8px' }}>
-                    {isDarkTroopBuilding ? 'Dark Barracks' : 'Barracks'} level needed: {troopBarracksLevel}
+                    {troopUnlockSourceLabel} level needed: {troopBarracksLevel}
                   </span>
                 )}
                 {isSpellBuilding && (

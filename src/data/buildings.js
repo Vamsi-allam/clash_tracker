@@ -33,6 +33,7 @@ export const BUILDING_SECTIONS = {
     { id: 'clan_castle', name: 'Clan Castle', image: '/src/assets/Army/clan_castle' },
     { id: 'spell_factory', name: 'Spell Factory', image: '/src/assets/Army/Spell_Factory' },
     { id: 'dark_spell_factory', name: 'Dark Spell Factory', image: '/src/assets/Army/Dark_Spell_Factory' },
+    { id: 'workshop', name: 'Workshop', image: '/src/assets/Army/Workshop' },
     { id: 'lab', name: 'Lab', image: '/src/assets/Army/Lab' },
     { id: 'hero_hall', name: 'Hero Hall', image: '/src/assets/Army/Hero_Hall' },
     { id: 'blacksmith', name: 'Blacksmith', image: '/src/assets/Army/Blacksmith' },
@@ -87,6 +88,16 @@ export const BUILDING_SECTIONS = {
     { id: 'bowler', name: 'Bowler', image: '/src/assets/Dark_Troops/Bowler' },
     { id: 'ice_golem', name: 'Ice Golem', image: '/src/assets/Dark_Troops/Ice_Golem' },
   ],
+  sieges: [
+    { id: 'wall_wrecker', name: 'Wall Wrecker', image: '/src/assets/Seige_machines/Wall_Wrecker' },
+    { id: 'battle_blimp', name: 'Battle Blimp', image: '/src/assets/Seige_machines/Battle_Blimp' },
+    { id: 'stone_slammer', name: 'Stone Slammer', image: '/src/assets/Seige_machines/Stone_Slammer' },
+    { id: 'siege_barracks', name: 'Siege Barracks', image: '/src/assets/Seige_machines/Siege_Barracks' },
+    { id: 'log_launcher', name: 'Log Launcher', image: '/src/assets/Seige_machines/Log_Launcher' },
+    { id: 'flame_flinger', name: 'Flame Flinger', image: '/src/assets/Seige_machines/Flame_Flinger' },
+    { id: 'battle_drill', name: 'Battle Drill', image: '/src/assets/Seige_machines/Battle_Drill' },
+    { id: 'troop_launcher', name: 'Troop Launcher', image: '/src/assets/Seige_machines/Troop_Launcher' },
+  ],
   heroes: [
     { id: 'barbarian_king', name: 'Barbarian King', image: '/src/assets/Heros/Barbarian_King' },
     { id: 'archer_queen', name: 'Archer Queen', image: '/src/assets/Heros/Archer_Queen' },
@@ -138,6 +149,7 @@ export const ADMIN_BUILDINGS_BY_CATEGORY = {
   spells: BUILDING_SECTIONS.spells,
   dark_spells: BUILDING_SECTIONS.dark_spells,
   dark_troops: BUILDING_SECTIONS.dark_troops,
+  sieges: BUILDING_SECTIONS.sieges,
   heroes: BUILDING_SECTIONS.heroes,
   equipment: BUILDING_SECTIONS.equipment,
   walls: BUILDING_SECTIONS.walls,
@@ -152,12 +164,14 @@ export const ALL_BUILDINGS = [
   ...BUILDING_SECTIONS.spells,
   ...BUILDING_SECTIONS.dark_spells,
   ...BUILDING_SECTIONS.dark_troops,
+  ...BUILDING_SECTIONS.sieges,
   ...BUILDING_SECTIONS.heroes,
   ...BUILDING_SECTIONS.walls,
 ]
 
 export const TROOP_BUILDING_IDS = new Set(BUILDING_SECTIONS.troops.map((building) => building.id))
 export const DARK_TROOP_BUILDING_IDS = new Set(BUILDING_SECTIONS.dark_troops.map((building) => building.id))
+export const SIEGE_BUILDING_IDS = new Set(BUILDING_SECTIONS.sieges.map((building) => building.id))
 export const SPELL_BUILDING_IDS = new Set([
   ...BUILDING_SECTIONS.spells.map((building) => building.id),
   ...BUILDING_SECTIONS.dark_spells.map((building) => building.id),
@@ -172,6 +186,10 @@ export const TROOP_BARRACKS_REQUIREMENTS = Object.fromEntries(
 
 export const DARK_TROOP_BARRACKS_REQUIREMENTS = Object.fromEntries(
   BUILDING_SECTIONS.dark_troops.map((building, index) => [building.id, index + 1]),
+)
+
+export const SIEGE_WORKSHOP_REQUIREMENTS = Object.fromEntries(
+  BUILDING_SECTIONS.sieges.map((building, index) => [building.id, index + 1]),
 )
 
 export const SPELL_FACTORY_REQUIREMENTS = Object.fromEntries(
@@ -191,6 +209,7 @@ export const getBuildingCategory = (buildingId) => {
   if (BUILDING_SECTIONS.dark_spells.some((building) => building.id === buildingId)) return 'spells'
   if (BUILDING_SECTIONS.spells.some((building) => building.id === buildingId)) return 'spells'
   if (BUILDING_SECTIONS.dark_troops.some((building) => building.id === buildingId)) return 'dark_troops'
+  if (BUILDING_SECTIONS.sieges.some((building) => building.id === buildingId)) return 'sieges'
   if (BUILDING_SECTIONS.heroes.some((building) => building.id === buildingId)) return 'heroes'
   if (BUILDING_SECTIONS.walls.some((building) => building.id === buildingId)) return 'walls'
   return 'defences'
@@ -1179,6 +1198,36 @@ export const getDefaultBuildingData = (townhallLevel) => {
         equipment_rarity: 'common',
         levels: [
           { level: 1, cost: 0, resource: 'glowy_ore', resource_options: ['glowy_ore'], resource_costs: createEquipmentResourceCosts(['glowy_ore', 0]), time: '0sec' },
+        ],
+      },
+    }
+  }
+
+  if (Number(townhallLevel) === 12) {
+    return {
+      workshop: {
+        id: 'workshop',
+        image_path: '/src/assets/Army/Workshop/104_',
+        buildings_unlocked: 1,
+        copy_unlocks: createCopyUnlocks(1, 1),
+        levels: [
+          { level: 1, cost: 0, resource: 'elixir', time: '0sec' },
+          { level: 2, cost: 5000000, resource: 'elixir', time: '12hr' },
+          { level: 3, cost: 6000000, resource: 'elixir', time: '14hr' },
+          { level: 4, cost: 7000000, resource: 'elixir', time: '16hr' },
+          { level: 5, cost: 8000000, resource: 'elixir', time: '18hr' },
+          { level: 6, cost: 10000000, resource: 'elixir', time: '1d' },
+          { level: 7, cost: 12000000, resource: 'elixir', time: '1d 6hr' },
+          { level: 8, cost: 14000000, resource: 'elixir', time: '1d 12hr' },
+        ],
+      },
+      wall_wrecker: {
+        id: 'wall_wrecker',
+        image_path: '/src/assets/Seige_machines/Wall_Wrecker/105_',
+        copy_unlocks: [true],
+        workshop_level_unlocked: 1,
+        levels: [
+          { level: 1, cost: 0, resource: 'elixir', time: '0sec', lab_level_unlocked: 1 },
         ],
       },
     }

@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS public.townhall_buildings (
   troops JSONB DEFAULT '{}'::jsonb,
   spells JSONB DEFAULT '{}'::jsonb,
   dark_troops JSONB DEFAULT '{}'::jsonb,
+  sieges JSONB DEFAULT '{}'::jsonb,
   heroes JSONB DEFAULT '{}'::jsonb,
   equipment JSONB DEFAULT '{}'::jsonb,
   walls JSONB DEFAULT '{}'::jsonb,
@@ -36,6 +37,9 @@ ALTER TABLE IF EXISTS public.townhall_buildings
 
 ALTER TABLE IF EXISTS public.townhall_buildings
   ADD COLUMN IF NOT EXISTS dark_troops JSONB DEFAULT '{}'::jsonb;
+
+ALTER TABLE IF EXISTS public.townhall_buildings
+  ADD COLUMN IF NOT EXISTS sieges JSONB DEFAULT '{}'::jsonb;
 
 ALTER TABLE IF EXISTS public.townhall_buildings
   ADD COLUMN IF NOT EXISTS heroes JSONB DEFAULT '{}'::jsonb;

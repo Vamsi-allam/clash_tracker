@@ -18,7 +18,7 @@ import Header from '../components/Header'
 import ToastNotification from '../components/ToastNotification'
 import { supabase } from '../supabaseClient'
 import { getTownhallSnapshotForLevel } from '../utils/townhallSnapshot'
-import { BUILDING_SECTIONS, TROOP_BARRACKS_REQUIREMENTS, TROOP_BUILDING_IDS, DARK_TROOP_BARRACKS_REQUIREMENTS, DARK_TROOP_BUILDING_IDS, SPELL_FACTORY_REQUIREMENTS, DARK_SPELL_FACTORY_REQUIREMENTS, SPELL_BUILDING_IDS, DARK_SPELL_BUILDING_IDS, HERO_BUILDING_IDS, EQUIPMENT_BUILDING_IDS, getDefaultBuildingData } from '../data/buildings'
+import { BUILDING_SECTIONS, TROOP_BARRACKS_REQUIREMENTS, TROOP_BUILDING_IDS, DARK_TROOP_BARRACKS_REQUIREMENTS, DARK_TROOP_BUILDING_IDS, SIEGE_WORKSHOP_REQUIREMENTS, SIEGE_BUILDING_IDS, SPELL_FACTORY_REQUIREMENTS, DARK_SPELL_FACTORY_REQUIREMENTS, SPELL_BUILDING_IDS, DARK_SPELL_BUILDING_IDS, HERO_BUILDING_IDS, EQUIPMENT_BUILDING_IDS, getDefaultBuildingData } from '../data/buildings'
 
 // Convert API asset URL to proxied URL
 const getProxiedAssetUrl = (assetUrl) => {
@@ -159,7 +159,7 @@ const clampDurationPartsToMax = (parts, maxSeconds) => {
 
 const getStructureRowCount = (building, currentLevels = []) => {
   const buildingId = String(building?.id || '')
-  if (TROOP_BUILDING_IDS.has(buildingId) || DARK_TROOP_BUILDING_IDS.has(buildingId) || SPELL_BUILDING_IDS.has(buildingId) || EQUIPMENT_BUILDING_IDS.has(buildingId)) return 1
+  if (TROOP_BUILDING_IDS.has(buildingId) || DARK_TROOP_BUILDING_IDS.has(buildingId) || SIEGE_BUILDING_IDS.has(buildingId) || SPELL_BUILDING_IDS.has(buildingId) || EQUIPMENT_BUILDING_IDS.has(buildingId)) return 1
 
   const unlockedCount = Number(building?.buildings_unlocked) || 0
   const savedCount = Array.isArray(currentLevels) ? currentLevels.length : 0
@@ -174,6 +174,11 @@ const getTroopBarracksRequirement = (building) => {
 const getDarkTroopBarracksRequirement = (building) => {
   const fallbackRequirement = DARK_TROOP_BARRACKS_REQUIREMENTS[String(building?.id || '').toLowerCase()] || 1
   return Math.max(fallbackRequirement, Number(building?.dark_barracks_level_unlocked) || 0)
+}
+
+const getSiegeWorkshopRequirement = (building) => {
+  const fallbackRequirement = SIEGE_WORKSHOP_REQUIREMENTS[String(building?.id || '').toLowerCase()] || 1
+  return Math.max(fallbackRequirement, Number(building?.workshop_level_unlocked) || 0)
 }
 
 const getHeroHallUnlockRequirement = (building) => {
@@ -213,6 +218,11 @@ const getCurrentLabLevel = (structureLevels = {}) => {
   return labLevels.reduce((highest, value) => Math.max(highest, Number(value) || 0), 0)
 }
 
+const getCurrentWorkshopLevel = (structureLevels = {}) => {
+  const workshopLevels = Array.isArray(structureLevels?.workshop) ? structureLevels.workshop : []
+  return workshopLevels.reduce((highest, value) => Math.max(highest, Number(value) || 0), 0)
+}
+
 const getCurrentHeroHallLevel = (structureLevels = {}) => {
   const heroHallLevels = Array.isArray(structureLevels?.hero_hall) ? structureLevels.hero_hall : []
   return heroHallLevels.reduce((highest, value) => Math.max(highest, Number(value) || 0), 0)
@@ -236,7 +246,7 @@ const getCurrentBlacksmithLevel = (structureLevels = {}) => {
 const getAllowedBuildingRowIdsForSnapshot = (snapshot = {}) => {
   const rowIds = new Set()
 
-  ;['defences', 'traps', 'army', 'resources', 'troops', 'spells', 'dark_troops', 'heroes', 'equipment'].forEach((categoryKey) => {
+  ;['defences', 'traps', 'army', 'resources', 'troops', 'spells', 'dark_troops', 'sieges', 'heroes', 'equipment'].forEach((categoryKey) => {
     const category = Array.isArray(snapshot?.[categoryKey]) ? snapshot[categoryKey] : []
 
     category.forEach((building) => {
@@ -398,6 +408,7 @@ const barracksImages = import.meta.glob('../assets/Army/Barracks/*.png', { eager
 const darkBarracksImages = import.meta.glob('../assets/Army/Dark_Barracks/*.png', { eager: true, import: 'default' })
 const spellFactoryImages = import.meta.glob('../assets/Army/Spell_Factory/*.png', { eager: true, import: 'default' })
 const darkSpellFactoryImages = import.meta.glob('../assets/Army/Dark_Spell_Factory/*.png', { eager: true, import: 'default' })
+const workshopImages = import.meta.glob('../assets/Army/Workshop/*.png', { eager: true, import: 'default' })
 const clanCastleImages = import.meta.glob('../assets/Army/clan_castle/*.png', { eager: true, import: 'default' })
 const labImages = import.meta.glob('../assets/Army/Lab/*.png', { eager: true, import: 'default' })
 const blacksmithImages = import.meta.glob('../assets/Army/Blacksmith/*.png', { eager: true, import: 'default' })
@@ -430,6 +441,14 @@ const witchDarkTroopImages = import.meta.glob('../assets/Dark_Troops/Witch/*.png
 const lavaHoundDarkTroopImages = import.meta.glob('../assets/Dark_Troops/Lava_Hound/*.png', { eager: true, import: 'default' })
 const bowlerDarkTroopImages = import.meta.glob('../assets/Dark_Troops/Bowler/*.png', { eager: true, import: 'default' })
 const iceGolemDarkTroopImages = import.meta.glob('../assets/Dark_Troops/Ice_Golem/*.png', { eager: true, import: 'default' })
+const wallWreckerSiegeImages = import.meta.glob('../assets/Seige_machines/Wall_Wrecker/*.png', { eager: true, import: 'default' })
+const battleBlimpSiegeImages = import.meta.glob('../assets/Seige_machines/Battle_Blimp/*.png', { eager: true, import: 'default' })
+const stoneSlammerSiegeImages = import.meta.glob('../assets/Seige_machines/Stone_Slammer/*.png', { eager: true, import: 'default' })
+const siegeBarracksSiegeImages = import.meta.glob('../assets/Seige_machines/Siege_Barracks/*.png', { eager: true, import: 'default' })
+const logLauncherSiegeImages = import.meta.glob('../assets/Seige_machines/Log_Launcher/*.png', { eager: true, import: 'default' })
+const flameFlingerSiegeImages = import.meta.glob('../assets/Seige_machines/Flame_Flinger/*.png', { eager: true, import: 'default' })
+const battleDrillSiegeImages = import.meta.glob('../assets/Seige_machines/Battle_Drill/*.png', { eager: true, import: 'default' })
+const troopLauncherSiegeImages = import.meta.glob('../assets/Seige_machines/Troop_Launcher/*.png', { eager: true, import: 'default' })
 const lightningSpellImages = import.meta.glob('../assets/spells/Lightning_Spell/*.png', { eager: true, import: 'default' })
 const healingSpellImages = import.meta.glob('../assets/spells/Healing_Spell/*.png', { eager: true, import: 'default' })
 const rageSpellImages = import.meta.glob('../assets/spells/Rage_Spell/*.png', { eager: true, import: 'default' })
@@ -469,7 +488,7 @@ export default function UserPage({ username, onLogout, userId }) {
   const [wallConfig, setWallConfig] = useState(null)
   const [wallCounts, setWallCounts] = useState({})
   const [wallLoading, setWallLoading] = useState(false)
-  const [structureCatalog, setStructureCatalog] = useState({ defences: [], traps: [], army: [], resources: [], troops: [], spells: [], dark_troops: [], heroes: [], equipment: [] })
+  const [structureCatalog, setStructureCatalog] = useState({ defences: [], traps: [], army: [], resources: [], troops: [], spells: [], dark_troops: [], sieges: [], heroes: [], equipment: [] })
   const [structureLevels, setStructureLevels] = useState({})
   const [structuresLoading, setStructuresLoading] = useState(false)
   const [refreshingVillage, setRefreshingVillage] = useState(false)
@@ -496,11 +515,13 @@ export default function UserPage({ username, onLogout, userId }) {
   const currentLabLevel = getCurrentLabLevel(structureLevels)
   const currentSpellFactoryLevel = getCurrentSpellFactoryLevel(structureLevels)
   const currentDarkSpellFactoryLevel = getCurrentDarkSpellFactoryLevel(structureLevels)
+  const currentWorkshopLevel = getCurrentWorkshopLevel(structureLevels)
   const currentHeroHallLevel = getCurrentHeroHallLevel(structureLevels)
   const currentBlacksmithLevel = getCurrentBlacksmithLevel(structureLevels)
   const showTrapsTab = Number(activeVillage?.townhall_level || 0) >= 3
   const showSpellsTab = Number(activeVillage?.townhall_level || 0) >= 5
   const showDarkTroopsTab = Number(activeVillage?.townhall_level || 0) >= 7
+  const showSiegesTab = Number(activeVillage?.townhall_level || 0) >= 12
   const showHeroesTab = Number(activeVillage?.townhall_level || 0) >= 4
   const showEquipmentTab = Number(activeVillage?.townhall_level || 0) >= 8
   const showLabAssistBox = Number(activeVillage?.townhall_level || 0) >= 9
@@ -509,6 +530,8 @@ export default function UserPage({ username, onLogout, userId }) {
     : !showSpellsTab && activeLoadedTab === 'spells'
       ? 'defences'
     : !showDarkTroopsTab && activeLoadedTab === 'dark_troops'
+      ? 'defences'
+    : !showSiegesTab && activeLoadedTab === 'sieges'
       ? 'defences'
     : !showHeroesTab && activeLoadedTab === 'heroes'
       ? 'defences'
@@ -982,6 +1005,7 @@ export default function UserPage({ username, onLogout, userId }) {
           return { id: building.id, ...(sourceEntry || {}) }
         })
         .filter(Boolean)
+    const normalizedSieges = normalizeStructures(data?.sieges)
     const normalizedHeroes = normalizeStructures(data?.heroes)
     const normalizedEquipment = normalizeStructures(data?.equipment)
 
@@ -993,6 +1017,7 @@ export default function UserPage({ username, onLogout, userId }) {
       troops: normalizedTroops,
       spells: normalizedSpells,
       dark_troops: normalizedDarkTroops,
+      sieges: normalizedSieges,
       heroes: normalizedHeroes,
       equipment: normalizedEquipment,
       walls: normalizeWalls(data?.walls),
@@ -1068,7 +1093,7 @@ export default function UserPage({ username, onLogout, userId }) {
       }
 
       const initialLevels = {}
-      ;[...normalizedData.defences, ...normalizedData.traps, ...normalizedData.army, ...normalizedData.resources, ...normalizedData.troops, ...normalizedData.spells, ...normalizedData.dark_troops, ...normalizedData.heroes, ...normalizedData.equipment].forEach((building) => {
+      ;[...normalizedData.defences, ...normalizedData.traps, ...normalizedData.army, ...normalizedData.resources, ...normalizedData.troops, ...normalizedData.spells, ...normalizedData.dark_troops, ...normalizedData.sieges, ...normalizedData.heroes, ...normalizedData.equipment].forEach((building) => {
         const savedRowsForBuilding = savedStructureRows.filter((row) => row.building_id?.startsWith(`${building.id}-`))
         const rowCount = getStructureRowCount(building, savedRowsForBuilding)
         initialLevels[building.id] = Array.from({ length: rowCount }, (_, index) => {
@@ -1205,14 +1230,14 @@ export default function UserPage({ username, onLogout, userId }) {
         villageId,
       })
       if (!data) {
-        setStructureCatalog({ defences: [], traps: [], army: [], resources: [], troops: [], spells: [], dark_troops: [], heroes: [], equipment: [] })
+        setStructureCatalog({ defences: [], traps: [], army: [], resources: [], troops: [], spells: [], dark_troops: [], sieges: [], heroes: [], equipment: [] })
         setStructureLevels({})
         setWallConfig(null)
         setWallCounts({})
       }
     } catch (fetchError) {
       console.error('Failed to load townhall structures:', fetchError)
-      setStructureCatalog({ defences: [], traps: [], army: [], resources: [], troops: [], spells: [], dark_troops: [], heroes: [], equipment: [] })
+      setStructureCatalog({ defences: [], traps: [], army: [], resources: [], troops: [], spells: [], dark_troops: [], sieges: [], heroes: [], equipment: [] })
       setStructureLevels({})
       setWallConfig(null)
       setWallCounts({})
@@ -1660,6 +1685,7 @@ export default function UserPage({ username, onLogout, userId }) {
     clan_castle: 3,
     spell_factory: 4,
     dark_spell_factory: 5,
+    workshop: 6,
     lab: 6,
     hero_hall: 7,
     blacksmith: 8,
@@ -1720,6 +1746,10 @@ export default function UserPage({ username, onLogout, userId }) {
     : []
   const visibleDarkTroopBuildings = activeLoadedTab === 'dark_troops'
     ? (structureCatalog.dark_troops || [])
+    : []
+
+  const visibleSiegeBuildings = activeLoadedTab === 'sieges'
+    ? (structureCatalog.sieges || [])
     : []
 
   const visibleEquipmentBuildings = activeLoadedTab === 'equipment'
@@ -1809,6 +1839,8 @@ export default function UserPage({ username, onLogout, userId }) {
             ? (structureCatalog.spells || [])
           : activeLoadedTab === 'dark_troops'
             ? (structureCatalog.dark_troops || [])
+          : activeLoadedTab === 'sieges'
+            ? (structureCatalog.sieges || [])
           : activeLoadedTab === 'heroes'
             ? (structureCatalog.heroes || [])
           : activeLoadedTab === 'equipment'
@@ -1836,6 +1868,7 @@ export default function UserPage({ username, onLogout, userId }) {
     troops: getPendingUpgradeCountForBuildings(structureCatalog.troops || []),
     spells: getPendingUpgradeCountForBuildings(structureCatalog.spells || []),
     dark_troops: getPendingUpgradeCountForBuildings(structureCatalog.dark_troops || []),
+    sieges: getPendingUpgradeCountForBuildings(structureCatalog.sieges || []),
     heroes: getPendingUpgradeCountForBuildings(structureCatalog.heroes || []),
     equipment: showEquipmentTab ? getPendingUpgradeCountForBuildings(structureCatalog.equipment || []) : 0,
     walls: 0,
@@ -1969,7 +2002,7 @@ export default function UserPage({ username, onLogout, userId }) {
   const getUpgradeSummary = (building, currentLevel, labLevel = 0, heroHallLevel = 0, blacksmithLevel = 0) => {
     const allNextLevels = getNextUpgradeLevels(building, currentLevel)
     const equipmentUsesBlacksmithRequirement = allNextLevels.some((level) => Number(level?.blacksmith_level_unlocked ?? building?.blacksmith_level_unlocked ?? 0) > 0)
-    const nextLevels = (TROOP_BUILDING_IDS.has(String(building?.id || '')) || DARK_TROOP_BUILDING_IDS.has(String(building?.id || '')) || SPELL_BUILDING_IDS.has(String(building?.id || '')))
+    const nextLevels = (TROOP_BUILDING_IDS.has(String(building?.id || '')) || DARK_TROOP_BUILDING_IDS.has(String(building?.id || '')) || SIEGE_BUILDING_IDS.has(String(building?.id || '')) || SPELL_BUILDING_IDS.has(String(building?.id || '')))
       ? allNextLevels.filter((level) => Number(level.lab_level_unlocked ?? 0) <= Number(labLevel || 0))
       : HERO_BUILDING_IDS.has(String(building?.id || ''))
         ? allNextLevels.filter((level) => Number(level.hero_hall_level_unlocked ?? 0) <= Number(heroHallLevel || 0))
@@ -2662,7 +2695,7 @@ export default function UserPage({ username, onLogout, userId }) {
   }
 
   const computeTroopsCompletion = () => {
-    const buildings = [...(structureCatalog.troops || []), ...(structureCatalog.dark_troops || [])]
+    const buildings = [...(structureCatalog.troops || []), ...(structureCatalog.dark_troops || []), ...(structureCatalog.sieges || [])]
     if (!buildings || buildings.length === 0) return 0
 
     let totalCurrentLevels = 0
@@ -2671,10 +2704,17 @@ export default function UserPage({ username, onLogout, userId }) {
     buildings.forEach((building) => {
       const maxLevel = Math.max(...(building.levels || []).map((l) => l.level), 0)
       const isDarkTroop = DARK_TROOP_BUILDING_IDS.has(String(building?.id || ''))
-      const troopRequirement = isDarkTroop ? getDarkTroopBarracksRequirement(building) : getTroopBarracksRequirement(building)
-      const troopUnlocked = isDarkTroop
-        ? Number(currentDarkBarracksLevel || 0) >= Number(troopRequirement || 0)
-        : Number(currentBarracksLevel || 0) >= Number(troopRequirement || 0)
+      const isSiege = SIEGE_BUILDING_IDS.has(String(building?.id || ''))
+      const troopRequirement = isSiege
+        ? getSiegeWorkshopRequirement(building)
+        : isDarkTroop
+          ? getDarkTroopBarracksRequirement(building)
+          : getTroopBarracksRequirement(building)
+      const troopUnlocked = isSiege
+        ? Number(currentWorkshopLevel || 0) >= Number(troopRequirement || 0)
+        : isDarkTroop
+          ? Number(currentDarkBarracksLevel || 0) >= Number(troopRequirement || 0)
+          : Number(currentBarracksLevel || 0) >= Number(troopRequirement || 0)
 
       if (maxLevel <= 0) {
         return
@@ -2996,7 +3036,7 @@ export default function UserPage({ username, onLogout, userId }) {
 
   const remainingBetaMaxBuilderCount = Math.max(1, Math.min(5, remainingBetaTotalUpgrades || 1))
   const savedVillageBuilderCount = Math.max(1, Math.min(5, Number(activeVillage?.builder_count) || 2))
-  const isLabTabActive = activeLoadedTab === 'troops' || activeLoadedTab === 'spells' || activeLoadedTab === 'dark_troops'
+  const isLabTabActive = activeLoadedTab === 'troops' || activeLoadedTab === 'spells' || activeLoadedTab === 'dark_troops' || activeLoadedTab === 'sieges'
   const remainingBetaSelectorCount = isLabTabActive ? 1 : savedVillageBuilderCount
   const displayedBuilderCount = Math.max(1, Math.min(remainingBetaSelectorCount, Number(remainingBetaBuilderCount) || savedVillageBuilderCount))
   const remainingBetaUnitLabel = isLabTabActive ? 'Lab Worker' : 'Builders'
@@ -3009,7 +3049,7 @@ export default function UserPage({ username, onLogout, userId }) {
   useEffect(() => {
     if (activeLoadedTab === 'walls') return
 
-    if (activeLoadedTab === 'troops' || activeLoadedTab === 'spells' || activeLoadedTab === 'dark_troops') {
+    if (activeLoadedTab === 'troops' || activeLoadedTab === 'spells' || activeLoadedTab === 'dark_troops' || activeLoadedTab === 'sieges') {
       setRemainingBetaBuilderCount(1)
       return
     }
@@ -3047,6 +3087,12 @@ export default function UserPage({ username, onLogout, userId }) {
       setActiveLoadedTab('defences')
     }
   }, [activeLoadedTab, showDarkTroopsTab])
+
+  useEffect(() => {
+    if (!showSiegesTab && activeLoadedTab === 'sieges') {
+      setActiveLoadedTab('defences')
+    }
+  }, [activeLoadedTab, showSiegesTab])
 
   useEffect(() => {
     if (!showHeroesTab && activeLoadedTab === 'heroes') {
@@ -3088,6 +3134,7 @@ export default function UserPage({ username, onLogout, userId }) {
       dark_barracks: (imageLevel) => darkBarracksImages[`../assets/Army/Dark_Barracks/9_${imageLevel}.png`] || '',
       spell_factory: (imageLevel) => spellFactoryImages[`../assets/Army/Spell_Factory/11_${imageLevel}.png`] || '',
       dark_spell_factory: (imageLevel) => darkSpellFactoryImages[`../assets/Army/Dark_Spell_Factory/12_${imageLevel}.png`] || '',
+      workshop: (imageLevel) => workshopImages[`../assets/Army/Workshop/104_${imageLevel}.png`] || '',
       clan_castle: (imageLevel) => clanCastleImages[`../assets/Army/clan_castle/19_${imageLevel}.png`] || '',
       lab: (imageLevel) => labImages[`../assets/Army/Lab/13_${imageLevel}.png`] || '',
       blacksmith: (imageLevel) => blacksmithImages[`../assets/Army/Blacksmith/152_${imageLevel}.png`] || '',
@@ -3120,6 +3167,14 @@ export default function UserPage({ username, onLogout, userId }) {
       lava_hound: (imageLevel) => lavaHoundDarkTroopImages[`../assets/Dark_Troops/Lava_Hound/58_${imageLevel}.png`] || '',
       bowler: (imageLevel) => bowlerDarkTroopImages[`../assets/Dark_Troops/Bowler/59_${imageLevel}.png`] || '',
       ice_golem: (imageLevel) => iceGolemDarkTroopImages[`../assets/Dark_Troops/Ice_Golem/111_${imageLevel}.png`] || '',
+      wall_wrecker: (imageLevel) => wallWreckerSiegeImages[`../assets/Seige_machines/Wall_Wrecker/105_${imageLevel}.png`] || '',
+      battle_blimp: (imageLevel) => battleBlimpSiegeImages[`../assets/Seige_machines/Battle_Blimp/106_${imageLevel}.png`] || '',
+      stone_slammer: (imageLevel) => stoneSlammerSiegeImages[`../assets/Seige_machines/Stone_Slammer/109_${imageLevel}.png`] || '',
+      siege_barracks: (imageLevel) => siegeBarracksSiegeImages[`../assets/Seige_machines/Siege_Barracks/120_${imageLevel}.png`] || '',
+      log_launcher: (imageLevel) => logLauncherSiegeImages[`../assets/Seige_machines/Log_Launcher/125_${imageLevel}.png`] || '',
+      flame_flinger: (imageLevel) => flameFlingerSiegeImages[`../assets/Seige_machines/Flame_Flinger/134_${imageLevel}.png`] || '',
+      battle_drill: (imageLevel) => battleDrillSiegeImages[`../assets/Seige_machines/Battle_Drill/139_${imageLevel}.png`] || '',
+      troop_launcher: (imageLevel) => troopLauncherSiegeImages[`../assets/Seige_machines/Troop_Launcher/215_${imageLevel}.png`] || '',
       lightning_spell: (imageLevel) => imageLevel === 0 ? (lightningSpellImages['../assets/spells/Lightning_Spell/43_0.png'] || '') : (lightningSpellImages['../assets/spells/Lightning_Spell/43.png'] || ''),
       healing_spell: (imageLevel) => imageLevel === 0 ? (healingSpellImages['../assets/spells/Healing_Spell/44_0.png'] || '') : (healingSpellImages['../assets/spells/Healing_Spell/44.png'] || ''),
       rage_spell: (imageLevel) => imageLevel === 0 ? (rageSpellImages['../assets/spells/Rage_Spell/45_0.png'] || '') : (rageSpellImages['../assets/spells/Rage_Spell/45.png'] || ''),
@@ -3190,6 +3245,7 @@ export default function UserPage({ username, onLogout, userId }) {
     const rowCount = getStructureRowCount(building, currentLevels)
     const maxLevel = Math.max(...(building.levels || []).map((level) => level.level), 0)
     const troopBarracksRequirement = getTroopBarracksRequirement(building)
+    const siegeWorkshopRequirement = getSiegeWorkshopRequirement(building)
     const spellFactoryRequirement = getSpellFactoryRequirement(building)
     const darkSpellFactoryRequirement = getDarkSpellFactoryRequirement(building)
     const heroHallRequirement = getHeroHallUnlockRequirement(building)
@@ -3218,7 +3274,7 @@ export default function UserPage({ username, onLogout, userId }) {
       const blacksmithLockedNextLevels = equipmentUsesBlacksmithRequirement
         ? allRemainingNextLevels.filter((levelInfo) => Number(levelInfo.blacksmith_level_unlocked ?? building?.blacksmith_level_unlocked ?? 0) > Number(currentBlacksmithLevel || 0))
         : []
-      const labLockedNextLevels = (TROOP_BUILDING_IDS.has(String(building?.id || '')) || DARK_TROOP_BUILDING_IDS.has(String(building?.id || '')) || SPELL_BUILDING_IDS.has(String(building?.id || '')))
+      const labLockedNextLevels = (TROOP_BUILDING_IDS.has(String(building?.id || '')) || DARK_TROOP_BUILDING_IDS.has(String(building?.id || '')) || SIEGE_BUILDING_IDS.has(String(building?.id || '')) || SPELL_BUILDING_IDS.has(String(building?.id || '')))
         ? allRemainingNextLevels.filter((levelInfo) => Number(levelInfo.lab_level_unlocked ?? 0) > Number(currentLabLevel || 0))
         : HERO_BUILDING_IDS.has(String(building?.id || ''))
           ? allRemainingNextLevels.filter((levelInfo) => Number(levelInfo.hero_hall_level_unlocked ?? 0) > Number(currentHeroHallLevel || 0))
@@ -3227,7 +3283,7 @@ export default function UserPage({ username, onLogout, userId }) {
             : []
       const labRequirementLevel = labLockedNextLevels.length > 0
         ? Math.min(...labLockedNextLevels.map((levelInfo) =>
-            (TROOP_BUILDING_IDS.has(String(building?.id || '')) || DARK_TROOP_BUILDING_IDS.has(String(building?.id || '')) || SPELL_BUILDING_IDS.has(String(building?.id || '')))
+            (TROOP_BUILDING_IDS.has(String(building?.id || '')) || DARK_TROOP_BUILDING_IDS.has(String(building?.id || '')) || SIEGE_BUILDING_IDS.has(String(building?.id || '')) || SPELL_BUILDING_IDS.has(String(building?.id || '')))
               ? Number(levelInfo.lab_level_unlocked || 0) || 0
               : HERO_BUILDING_IDS.has(String(building?.id || ''))
                 ? Number(levelInfo.hero_hall_level_unlocked || 0) || 0
@@ -3238,7 +3294,7 @@ export default function UserPage({ username, onLogout, userId }) {
         : blacksmithLockedNextLevels.length > 0
           ? Math.min(...blacksmithLockedNextLevels.map((levelInfo) => Number(levelInfo.blacksmith_level_unlocked ?? building?.blacksmith_level_unlocked ?? 0) || 0))
         : null
-      const labRequirementLabel = (TROOP_BUILDING_IDS.has(String(building?.id || '')) || DARK_TROOP_BUILDING_IDS.has(String(building?.id || '')) || SPELL_BUILDING_IDS.has(String(building?.id || '')))
+      const labRequirementLabel = (TROOP_BUILDING_IDS.has(String(building?.id || '')) || DARK_TROOP_BUILDING_IDS.has(String(building?.id || '')) || SIEGE_BUILDING_IDS.has(String(building?.id || '')) || SPELL_BUILDING_IDS.has(String(building?.id || '')))
         ? 'Lab'
         : HERO_BUILDING_IDS.has(String(building?.id || ''))
           ? 'Hero Hall'
@@ -3311,7 +3367,7 @@ export default function UserPage({ username, onLogout, userId }) {
     const upgradeListClassName = activeLoadedTab === 'equipment'
       ? `${styles.readOnlyUpgradeList} ${styles.readOnlyUpgradeListEquipment}`
       : styles.readOnlyUpgradeList
-    const hideLevelOneInUpgradeList = ['troops', 'dark_troops', 'spells', 'dark_spells', 'heroes', 'equipment'].includes(activeLoadedTab)
+    const hideLevelOneInUpgradeList = ['troops', 'dark_troops', 'sieges', 'spells', 'dark_spells', 'heroes', 'equipment'].includes(activeLoadedTab)
     const getVisibleUpgradeLevels = (levels = []) => (
       hideLevelOneInUpgradeList
         ? levels.filter((levelInfo) => Number(levelInfo?.level) !== 1)
@@ -3321,15 +3377,18 @@ export default function UserPage({ username, onLogout, userId }) {
     if (readOnly) {
             const isTroopTabCard = activeLoadedTab === 'troops' && TROOP_BUILDING_IDS.has(String(building?.id || ''))
             const isDarkTroopTabCard = activeLoadedTab === 'dark_troops' && DARK_TROOP_BUILDING_IDS.has(String(building?.id || ''))
+            const isSiegeTabCard = activeLoadedTab === 'sieges' && SIEGE_BUILDING_IDS.has(String(building?.id || ''))
             const isSpellTabCard = (activeLoadedTab === 'spells' || activeLoadedTab === 'dark_spells') && SPELL_BUILDING_IDS.has(String(building?.id || ''))
 
-            if (isTroopTabCard || isDarkTroopTabCard || isSpellTabCard) {
+            if (isTroopTabCard || isDarkTroopTabCard || isSiegeTabCard || isSpellTabCard) {
               const troopRowState = rowStates[0] || null
               const isDarkSpellBuilding = SPELL_BUILDING_IDS.has(String(building?.id || '')) && DARK_SPELL_BUILDING_IDS.has(String(building?.id || ''))
               const troopUnlocked = isTroopTabCard
                 ? currentBarracksLevel >= troopBarracksRequirement
                 : isDarkTroopTabCard
                   ? currentDarkBarracksLevel >= getDarkTroopBarracksRequirement(building)
+                  : isSiegeTabCard
+                    ? currentWorkshopLevel >= siegeWorkshopRequirement
                   : isDarkSpellBuilding
                     ? currentDarkSpellFactoryLevel >= darkSpellFactoryRequirement
                     : currentSpellFactoryLevel >= spellFactoryRequirement
@@ -3340,6 +3399,8 @@ export default function UserPage({ username, onLogout, userId }) {
                 ? `Requires Barracks level ${troopBarracksRequirement} to unlock`
                 : isDarkTroopTabCard
                   ? `Requires Dark Barracks level ${getDarkTroopBarracksRequirement(building)} to unlock`
+                  : isSiegeTabCard
+                    ? `Requires Workshop level ${siegeWorkshopRequirement} to unlock`
                   : isDarkSpellBuilding
                     ? `Requires Dark Spell Factory level ${darkSpellFactoryRequirement} to unlock`
                     : `Requires Spell Factory level ${spellFactoryRequirement} to unlock`
@@ -4380,6 +4441,8 @@ export default function UserPage({ username, onLogout, userId }) {
               ? 'Spell'
             : displayedLoadedTab === 'dark_troops'
               ? 'Dark Troop'
+              : displayedLoadedTab === 'sieges'
+                ? 'Siege'
                 : displayedLoadedTab === 'equipment'
                   ? 'Equipment'
             : displayedLoadedTab === 'heroes'
@@ -4403,6 +4466,8 @@ export default function UserPage({ username, onLogout, userId }) {
                 ? 'Spells'
               : displayedLoadedTab === 'dark_troops'
                 ? 'Dark Troop'
+                : displayedLoadedTab === 'sieges'
+                  ? 'Sieges'
                 : displayedLoadedTab === 'equipment'
                   ? 'Equipment'
               : displayedLoadedTab === 'heroes'
@@ -4417,6 +4482,10 @@ export default function UserPage({ username, onLogout, userId }) {
     ? (structureCatalog.heroes || [])
     : []
 
+  const visibleSiegesTabBuildings = activeLoadedTab === 'sieges'
+    ? (structureCatalog.sieges || [])
+    : []
+
   const tabLabels = {
     defences: 'Defenses',
     traps: 'Traps',
@@ -4425,6 +4494,7 @@ export default function UserPage({ username, onLogout, userId }) {
     troops: 'Troops',
     spells: 'Spells',
     dark_troops: 'Dark Troops',
+    sieges: 'Sieges',
     heroes: 'Heroes',
     equipment: 'Equipment',
     walls: 'Walls',
@@ -4478,6 +4548,23 @@ export default function UserPage({ username, onLogout, userId }) {
     })
   }
 
+  const isSiegeCategoryComplete = (buildings = []) => {
+    if (!Array.isArray(buildings) || buildings.length === 0) return false
+
+    return buildings.every((building) => {
+      const maxLevel = Math.max(...(building.levels || []).map((level) => Number(level.level || 0)), 0)
+      if (maxLevel <= 0) return false
+
+      const siegeRequirement = getSiegeWorkshopRequirement(building)
+      if (currentWorkshopLevel < siegeRequirement) return false
+
+      const rowLevels = structureLevels[building.id] || []
+      const rowCount = getStructureRowCount(building, rowLevels)
+
+      return Array.from({ length: rowCount }, (_, index) => Number(rowLevels[index] || 0) >= maxLevel).every(Boolean)
+    })
+  }
+
   const isSpellCategoryComplete = (buildings = []) => {
     if (!Array.isArray(buildings) || buildings.length === 0) return false
 
@@ -4522,6 +4609,7 @@ export default function UserPage({ username, onLogout, userId }) {
     troops: isTroopCategoryComplete(structureCatalog.troops || []),
     spells: showSpellsTab ? isSpellCategoryComplete(structureCatalog.spells || []) : false,
     dark_troops: showDarkTroopsTab ? isDarkTroopCategoryComplete(structureCatalog.dark_troops || []) : false,
+    sieges: showSiegesTab ? isSiegeCategoryComplete(structureCatalog.sieges || []) : false,
     heroes: showHeroesTab ? computeHeroesCompletion() >= 100 : false,
     equipment: showEquipmentTab ? isEquipmentCategoryComplete(structureCatalog.equipment || []) : false,
     walls: isWallMaxComplete,
@@ -4539,6 +4627,7 @@ export default function UserPage({ username, onLogout, userId }) {
       ...(structureCatalog.troops || []),
       ...(structureCatalog.spells || []),
       ...(structureCatalog.dark_troops || []),
+      ...(structureCatalog.sieges || []),
     ].filter((building) => building?.id)
 
     if (constructibleBuildings.length === 0) return false
@@ -4940,7 +5029,7 @@ export default function UserPage({ username, onLogout, userId }) {
 
                 <div className={styles.loadedTabShell}>
                   <div className={styles.loadedTabBar}>
-                    {['defences', ...(showTrapsTab ? ['traps'] : []), 'army', 'resources', 'troops', ...(showSpellsTab ? ['spells'] : []), ...(showDarkTroopsTab ? ['dark_troops'] : []), ...(showHeroesTab ? ['heroes'] : []), ...(showEquipmentTab ? ['equipment'] : []), 'walls'].map((tab) => (
+                    {['defences', ...(showTrapsTab ? ['traps'] : []), 'army', 'resources', 'troops', ...(showSpellsTab ? ['spells'] : []), ...(showDarkTroopsTab ? ['dark_troops'] : []), ...(showSiegesTab ? ['sieges'] : []), ...(showHeroesTab ? ['heroes'] : []), ...(showEquipmentTab ? ['equipment'] : []), 'walls'].map((tab) => (
                       (() => {
                         const upgradeCount = loadedTabUpgradeCounts[tab] || 0
                         const isUpgrading = upgradeCount > 0
@@ -5200,6 +5289,27 @@ export default function UserPage({ username, onLogout, userId }) {
                             </div>
                             <div className={styles.readOnlyLoadedList}>
                               {visibleDarkTroopBuildings.map((building, index) => renderStructureCard(building, `tab-dark-troops-${building.id}-${index}`, { readOnly: true }))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {displayedLoadedTab === 'sieges' && showSiegesTab && (
+                        <div className={styles.loadedTabSection}>
+                          <div className={styles.loadedTabSectionHeader}>
+                            <div className={styles.loadedTabHeaderLeft}>
+                              <h3 className={styles.loadedTabSectionTitle}>{loadedTabSectionTitle}</h3>
+                              <SettingsIcon className={styles.loadedTabSettingsIcon} />
+                            </div>
+                          </div>
+                          <div className={styles.loadedStructureFrame}>
+                            <div className={styles.loadedStructureHeader}>
+                              <span>{loadedTabPrimaryLabel}</span>
+                              <span>{loadedTabSecondaryLabel}</span>
+                              <span>Upgrades</span>
+                            </div>
+                            <div className={styles.readOnlyLoadedList}>
+                              {visibleSiegesTabBuildings.map((building, index) => renderStructureCard(building, `tab-sieges-${building.id}-${index}`, { readOnly: true }))}
                             </div>
                           </div>
                         </div>
