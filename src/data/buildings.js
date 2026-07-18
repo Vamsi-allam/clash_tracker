@@ -61,6 +61,7 @@ export const BUILDING_SECTIONS = {
     { id: 'baby_dragon', name: 'Baby Dragon', image: '/src/assets/Troops/Baby_Dragon' },
     { id: 'miner', name: 'Miner', image: '/src/assets/Troops/Miner' },
     { id: 'electro_dragon', name: 'Electro Dragon', image: '/src/assets/Troops/Electro_Dragon' },
+    { id: 'yeti', name: 'Yeti', image: '/src/assets/Troops/Yeti' },
   ],
   spells: [
     { id: 'lightning_spell', name: 'Lightning Spell', image: '/src/assets/spells/Lightning_Spell' },
@@ -77,6 +78,7 @@ export const BUILDING_SECTIONS = {
     { id: 'haste_spell', name: 'Haste Spell', image: '/src/assets/spells/Haste_Spell' },
     { id: 'skeleton_spell', name: 'Skeleton Spell', image: '/src/assets/spells/Skeleton_Spell' },
     { id: 'bat_spell', name: 'Bat Spell', image: '/src/assets/spells/Bat_spell' },
+    { id: 'overgrowth_spell', name: 'Overgrowth Spell', image: '/src/assets/spells/Overgrowth_Spell' },
   ],
   dark_troops: [
     { id: 'minion', name: 'Minion', image: '/src/assets/Dark_Troops/Minion' },
@@ -87,6 +89,7 @@ export const BUILDING_SECTIONS = {
     { id: 'lava_hound', name: 'Lava Hound', image: '/src/assets/Dark_Troops/Lava_Hound' },
     { id: 'bowler', name: 'Bowler', image: '/src/assets/Dark_Troops/Bowler' },
     { id: 'ice_golem', name: 'Ice Golem', image: '/src/assets/Dark_Troops/Ice_Golem' },
+    { id: 'head_hunter', name: 'Head Hunter', image: '/src/assets/Dark_Troops/HeadHunter' },
   ],
   sieges: [
     { id: 'wall_wrecker', name: 'Wall Wrecker', image: '/src/assets/Seige_machines/Wall_Wrecker' },
@@ -118,6 +121,7 @@ export const BUILDING_SECTIONS = {
     { id: 'archer_puppet', name: 'Archer Puppet', hero: 'Archer Queen', image: '/src/assets/Equipment/Archer_Queen/Archer_Puppet/161.png', levelCount: 1, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1, equipment_type: 'active', equipment_rarity: 'common' },
     { id: 'invisibility_vial', name: 'Invisibility Vial', hero: 'Archer Queen', image: '/src/assets/Equipment/Archer_Queen/Invisibility_vial/162.png', levelCount: 1, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1, equipment_type: 'active', equipment_rarity: 'common' },
     { id: 'giant_arrow', name: 'Giant Arrow', hero: 'Archer Queen', image: '/src/assets/Equipment/Archer_Queen/Giant_Arrow/163.png', levelCount: 1, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1, equipment_type: 'active', equipment_rarity: 'epic' },
+    { id: 'healer_puppet', name: 'Healer Puppet', hero: 'Archer Queen', image: '/src/assets/Equipment/Archer_Queen/Healer_Puppet/164.png', levelCount: 1, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1, equipment_type: 'active', equipment_rarity: 'common' },
     { id: 'frozen_arrow', name: 'Frozen Arrow', hero: 'Archer Queen', image: '/src/assets/Equipment/Archer_Queen/Fronzen_Arrow/172.png', levelCount: 1, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1, equipment_type: 'active', equipment_rarity: 'epic' },
     { id: 'magic_mirror', name: 'Magic Mirror', hero: 'Archer Queen', image: '/src/assets/Equipment/Archer_Queen/Magic_Mirror/198.png', levelCount: 1, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1, equipment_type: 'active', equipment_rarity: 'epic' },
     { id: 'action_figure', name: 'Action Figure', hero: 'Archer Queen', image: '/src/assets/Equipment/Archer_Queen/Action_Figure/220.png', levelCount: 1, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1, equipment_type: 'passive', equipment_rarity: 'common' },
@@ -1246,6 +1250,62 @@ export const getDefaultBuildingData = (townhallLevel) => {
         workshop_level_unlocked: 3,
         levels: [
           { level: 1, cost: 0, resource: 'elixir', time: '0sec', lab_level_unlocked: 1 },
+        ],
+      },
+      yeti: {
+        id: 'yeti',
+        image_path: '/src/assets/Troops/Yeti/121_',
+        copy_unlocks: [true],
+        barracks_level_unlocked: 14,
+        levels: [
+          { level: 1, cost: 0, resource: 'elixir', time: '0sec', lab_level_unlocked: 1 },
+        ],
+      },
+      head_hunter: {
+        id: 'head_hunter',
+        image_path: '/src/assets/Dark_Troops/HeadHunter/123_',
+        copy_unlocks: [true],
+        dark_barracks_level_unlocked: 9,
+        levels: [
+          { level: 1, cost: 0, resource: 'dark_elixir', time: '0sec', lab_level_unlocked: 1 },
+        ],
+      },
+      overgrowth_spell: {
+        id: 'overgrowth_spell',
+        image_path: '/src/assets/spells/Overgrowth_Spell/175_',
+        buildings_unlocked: 1,
+        copy_unlocks: createCopyUnlocks(1, 1),
+        dark_spell_factory_level_unlocked: 6,
+        levels: [
+          { level: 1, cost: 0, resource: 'dark_elixir', time: '0sec', lab_level_unlocked: 1 },
+        ],
+      },
+      healer_puppet: {
+        id: 'healer_puppet',
+        image_path: '/src/assets/Equipment/Archer_Queen/Healer_Puppet/164.png',
+        hero: 'Archer Queen',
+        buildings_unlocked: 1,
+        copy_unlocks: [true],
+        unlock_source: 'blacksmith',
+        blacksmith_level_unlocked: 1,
+        equipment_type: 'active',
+        equipment_rarity: 'common',
+        levels: [
+          { level: 1, cost: 0, resource: 'glowy_ore', resource_options: ['glowy_ore'], resource_costs: createEquipmentResourceCosts(['glowy_ore', 0]), time: '0sec' },
+        ],
+      },
+      noble_iron: {
+        id: 'noble_iron',
+        image_path: '/src/assets/Equipment/Minion_Prince/Noble_Iron/219_0.png',
+        hero: 'Minion Prince',
+        buildings_unlocked: 1,
+        copy_unlocks: [true],
+        unlock_source: 'blacksmith',
+        blacksmith_level_unlocked: 1,
+        equipment_type: 'passive',
+        equipment_rarity: 'common',
+        levels: [
+          { level: 1, cost: 0, resource: 'glowy_ore', resource_options: ['glowy_ore'], resource_costs: createEquipmentResourceCosts(['glowy_ore', 0]), time: '0sec' },
         ],
       },
     }

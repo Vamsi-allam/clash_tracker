@@ -590,6 +590,7 @@ export default function AdminPage({ username, onLogout }) {
                   if (building.id === 'baby_dragon') return `41_${maxLevel}`
                   if (building.id === 'miner') return `42_${maxLevel}`
                   if (building.id === 'electro_dragon') return `103_${maxLevel}`
+                  if (building.id === 'yeti') return `121_${maxLevel}`
                   if (building.id === 'minion') return `53_${maxLevel}`
                   if (building.id === 'hog_rider') return `54_${maxLevel}`
                   if (building.id === 'valkyrie') return `55_${maxLevel}`
@@ -598,6 +599,7 @@ export default function AdminPage({ username, onLogout }) {
                   if (building.id === 'lava_hound') return `58_${maxLevel}`
                   if (building.id === 'bowler') return `59_${maxLevel}`
                   if (building.id === 'ice_golem') return `111_${maxLevel}`
+                  if (building.id === 'head_hunter') return `123_${maxLevel}`
                   if (building.id === 'wall_wrecker') return `105_${maxLevel}`
                   if (building.id === 'battle_blimp') return `106_${maxLevel}`
                   if (building.id === 'stone_slammer') return `109_${maxLevel}`
@@ -617,6 +619,7 @@ export default function AdminPage({ username, onLogout }) {
                   if (building.id === 'haste_spell') return '51'
                   if (building.id === 'skeleton_spell') return '52'
                   if (building.id === 'bat_spell') return '110'
+                  if (building.id === 'overgrowth_spell') return '175'
                   if (building.id === 'invisibility_spell') return '124'
                   if (building.id === 'barbarian_king') return '61'
                   if (building.id === 'archer_queen') return '62'

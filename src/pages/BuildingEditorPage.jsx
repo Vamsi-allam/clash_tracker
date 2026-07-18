@@ -1104,6 +1104,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
                 if (defence.id === 'baby_dragon') return `41_${maxLevel}`
                 if (defence.id === 'miner') return `42_${maxLevel}`
                 if (defence.id === 'electro_dragon') return `103_${maxLevel}`
+                if (defence.id === 'yeti') return `121_${maxLevel}`
                 if (defence.id === 'minion') return `53_${maxLevel}`
                 if (defence.id === 'hog_rider') return `54_${maxLevel}`
                 if (defence.id === 'valkyrie') return `55_${maxLevel}`
@@ -1112,6 +1113,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
                 if (defence.id === 'lava_hound') return `58_${maxLevel}`
                 if (defence.id === 'bowler') return `59_${maxLevel}`
                 if (defence.id === 'ice_golem') return `111_${maxLevel}`
+                if (defence.id === 'head_hunter') return `123_${maxLevel}`
                 if (defence.id === 'wall_wrecker') return `105_${maxLevel}`
                 if (defence.id === 'battle_blimp') return `106_${maxLevel}`
                 if (defence.id === 'stone_slammer') return `109_${maxLevel}`
@@ -1132,6 +1134,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
                 if (defence.id === 'haste_spell') return '51'
                 if (defence.id === 'skeleton_spell') return '52'
                 if (defence.id === 'bat_spell') return '110'
+                if (defence.id === 'overgrowth_spell') return '175'
                 if (defence.id === 'invisibility_spell') return '124'
                 if (defence.id === 'barbarian_king') return '61'
                 if (defence.id === 'archer_queen') return '62'
