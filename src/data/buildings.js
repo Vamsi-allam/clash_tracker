@@ -37,6 +37,7 @@ export const BUILDING_SECTIONS = {
     { id: 'workshop', name: 'Workshop', image: '/src/assets/Army/Workshop' },
     { id: 'lab', name: 'Lab', image: '/src/assets/Army/Lab' },
     { id: 'hero_hall', name: 'Hero Hall', image: '/src/assets/Army/Hero_Hall' },
+    { id: 'pet_house', name: 'Pet House', image: '/src/assets/Army/Pet_House' },
     { id: 'blacksmith', name: 'Blacksmith', image: '/src/assets/Army/Blacksmith' },
   ],
   resources: [
@@ -113,6 +114,9 @@ export const BUILDING_SECTIONS = {
     { id: 'minion_prince', name: 'Minion Prince', image: '/src/assets/Heros/Minion_Prince' },
     { id: 'dragon_duke', name: 'Dragon Duke', image: '/src/assets/Heros/Dragon_Duke' },
   ],
+  pets: [
+    { id: 'lassi', name: 'L.A.S.S.I', image: '/src/assets/pets/L.A.S.S.I' },
+  ],
   equipment: [
     { id: 'barbarian_puppet', name: 'Barbarian Puppet', hero: 'Barbarian King', image: '/src/assets/Equipment/Barbarian_King/Barbarian_puppet/157.png', levelCount: 4, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1, equipment_type: 'active', equipment_rarity: 'common' },
     { id: 'rage_vial', name: 'Rage Vial', hero: 'Barbarian King', image: '/src/assets/Equipment/Barbarian_King/Rage_Vial/158.png', levelCount: 1, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1, equipment_type: 'active', equipment_rarity: 'epic' },
@@ -165,6 +169,7 @@ export const ADMIN_BUILDINGS_BY_CATEGORY = {
   dark_troops: BUILDING_SECTIONS.dark_troops,
   sieges: BUILDING_SECTIONS.sieges,
   heroes: BUILDING_SECTIONS.heroes,
+  pets: BUILDING_SECTIONS.pets,
   equipment: BUILDING_SECTIONS.equipment,
   walls: BUILDING_SECTIONS.walls,
 }
@@ -180,6 +185,7 @@ export const ALL_BUILDINGS = [
   ...BUILDING_SECTIONS.dark_troops,
   ...BUILDING_SECTIONS.sieges,
   ...BUILDING_SECTIONS.heroes,
+  ...BUILDING_SECTIONS.pets,
   ...BUILDING_SECTIONS.walls,
 ]
 
@@ -192,6 +198,7 @@ export const SPELL_BUILDING_IDS = new Set([
 ])
 export const DARK_SPELL_BUILDING_IDS = new Set(BUILDING_SECTIONS.dark_spells.map((building) => building.id))
 export const HERO_BUILDING_IDS = new Set(BUILDING_SECTIONS.heroes.map((building) => building.id))
+export const PET_BUILDING_IDS = new Set(BUILDING_SECTIONS.pets.map((building) => building.id))
 export const EQUIPMENT_BUILDING_IDS = new Set(BUILDING_SECTIONS.equipment.map((building) => building.id))
 
 export const TROOP_BARRACKS_REQUIREMENTS = Object.fromEntries(
@@ -204,6 +211,10 @@ export const DARK_TROOP_BARRACKS_REQUIREMENTS = Object.fromEntries(
 
 export const SIEGE_WORKSHOP_REQUIREMENTS = Object.fromEntries(
   BUILDING_SECTIONS.sieges.map((building, index) => [building.id, index + 1]),
+)
+
+export const PET_HOUSE_REQUIREMENTS = Object.fromEntries(
+  BUILDING_SECTIONS.pets.map((building, index) => [building.id, index + 1]),
 )
 
 export const SPELL_FACTORY_REQUIREMENTS = Object.fromEntries(
@@ -225,6 +236,7 @@ export const getBuildingCategory = (buildingId) => {
   if (BUILDING_SECTIONS.dark_troops.some((building) => building.id === buildingId)) return 'dark_troops'
   if (BUILDING_SECTIONS.sieges.some((building) => building.id === buildingId)) return 'sieges'
   if (BUILDING_SECTIONS.heroes.some((building) => building.id === buildingId)) return 'heroes'
+  if (BUILDING_SECTIONS.pets.some((building) => building.id === buildingId)) return 'pets'
   if (BUILDING_SECTIONS.walls.some((building) => building.id === buildingId)) return 'walls'
   return 'defences'
 }
@@ -1475,6 +1487,29 @@ export const getDefaultBuildingData = (townhallLevel) => {
         equipment_rarity: 'common',
         levels: [
           { level: 1, cost: 0, resource: 'glowy_ore', resource_options: ['glowy_ore'], resource_costs: createEquipmentResourceCosts(['glowy_ore', 0]), time: '0sec' },
+        ],
+      },
+    }
+  }
+
+  if (Number(townhallLevel) === 14) {
+    return {
+      pet_house: {
+        id: 'pet_house',
+        image_path: '/src/assets/Army/Pet_House/128_',
+        buildings_unlocked: 1,
+        copy_unlocks: createCopyUnlocks(1, 1),
+        levels: [
+          { level: 1, cost: 0, resource: 'elixir', time: '0sec' },
+        ],
+      },
+      lassi: {
+        id: 'lassi',
+        image_path: '/src/assets/pets/L.A.S.S.I/129',
+        copy_unlocks: [true],
+        pet_house_level_unlocked: 1,
+        levels: [
+          { level: 1, cost: 0, resource: 'dark_elixir', time: '0sec', pet_house_level_unlocked: 1 },
         ],
       },
     }

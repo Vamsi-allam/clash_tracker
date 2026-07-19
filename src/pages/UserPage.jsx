@@ -18,7 +18,7 @@ import Header from '../components/Header'
 import ToastNotification from '../components/ToastNotification'
 import { supabase } from '../supabaseClient'
 import { getTownhallSnapshotForLevel } from '../utils/townhallSnapshot'
-import { BUILDING_SECTIONS, TROOP_BARRACKS_REQUIREMENTS, TROOP_BUILDING_IDS, DARK_TROOP_BARRACKS_REQUIREMENTS, DARK_TROOP_BUILDING_IDS, SIEGE_WORKSHOP_REQUIREMENTS, SIEGE_BUILDING_IDS, SPELL_FACTORY_REQUIREMENTS, DARK_SPELL_FACTORY_REQUIREMENTS, SPELL_BUILDING_IDS, DARK_SPELL_BUILDING_IDS, HERO_BUILDING_IDS, EQUIPMENT_BUILDING_IDS, getDefaultBuildingData } from '../data/buildings'
+import { BUILDING_SECTIONS, TROOP_BARRACKS_REQUIREMENTS, TROOP_BUILDING_IDS, DARK_TROOP_BARRACKS_REQUIREMENTS, DARK_TROOP_BUILDING_IDS, SIEGE_WORKSHOP_REQUIREMENTS, SIEGE_BUILDING_IDS, PET_HOUSE_REQUIREMENTS, PET_BUILDING_IDS, SPELL_FACTORY_REQUIREMENTS, DARK_SPELL_FACTORY_REQUIREMENTS, SPELL_BUILDING_IDS, DARK_SPELL_BUILDING_IDS, HERO_BUILDING_IDS, EQUIPMENT_BUILDING_IDS, getDefaultBuildingData } from '../data/buildings'
 
 // Convert API asset URL to proxied URL
 const getProxiedAssetUrl = (assetUrl) => {
@@ -159,7 +159,7 @@ const clampDurationPartsToMax = (parts, maxSeconds) => {
 
 const getStructureRowCount = (building, currentLevels = []) => {
   const buildingId = String(building?.id || '')
-  if (TROOP_BUILDING_IDS.has(buildingId) || DARK_TROOP_BUILDING_IDS.has(buildingId) || SIEGE_BUILDING_IDS.has(buildingId) || SPELL_BUILDING_IDS.has(buildingId) || EQUIPMENT_BUILDING_IDS.has(buildingId)) return 1
+  if (TROOP_BUILDING_IDS.has(buildingId) || DARK_TROOP_BUILDING_IDS.has(buildingId) || SIEGE_BUILDING_IDS.has(buildingId) || PET_BUILDING_IDS.has(buildingId) || SPELL_BUILDING_IDS.has(buildingId) || EQUIPMENT_BUILDING_IDS.has(buildingId)) return 1
 
   const unlockedCount = Number(building?.buildings_unlocked) || 0
   const savedCount = Array.isArray(currentLevels) ? currentLevels.length : 0
@@ -179,6 +179,11 @@ const getDarkTroopBarracksRequirement = (building) => {
 const getSiegeWorkshopRequirement = (building) => {
   const fallbackRequirement = SIEGE_WORKSHOP_REQUIREMENTS[String(building?.id || '').toLowerCase()] || 1
   return Math.max(fallbackRequirement, Number(building?.workshop_level_unlocked) || 0)
+}
+
+const getPetHouseRequirement = (building) => {
+  const fallbackRequirement = PET_HOUSE_REQUIREMENTS[String(building?.id || '').toLowerCase()] || 1
+  return Math.max(fallbackRequirement, Number(building?.pet_house_level_unlocked) || 0)
 }
 
 const getHeroHallUnlockRequirement = (building) => {
@@ -243,10 +248,15 @@ const getCurrentBlacksmithLevel = (structureLevels = {}) => {
   return blacksmithLevels.reduce((highest, value) => Math.max(highest, Number(value) || 0), 0)
 }
 
+const getCurrentPetHouseLevel = (structureLevels = {}) => {
+  const petHouseLevels = Array.isArray(structureLevels?.pet_house) ? structureLevels.pet_house : []
+  return petHouseLevels.reduce((highest, value) => Math.max(highest, Number(value) || 0), 0)
+}
+
 const getAllowedBuildingRowIdsForSnapshot = (snapshot = {}) => {
   const rowIds = new Set()
 
-  ;['defences', 'traps', 'army', 'resources', 'troops', 'spells', 'dark_troops', 'sieges', 'heroes', 'equipment'].forEach((categoryKey) => {
+  ;['defences', 'traps', 'army', 'resources', 'troops', 'spells', 'dark_troops', 'sieges', 'heroes', 'pets', 'equipment'].forEach((categoryKey) => {
     const category = Array.isArray(snapshot?.[categoryKey]) ? snapshot[categoryKey] : []
 
     category.forEach((building) => {
@@ -414,6 +424,7 @@ const clanCastleImages = import.meta.glob('../assets/Army/clan_castle/*.png', { 
 const labImages = import.meta.glob('../assets/Army/Lab/*.png', { eager: true, import: 'default' })
 const blacksmithImages = import.meta.glob('../assets/Army/Blacksmith/*.png', { eager: true, import: 'default' })
 const heroHallImages = import.meta.glob('../assets/Army/Hero_Hall/*.png', { eager: true, import: 'default' })
+const petHouseImages = import.meta.glob('../assets/Army/Pet_House/*.png', { eager: true, import: 'default' })
 const goldMineImages = import.meta.glob('../assets/Resources/goldmine/*.png', { eager: true, import: 'default' })
 const elixirCollectorImages = import.meta.glob('../assets/Resources/elixir_collector/*.png', { eager: true, import: 'default' })
 const goldStorageImages = import.meta.glob('../assets/Resources/gold_storage/*.png', { eager: true, import: 'default' })
@@ -446,6 +457,7 @@ const bowlerDarkTroopImages = import.meta.glob('../assets/Dark_Troops/Bowler/*.p
 const iceGolemDarkTroopImages = import.meta.glob('../assets/Dark_Troops/Ice_Golem/*.png', { eager: true, import: 'default' })
 const headHunterDarkTroopImages = import.meta.glob('../assets/Dark_Troops/HeadHunter/*.png', { eager: true, import: 'default' })
 const apprenticeWardenDarkTroopImages = import.meta.glob('../assets/Dark_Troops/Apprentice_Warden/*.png', { eager: true, import: 'default' })
+const lassiPetImages = import.meta.glob('../assets/pets/L.A.S.S.I/*.png', { eager: true, import: 'default' })
 const wallWreckerSiegeImages = import.meta.glob('../assets/Seige_machines/Wall_Wrecker/*.png', { eager: true, import: 'default' })
 const battleBlimpSiegeImages = import.meta.glob('../assets/Seige_machines/Battle_Blimp/*.png', { eager: true, import: 'default' })
 const stoneSlammerSiegeImages = import.meta.glob('../assets/Seige_machines/Stone_Slammer/*.png', { eager: true, import: 'default' })
@@ -495,7 +507,7 @@ export default function UserPage({ username, onLogout, userId }) {
   const [wallConfig, setWallConfig] = useState(null)
   const [wallCounts, setWallCounts] = useState({})
   const [wallLoading, setWallLoading] = useState(false)
-  const [structureCatalog, setStructureCatalog] = useState({ defences: [], traps: [], army: [], resources: [], troops: [], spells: [], dark_troops: [], sieges: [], heroes: [], equipment: [] })
+  const [structureCatalog, setStructureCatalog] = useState({ defences: [], traps: [], army: [], resources: [], troops: [], spells: [], dark_troops: [], sieges: [], heroes: [], pets: [], equipment: [] })
   const [structureLevels, setStructureLevels] = useState({})
   const [structuresLoading, setStructuresLoading] = useState(false)
   const [refreshingVillage, setRefreshingVillage] = useState(false)
@@ -525,12 +537,14 @@ export default function UserPage({ username, onLogout, userId }) {
   const currentWorkshopLevel = getCurrentWorkshopLevel(structureLevels)
   const currentHeroHallLevel = getCurrentHeroHallLevel(structureLevels)
   const currentBlacksmithLevel = getCurrentBlacksmithLevel(structureLevels)
+  const currentPetHouseLevel = getCurrentPetHouseLevel(structureLevels)
   const showTrapsTab = Number(activeVillage?.townhall_level || 0) >= 3
   const showSpellsTab = Number(activeVillage?.townhall_level || 0) >= 5
   const showDarkTroopsTab = Number(activeVillage?.townhall_level || 0) >= 7
   const showSiegesTab = Number(activeVillage?.townhall_level || 0) >= 12
   const showHeroesTab = Number(activeVillage?.townhall_level || 0) >= 4
   const showEquipmentTab = Number(activeVillage?.townhall_level || 0) >= 8
+  const showPetsTab = Number(activeVillage?.townhall_level || 0) >= 14
   const showLabAssistBox = Number(activeVillage?.townhall_level || 0) >= 9
   const displayedLoadedTab = !showTrapsTab && activeLoadedTab === 'traps'
     ? 'defences'
@@ -543,6 +557,8 @@ export default function UserPage({ username, onLogout, userId }) {
     : !showHeroesTab && activeLoadedTab === 'heroes'
       ? 'defences'
     : !showEquipmentTab && activeLoadedTab === 'equipment'
+      ? 'defences'
+    : !showPetsTab && activeLoadedTab === 'pets'
       ? 'defences'
       : activeLoadedTab
 
@@ -1014,6 +1030,7 @@ export default function UserPage({ username, onLogout, userId }) {
         .filter(Boolean)
     const normalizedSieges = normalizeStructures(data?.sieges)
     const normalizedHeroes = normalizeStructures(data?.heroes)
+    const normalizedPets = normalizeStructures(data?.pets)
     const normalizedEquipment = normalizeStructures(data?.equipment)
 
     return {
@@ -1026,6 +1043,7 @@ export default function UserPage({ username, onLogout, userId }) {
       dark_troops: normalizedDarkTroops,
       sieges: normalizedSieges,
       heroes: normalizedHeroes,
+      pets: normalizedPets,
       equipment: normalizedEquipment,
       walls: normalizeWalls(data?.walls),
     }
@@ -1100,7 +1118,7 @@ export default function UserPage({ username, onLogout, userId }) {
       }
 
       const initialLevels = {}
-      ;[...normalizedData.defences, ...normalizedData.traps, ...normalizedData.army, ...normalizedData.resources, ...normalizedData.troops, ...normalizedData.spells, ...normalizedData.dark_troops, ...normalizedData.sieges, ...normalizedData.heroes, ...normalizedData.equipment].forEach((building) => {
+      ;[...normalizedData.defences, ...normalizedData.traps, ...normalizedData.army, ...normalizedData.resources, ...normalizedData.troops, ...normalizedData.spells, ...normalizedData.dark_troops, ...normalizedData.sieges, ...normalizedData.heroes, ...normalizedData.pets, ...normalizedData.equipment].forEach((building) => {
         const savedRowsForBuilding = savedStructureRows.filter((row) => row.building_id?.startsWith(`${building.id}-`))
         const rowCount = getStructureRowCount(building, savedRowsForBuilding)
         initialLevels[building.id] = Array.from({ length: rowCount }, (_, index) => {
@@ -1237,14 +1255,14 @@ export default function UserPage({ username, onLogout, userId }) {
         villageId,
       })
       if (!data) {
-        setStructureCatalog({ defences: [], traps: [], army: [], resources: [], troops: [], spells: [], dark_troops: [], sieges: [], heroes: [], equipment: [] })
+        setStructureCatalog({ defences: [], traps: [], army: [], resources: [], troops: [], spells: [], dark_troops: [], sieges: [], heroes: [], pets: [], equipment: [] })
         setStructureLevels({})
         setWallConfig(null)
         setWallCounts({})
       }
     } catch (fetchError) {
       console.error('Failed to load townhall structures:', fetchError)
-      setStructureCatalog({ defences: [], traps: [], army: [], resources: [], troops: [], spells: [], dark_troops: [], sieges: [], heroes: [], equipment: [] })
+      setStructureCatalog({ defences: [], traps: [], army: [], resources: [], troops: [], spells: [], dark_troops: [], sieges: [], heroes: [], pets: [], equipment: [] })
       setStructureLevels({})
       setWallConfig(null)
       setWallCounts({})
@@ -1696,6 +1714,7 @@ export default function UserPage({ username, onLogout, userId }) {
     lab: 6,
     hero_hall: 7,
     blacksmith: 8,
+    pet_house: 9,
   }
 
   const visibleDefenseBuildings = [...(structureCatalog.defences || [])]
@@ -1733,7 +1752,7 @@ export default function UserPage({ username, onLogout, userId }) {
   const editResourceBuildings = [...(structureCatalog.resources || [])]
     .filter((building) => ['gold_mine', 'elixir_collector', 'gold_storage', 'elixir_storage', 'dark_elixir_driller', 'dark_elixir_storage'].includes(building.id))
   const editArmyBuildings = [...(structureCatalog.army || [])]
-    .filter((building) => ['army_camp', 'lab', 'hero_hall', 'blacksmith'].includes(building.id))
+    .filter((building) => ['army_camp', 'lab', 'hero_hall', 'blacksmith', 'pet_house'].includes(building.id))
   const visibleSpellBuildings = activeLoadedTab === 'spells'
     ? (() => {
       const spellBuildings = (structureCatalog.spells || []).filter((building) => building?.id)
@@ -1761,6 +1780,10 @@ export default function UserPage({ username, onLogout, userId }) {
 
   const visibleEquipmentBuildings = activeLoadedTab === 'equipment'
     ? (structureCatalog.equipment || [])
+    : []
+
+  const visiblePetBuildings = activeLoadedTab === 'pets'
+    ? (structureCatalog.pets || [])
     : []
 
   const equipmentHeroSortOrder = {
@@ -1852,6 +1875,8 @@ export default function UserPage({ username, onLogout, userId }) {
             ? (structureCatalog.heroes || [])
           : activeLoadedTab === 'equipment'
             ? (structureCatalog.equipment || [])
+          : activeLoadedTab === 'pets'
+            ? (structureCatalog.pets || [])
           : []
 
   const isWallsTabActive = activeLoadedTab === 'walls'
@@ -1878,6 +1903,7 @@ export default function UserPage({ username, onLogout, userId }) {
     sieges: getPendingUpgradeCountForBuildings(structureCatalog.sieges || []),
     heroes: getPendingUpgradeCountForBuildings(structureCatalog.heroes || []),
     equipment: showEquipmentTab ? getPendingUpgradeCountForBuildings(structureCatalog.equipment || []) : 0,
+    pets: showPetsTab ? getPendingUpgradeCountForBuildings(structureCatalog.pets || []) : 0,
     walls: 0,
   }
 
@@ -2009,7 +2035,9 @@ export default function UserPage({ username, onLogout, userId }) {
   const getUpgradeSummary = (building, currentLevel, labLevel = 0, heroHallLevel = 0, blacksmithLevel = 0) => {
     const allNextLevels = getNextUpgradeLevels(building, currentLevel)
     const equipmentUsesBlacksmithRequirement = allNextLevels.some((level) => Number(level?.blacksmith_level_unlocked ?? building?.blacksmith_level_unlocked ?? 0) > 0)
-    const nextLevels = (TROOP_BUILDING_IDS.has(String(building?.id || '')) || DARK_TROOP_BUILDING_IDS.has(String(building?.id || '')) || SIEGE_BUILDING_IDS.has(String(building?.id || '')) || SPELL_BUILDING_IDS.has(String(building?.id || '')))
+    const nextLevels = PET_BUILDING_IDS.has(String(building?.id || ''))
+      ? allNextLevels.filter((level) => Number(level.pet_house_level_unlocked ?? building?.pet_house_level_unlocked ?? 0) <= Number(currentPetHouseLevel || 0))
+      : (TROOP_BUILDING_IDS.has(String(building?.id || '')) || DARK_TROOP_BUILDING_IDS.has(String(building?.id || '')) || SIEGE_BUILDING_IDS.has(String(building?.id || '')) || SPELL_BUILDING_IDS.has(String(building?.id || '')))
       ? allNextLevels.filter((level) => Number(level.lab_level_unlocked ?? 0) <= Number(labLevel || 0))
       : HERO_BUILDING_IDS.has(String(building?.id || ''))
         ? allNextLevels.filter((level) => Number(level.hero_hall_level_unlocked ?? 0) <= Number(heroHallLevel || 0))
@@ -2517,6 +2545,11 @@ export default function UserPage({ username, onLogout, userId }) {
         return
       }
 
+      if (PET_BUILDING_IDS.has(String(building.id || '')) && rowState.labRequirementLevel != null && rowState.visibleNextLevels.length === 0) {
+        showToast(`Pet House level ${rowState.labRequirementLevel} is required to upgrade this pet.`, 'error')
+        return
+      }
+
       if (TROOP_BUILDING_IDS.has(String(building.id || '')) && Number(currentBarracksLevel || 0) < getTroopBarracksRequirement(building)) {
         showToast(`Barracks level ${getTroopBarracksRequirement(building)} is required to unlock this troop.`, 'error')
         return
@@ -2524,6 +2557,11 @@ export default function UserPage({ username, onLogout, userId }) {
 
       if (DARK_TROOP_BUILDING_IDS.has(String(building.id || '')) && Number(currentDarkBarracksLevel || 0) < getDarkTroopBarracksRequirement(building)) {
         showToast(`Dark Barracks level ${getDarkTroopBarracksRequirement(building)} is required to unlock this troop.`, 'error')
+        return
+      }
+
+      if (PET_BUILDING_IDS.has(String(building.id || '')) && Number(currentPetHouseLevel || 0) < getPetHouseRequirement(building)) {
+        showToast(`Pet House level ${getPetHouseRequirement(building)} is required to unlock this pet.`, 'error')
         return
       }
 
@@ -2870,6 +2908,42 @@ export default function UserPage({ username, onLogout, userId }) {
     return Math.floor(rawPercent * 10) / 10
   }
 
+  const computePetsCompletion = () => {
+    const buildings = [...(structureCatalog.pets || [])]
+    if (!buildings || buildings.length === 0) return 0
+
+    let totalCurrentLevels = 0
+    let totalMaxLevels = 0
+
+    buildings.forEach((building) => {
+      const maxLevel = Math.max(...(building.levels || []).map((l) => l.level), 0)
+      const petRequirement = getPetHouseRequirement(building)
+      const petUnlocked = Number(currentPetHouseLevel || 0) >= Number(petRequirement || 0)
+
+      if (maxLevel <= 0) {
+        return
+      }
+
+      const rows = getStructureRowCount(building, structureLevels[building.id] || [])
+      const levelsArray = structureLevels[building.id] || Array.from(
+        { length: rows },
+        (_, index) => getDefaultRowLevel(building, index, isCopyUnlocked(building, index)),
+      )
+
+      for (let i = 0; i < rows; i += 1) {
+        // Keep locked pets at 0/1 until Pet House requirement is met.
+        const denominatorMax = petUnlocked ? maxLevel : 1
+        const currentLevel = petUnlocked ? Number(levelsArray[i] || 0) : 0
+        totalCurrentLevels += Math.min(Math.max(currentLevel, 0), denominatorMax)
+        totalMaxLevels += denominatorMax
+      }
+    })
+
+    if (totalMaxLevels === 0) return 0
+    const rawPercent = (totalCurrentLevels / totalMaxLevels) * 100
+    return Math.floor(rawPercent * 10) / 10
+  }
+
   useEffect(() => {
     const townhallLevel = activeVillage?.townhall_level
     const currentVillageId = activeVillage?.id
@@ -2993,7 +3067,9 @@ export default function UserPage({ username, onLogout, userId }) {
           const rowLevel = pendingUpgrade
             ? Number(pendingUpgrade.toLevel)
             : Number(levelsArray[rowIndex] ?? getDefaultRowLevel(building, rowIndex, isCopyUnlocked(building, rowIndex)))
-          const nextLevels = (TROOP_BUILDING_IDS.has(String(building?.id || '')) || DARK_TROOP_BUILDING_IDS.has(String(building?.id || '')) || SPELL_BUILDING_IDS.has(String(building?.id || '')))
+          const nextLevels = PET_BUILDING_IDS.has(String(building?.id || ''))
+            ? getNextUpgradeLevels(building, rowLevel).filter((levelInfo) => Number(levelInfo.pet_house_level_unlocked ?? building?.pet_house_level_unlocked ?? 0) <= Number(currentPetHouseLevel || 0))
+            : (TROOP_BUILDING_IDS.has(String(building?.id || '')) || DARK_TROOP_BUILDING_IDS.has(String(building?.id || '')) || SPELL_BUILDING_IDS.has(String(building?.id || '')))
             ? getNextUpgradeLevels(building, rowLevel).filter((levelInfo) => Number(levelInfo.lab_level_unlocked ?? 0) <= Number(currentLabLevel || 0))
             : HERO_BUILDING_IDS.has(String(building?.id || ''))
               ? getNextUpgradeLevels(building, rowLevel).filter((levelInfo) => Number(levelInfo.hero_hall_level_unlocked ?? 0) <= Number(currentHeroHallLevel || 0))
@@ -3113,6 +3189,12 @@ export default function UserPage({ username, onLogout, userId }) {
     }
   }, [activeLoadedTab, showEquipmentTab])
 
+  useEffect(() => {
+    if (!showPetsTab && activeLoadedTab === 'pets') {
+      setActiveLoadedTab('defences')
+    }
+  }, [activeLoadedTab, showPetsTab])
+
   const getBuildingImagePath = (building, level) => {
     const requestedLevel = Math.max(0, Number(level) || 0)
 
@@ -3147,6 +3229,8 @@ export default function UserPage({ username, onLogout, userId }) {
       lab: (imageLevel) => labImages[`../assets/Army/Lab/13_${imageLevel}.png`] || '',
       blacksmith: (imageLevel) => blacksmithImages[`../assets/Army/Blacksmith/152_${imageLevel}.png`] || '',
       hero_hall: (imageLevel) => heroHallImages[`../assets/Army/Hero_Hall/202_${imageLevel}.png`] || '',
+      pet_house: (imageLevel) => petHouseImages[`../assets/Army/Pet_House/128_${imageLevel}.png`] || '',
+      lassi: () => lassiPetImages['../assets/pets/L.A.S.S.I/129.png'] || lassiPetImages['../assets/pets/L.A.S.S.I/129_0.png'] || '',
       gold_mine: (imageLevel) => goldMineImages[`../assets/Resources/goldmine/2_${imageLevel}.png`] || '',
       elixir_collector: (imageLevel) => elixirCollectorImages[`../assets/Resources/elixir_collector/3_${imageLevel}.png`] || '',
       gold_storage: (imageLevel) => goldStorageImages[`../assets/Resources/gold_storage/5_${imageLevel}.png`] || '',
@@ -3292,7 +3376,9 @@ export default function UserPage({ username, onLogout, userId }) {
       const blacksmithLockedNextLevels = equipmentUsesBlacksmithRequirement
         ? allRemainingNextLevels.filter((levelInfo) => Number(levelInfo.blacksmith_level_unlocked ?? building?.blacksmith_level_unlocked ?? 0) > Number(currentBlacksmithLevel || 0))
         : []
-      const labLockedNextLevels = (TROOP_BUILDING_IDS.has(String(building?.id || '')) || DARK_TROOP_BUILDING_IDS.has(String(building?.id || '')) || SIEGE_BUILDING_IDS.has(String(building?.id || '')) || SPELL_BUILDING_IDS.has(String(building?.id || '')))
+      const labLockedNextLevels = PET_BUILDING_IDS.has(String(building?.id || ''))
+        ? allRemainingNextLevels.filter((levelInfo) => Number(levelInfo.pet_house_level_unlocked ?? building?.pet_house_level_unlocked ?? 0) > Number(currentPetHouseLevel || 0))
+        : (TROOP_BUILDING_IDS.has(String(building?.id || '')) || DARK_TROOP_BUILDING_IDS.has(String(building?.id || '')) || SIEGE_BUILDING_IDS.has(String(building?.id || '')) || SPELL_BUILDING_IDS.has(String(building?.id || '')))
         ? allRemainingNextLevels.filter((levelInfo) => Number(levelInfo.lab_level_unlocked ?? 0) > Number(currentLabLevel || 0))
         : HERO_BUILDING_IDS.has(String(building?.id || ''))
           ? allRemainingNextLevels.filter((levelInfo) => Number(levelInfo.hero_hall_level_unlocked ?? 0) > Number(currentHeroHallLevel || 0))
@@ -3301,7 +3387,9 @@ export default function UserPage({ username, onLogout, userId }) {
             : []
       const labRequirementLevel = labLockedNextLevels.length > 0
         ? Math.min(...labLockedNextLevels.map((levelInfo) =>
-            (TROOP_BUILDING_IDS.has(String(building?.id || '')) || DARK_TROOP_BUILDING_IDS.has(String(building?.id || '')) || SIEGE_BUILDING_IDS.has(String(building?.id || '')) || SPELL_BUILDING_IDS.has(String(building?.id || '')))
+            PET_BUILDING_IDS.has(String(building?.id || ''))
+              ? Number(levelInfo.pet_house_level_unlocked ?? building?.pet_house_level_unlocked ?? 0) || 0
+              : (TROOP_BUILDING_IDS.has(String(building?.id || '')) || DARK_TROOP_BUILDING_IDS.has(String(building?.id || '')) || SIEGE_BUILDING_IDS.has(String(building?.id || '')) || SPELL_BUILDING_IDS.has(String(building?.id || '')))
               ? Number(levelInfo.lab_level_unlocked || 0) || 0
               : HERO_BUILDING_IDS.has(String(building?.id || ''))
                 ? Number(levelInfo.hero_hall_level_unlocked || 0) || 0
@@ -3312,7 +3400,9 @@ export default function UserPage({ username, onLogout, userId }) {
         : blacksmithLockedNextLevels.length > 0
           ? Math.min(...blacksmithLockedNextLevels.map((levelInfo) => Number(levelInfo.blacksmith_level_unlocked ?? building?.blacksmith_level_unlocked ?? 0) || 0))
         : null
-      const labRequirementLabel = (TROOP_BUILDING_IDS.has(String(building?.id || '')) || DARK_TROOP_BUILDING_IDS.has(String(building?.id || '')) || SIEGE_BUILDING_IDS.has(String(building?.id || '')) || SPELL_BUILDING_IDS.has(String(building?.id || '')))
+      const labRequirementLabel = PET_BUILDING_IDS.has(String(building?.id || ''))
+        ? 'Pet House'
+        : (TROOP_BUILDING_IDS.has(String(building?.id || '')) || DARK_TROOP_BUILDING_IDS.has(String(building?.id || '')) || SIEGE_BUILDING_IDS.has(String(building?.id || '')) || SPELL_BUILDING_IDS.has(String(building?.id || '')))
         ? 'Lab'
         : HERO_BUILDING_IDS.has(String(building?.id || ''))
           ? 'Hero Hall'
@@ -3368,6 +3458,10 @@ export default function UserPage({ username, onLogout, userId }) {
         return Number(levelInfo?.hero_hall_level_unlocked ?? 0) > Number(currentHeroHallLevel || 0)
       }
 
+      if (rowState?.labRequirementLabel === 'Pet House') {
+        return Number(levelInfo?.pet_house_level_unlocked ?? building?.pet_house_level_unlocked ?? rowState?.labRequirementLevel ?? 0) > Number(currentPetHouseLevel || 0)
+      }
+
       if (rowState?.labRequirementLabel === 'Blacksmith') {
         const requiredBlacksmithLevel = Number(levelInfo?.blacksmith_level_unlocked ?? building?.blacksmith_level_unlocked ?? rowState?.labRequirementLevel ?? 0)
         return requiredBlacksmithLevel > Number(currentBlacksmithLevel || 0)
@@ -3385,7 +3479,7 @@ export default function UserPage({ username, onLogout, userId }) {
     const upgradeListClassName = activeLoadedTab === 'equipment'
       ? `${styles.readOnlyUpgradeList} ${styles.readOnlyUpgradeListEquipment}`
       : styles.readOnlyUpgradeList
-    const hideLevelOneInUpgradeList = ['troops', 'dark_troops', 'sieges', 'spells', 'dark_spells', 'heroes', 'equipment'].includes(activeLoadedTab)
+    const hideLevelOneInUpgradeList = ['troops', 'dark_troops', 'sieges', 'pets', 'spells', 'dark_spells', 'heroes', 'equipment'].includes(activeLoadedTab)
     const getVisibleUpgradeLevels = (levels = []) => (
       hideLevelOneInUpgradeList
         ? levels.filter((levelInfo) => Number(levelInfo?.level) !== 1)
@@ -3396,9 +3490,10 @@ export default function UserPage({ username, onLogout, userId }) {
             const isTroopTabCard = activeLoadedTab === 'troops' && TROOP_BUILDING_IDS.has(String(building?.id || ''))
             const isDarkTroopTabCard = activeLoadedTab === 'dark_troops' && DARK_TROOP_BUILDING_IDS.has(String(building?.id || ''))
             const isSiegeTabCard = activeLoadedTab === 'sieges' && SIEGE_BUILDING_IDS.has(String(building?.id || ''))
+            const isPetTabCard = activeLoadedTab === 'pets' && PET_BUILDING_IDS.has(String(building?.id || ''))
             const isSpellTabCard = (activeLoadedTab === 'spells' || activeLoadedTab === 'dark_spells') && SPELL_BUILDING_IDS.has(String(building?.id || ''))
 
-            if (isTroopTabCard || isDarkTroopTabCard || isSiegeTabCard || isSpellTabCard) {
+            if (isTroopTabCard || isDarkTroopTabCard || isSiegeTabCard || isPetTabCard || isSpellTabCard) {
               const troopRowState = rowStates[0] || null
               const isDarkSpellBuilding = SPELL_BUILDING_IDS.has(String(building?.id || '')) && DARK_SPELL_BUILDING_IDS.has(String(building?.id || ''))
               const troopUnlocked = isTroopTabCard
@@ -3407,6 +3502,8 @@ export default function UserPage({ username, onLogout, userId }) {
                   ? currentDarkBarracksLevel >= getDarkTroopBarracksRequirement(building)
                   : isSiegeTabCard
                     ? currentWorkshopLevel >= siegeWorkshopRequirement
+                  : isPetTabCard
+                    ? currentPetHouseLevel >= getPetHouseRequirement(building)
                   : isDarkSpellBuilding
                     ? currentDarkSpellFactoryLevel >= darkSpellFactoryRequirement
                     : currentSpellFactoryLevel >= spellFactoryRequirement
@@ -3419,6 +3516,8 @@ export default function UserPage({ username, onLogout, userId }) {
                   ? `Requires Dark Barracks level ${getDarkTroopBarracksRequirement(building)} to unlock`
                   : isSiegeTabCard
                     ? `Requires Workshop level ${siegeWorkshopRequirement} to unlock`
+                  : isPetTabCard
+                    ? `Requires Pet House level ${getPetHouseRequirement(building)} to unlock`
                   : isDarkSpellBuilding
                     ? `Requires Dark Spell Factory level ${darkSpellFactoryRequirement} to unlock`
                     : `Requires Spell Factory level ${spellFactoryRequirement} to unlock`
@@ -3481,7 +3580,9 @@ export default function UserPage({ username, onLogout, userId }) {
                                             />
                                           ) : null}
                                         </span>
-                                        <span className={`${styles.readOnlyUpgradeLevel} ${Number(levelInfo.lab_level_unlocked ?? 0) > Number(currentLabLevel || 0) ? styles.readOnlyUpgradeLevelLocked : ''}`}>
+                                        <span className={`${styles.readOnlyUpgradeLevel} ${(isPetTabCard
+                                          ? Number(levelInfo.pet_house_level_unlocked ?? building?.pet_house_level_unlocked ?? 0) > Number(currentPetHouseLevel || 0)
+                                          : Number(levelInfo.lab_level_unlocked ?? 0) > Number(currentLabLevel || 0)) ? styles.readOnlyUpgradeLevelLocked : ''}`}>
                                           Lvl {levelInfo.level}:
                                         </span>
                                         <span className={`${styles.readOnlyUpgradeCost} ${getUpgradeResourceClass(levelInfo.resource)}`}>
@@ -4463,6 +4564,8 @@ export default function UserPage({ username, onLogout, userId }) {
                 ? 'Siege'
                 : displayedLoadedTab === 'equipment'
                   ? 'Equipment'
+                : displayedLoadedTab === 'pets'
+                  ? 'Pet'
             : displayedLoadedTab === 'heroes'
               ? 'Hero'
             : 'Walls'
@@ -4488,6 +4591,8 @@ export default function UserPage({ username, onLogout, userId }) {
                   ? 'Sieges'
                 : displayedLoadedTab === 'equipment'
                   ? 'Equipment'
+                : displayedLoadedTab === 'pets'
+                  ? 'Pets'
               : displayedLoadedTab === 'heroes'
                 ? 'Heroes'
               : 'Walls'
@@ -4515,6 +4620,7 @@ export default function UserPage({ username, onLogout, userId }) {
     sieges: 'Sieges',
     heroes: 'Heroes',
     equipment: 'Equipment',
+    pets: 'Pets',
     walls: 'Walls',
   }
 
@@ -4619,6 +4725,23 @@ export default function UserPage({ username, onLogout, userId }) {
     })
   }
 
+  const isPetCategoryComplete = (buildings = []) => {
+    if (!Array.isArray(buildings) || buildings.length === 0) return false
+
+    return buildings.every((building) => {
+      const maxLevel = Math.max(...(building.levels || []).map((level) => Number(level.level || 0)), 0)
+      if (maxLevel <= 0) return false
+
+      const petRequirement = getPetHouseRequirement(building)
+      if (currentPetHouseLevel < petRequirement) return false
+
+      const rowLevels = structureLevels[building.id] || []
+      const rowCount = getStructureRowCount(building, rowLevels)
+
+      return Array.from({ length: rowCount }, (_, index) => Number(rowLevels[index] || 0) >= maxLevel).every(Boolean)
+    })
+  }
+
   const loadedTabCompletion = {
     defences: isBuildingCategoryComplete(visibleDefenseBuildings),
     traps: showTrapsTab ? isBuildingCategoryComplete(visibleTrapBuildings) : false,
@@ -4630,12 +4753,14 @@ export default function UserPage({ username, onLogout, userId }) {
     sieges: showSiegesTab ? isSiegeCategoryComplete(structureCatalog.sieges || []) : false,
     heroes: showHeroesTab ? computeHeroesCompletion() >= 100 : false,
     equipment: showEquipmentTab ? isEquipmentCategoryComplete(structureCatalog.equipment || []) : false,
+    pets: showPetsTab ? isPetCategoryComplete(structureCatalog.pets || []) : false,
     walls: isWallMaxComplete,
   }
   const showTroopsProgress = currentTownHallLevel >= 3
   const showSpellsProgress = currentTownHallLevel >= 5
   const showHeroesProgress = currentTownHallLevel >= 4
   const showEquipmentProgress = currentTownHallLevel >= 8
+  const showPetsProgress = currentTownHallLevel >= 14
   const townhallConstructionReady = (() => {
     const constructibleBuildings = [
       ...(structureCatalog.defences || []),
@@ -4646,6 +4771,7 @@ export default function UserPage({ username, onLogout, userId }) {
       ...(structureCatalog.spells || []),
       ...(structureCatalog.dark_troops || []),
       ...(structureCatalog.sieges || []),
+      ...(structureCatalog.pets || []),
     ].filter((building) => building?.id)
 
     if (constructibleBuildings.length === 0) return false
@@ -4873,6 +4999,16 @@ export default function UserPage({ username, onLogout, userId }) {
                             </div>
                           )}
 
+                          {showPetsProgress && (
+                            <div className={styles.progressRow}>
+                              <div className={styles.progressBarWrap}>
+                                <div className={styles.progressBarInner} style={{width: `${Math.max(0, computePetsCompletion())}%`}} />
+                                <span className={styles.progressOverlayLabel}>{Math.max(0, computePetsCompletion())}%</span>
+                              </div>
+                              <div className={styles.progressName}>Pets</div>
+                            </div>
+                          )}
+
                         <div className={styles.progressRow}>
                           <div className={styles.progressBarWrap}>
                             <div className={styles.progressBarInner} style={{width: `${Math.max(0, computeWallsCompletion())}%`}} />
@@ -5047,7 +5183,7 @@ export default function UserPage({ username, onLogout, userId }) {
 
                 <div className={styles.loadedTabShell}>
                   <div className={styles.loadedTabBar}>
-                    {['defences', ...(showTrapsTab ? ['traps'] : []), 'army', 'resources', 'troops', ...(showSpellsTab ? ['spells'] : []), ...(showDarkTroopsTab ? ['dark_troops'] : []), ...(showSiegesTab ? ['sieges'] : []), ...(showHeroesTab ? ['heroes'] : []), ...(showEquipmentTab ? ['equipment'] : []), 'walls'].map((tab) => (
+                    {['defences', ...(showTrapsTab ? ['traps'] : []), 'army', 'resources', 'troops', ...(showSpellsTab ? ['spells'] : []), ...(showDarkTroopsTab ? ['dark_troops'] : []), ...(showSiegesTab ? ['sieges'] : []), ...(showHeroesTab ? ['heroes'] : []), ...(showEquipmentTab ? ['equipment'] : []), ...(showPetsTab ? ['pets'] : []), 'walls'].map((tab) => (
                       (() => {
                         const upgradeCount = loadedTabUpgradeCounts[tab] || 0
                         const isUpgrading = upgradeCount > 0
@@ -5328,6 +5464,27 @@ export default function UserPage({ username, onLogout, userId }) {
                             </div>
                             <div className={styles.readOnlyLoadedList}>
                               {visibleSiegesTabBuildings.map((building, index) => renderStructureCard(building, `tab-sieges-${building.id}-${index}`, { readOnly: true }))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {displayedLoadedTab === 'pets' && showPetsTab && (
+                        <div className={styles.loadedTabSection}>
+                          <div className={styles.loadedTabSectionHeader}>
+                            <div className={styles.loadedTabHeaderLeft}>
+                              <h3 className={styles.loadedTabSectionTitle}>{loadedTabSectionTitle}</h3>
+                              <SettingsIcon className={styles.loadedTabSettingsIcon} />
+                            </div>
+                          </div>
+                          <div className={styles.loadedStructureFrame}>
+                            <div className={styles.loadedStructureHeader}>
+                              <span>{loadedTabPrimaryLabel}</span>
+                              <span>{loadedTabSecondaryLabel}</span>
+                              <span>Upgrades</span>
+                            </div>
+                            <div className={styles.readOnlyLoadedList}>
+                              {visiblePetBuildings.map((building, index) => renderStructureCard(building, `tab-pets-${building.id}-${index}`, { readOnly: true }))}
                             </div>
                           </div>
                         </div>

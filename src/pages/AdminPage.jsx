@@ -124,6 +124,7 @@ export default function AdminPage({ username, onLogout }) {
   const showSiegesTab = Number(townhallLevel) >= 12
   const showHeroesTab = Number(townhallLevel) >= 4
   const showEquipmentTab = Number(townhallLevel) >= 8
+  const showPetsTab = Number(townhallLevel) >= 14
   const townhalls = Array.from({ length: 17 }, (_, i) => i + 2) // Town halls 2-18
   const [activeTab, setActiveTab] = useState('defenses')
   const [dynamicData, setDynamicData] = useState({})
@@ -157,7 +158,7 @@ export default function AdminPage({ username, onLogout }) {
         const inheritedSnapshot = getTownhallSnapshotForLevel(rows || [], selectedTownhall, staticDefaults)
         const merged = {}
 
-        ;[...(inheritedSnapshot.defences || []), ...(inheritedSnapshot.traps || []), ...(inheritedSnapshot.army || []), ...(inheritedSnapshot.resources || []), ...(inheritedSnapshot.troops || []), ...(inheritedSnapshot.spells || []), ...(inheritedSnapshot.dark_troops || []), ...(inheritedSnapshot.sieges || []), ...(inheritedSnapshot.heroes || []), ...(inheritedSnapshot.equipment || [])].forEach((building) => {
+        ;[...(inheritedSnapshot.defences || []), ...(inheritedSnapshot.traps || []), ...(inheritedSnapshot.army || []), ...(inheritedSnapshot.resources || []), ...(inheritedSnapshot.troops || []), ...(inheritedSnapshot.spells || []), ...(inheritedSnapshot.dark_troops || []), ...(inheritedSnapshot.sieges || []), ...(inheritedSnapshot.heroes || []), ...(inheritedSnapshot.pets || []), ...(inheritedSnapshot.equipment || [])].forEach((building) => {
           merged[building.id] = building
         })
         if (inheritedSnapshot.walls) {
@@ -203,6 +204,12 @@ export default function AdminPage({ username, onLogout }) {
       setActiveTab('defenses')
     }
   }, [activeTab, showEquipmentTab])
+
+  useEffect(() => {
+    if (!showPetsTab && activeTab === 'pets') {
+      setActiveTab('defenses')
+    }
+  }, [activeTab, showPetsTab])
 
   useEffect(() => {
     if (!showSpellsTab && activeTab === 'spells') {
@@ -310,6 +317,7 @@ export default function AdminPage({ username, onLogout }) {
           dark_troops: townhallRecord?.dark_troops || {},
           sieges: townhallRecord?.sieges || {},
           heroes: townhallRecord?.heroes || {},
+          pets: townhallRecord?.pets || {},
           equipment: townhallRecord?.equipment || {},
           walls: townhallRecord?.walls || {},
           traps: townhallRecord?.traps || [],
@@ -510,7 +518,7 @@ export default function AdminPage({ username, onLogout }) {
             )}
 
             <div className={styles.tabsContainer}>
-              {['defenses', ...(showTrapsTab ? ['traps'] : []), 'army', 'resources', 'troops', ...(showSpellsTab ? ['spells'] : []), ...(showDarkSpellsTab ? ['dark_spells'] : []), ...(showDarkTroopsTab ? ['dark_troops'] : []), ...(showSiegesTab ? ['sieges'] : []), ...(showHeroesTab ? ['heroes'] : []), ...(showEquipmentTab ? ['equipment'] : []), 'walls'].map((tab) => (
+              {['defenses', ...(showTrapsTab ? ['traps'] : []), 'army', 'resources', 'troops', ...(showSpellsTab ? ['spells'] : []), ...(showDarkSpellsTab ? ['dark_spells'] : []), ...(showDarkTroopsTab ? ['dark_troops'] : []), ...(showSiegesTab ? ['sieges'] : []), ...(showHeroesTab ? ['heroes'] : []), ...(showEquipmentTab ? ['equipment'] : []), ...(showPetsTab ? ['pets'] : []), 'walls'].map((tab) => (
                 <button
                   key={tab}
                   className={`${styles.tab} ${activeTab === tab ? styles.tabActive : ''}`}
@@ -534,6 +542,7 @@ export default function AdminPage({ username, onLogout }) {
                 const spellFactoryLevelNeeded = Number(buildingData?.spell_factory_level_unlocked ?? staticDefaults[building.id]?.spell_factory_level_unlocked ?? 1) || 1
                 const darkSpellFactoryLevelNeeded = Number(buildingData?.dark_spell_factory_level_unlocked ?? staticDefaults[building.id]?.dark_spell_factory_level_unlocked ?? 1) || 1
                 const heroHallLevelNeeded = Number(buildingData?.hero_hall_level_unlocked ?? staticDefaults[building.id]?.hero_hall_level_unlocked ?? 1) || 1
+                const petHouseLevelNeeded = Number(buildingData?.pet_house_level_unlocked ?? staticDefaults[building.id]?.pet_house_level_unlocked ?? 1) || 1
                 const equipmentUnlockSource = String(buildingData?.unlock_source || staticDefaults[building.id]?.unlock_source || 'blacksmith').trim().toLowerCase()
                 const equipmentUnlockLevel = Number(buildingData?.blacksmith_level_unlocked ?? staticDefaults[building.id]?.blacksmith_level_unlocked ?? 0) || 0
                 const equipmentUnlockLabel = equipmentUnlockSource === 'blacksmith'
@@ -576,6 +585,7 @@ export default function AdminPage({ username, onLogout }) {
                   if (building.id === 'barracks') return `8_${maxLevel}`
                   if (building.id === 'dark_barracks') return `9_${maxLevel}`
                   if (building.id === 'clan_castle') return `19_${maxLevel}`
+                  if (building.id === 'pet_house') return `128_${maxLevel}`
                   if (building.id === 'walls') return `60_${maxLevel}`
                   if (building.id === 'gold_mine') return `2_${maxLevel}`
                   if (building.id === 'elixir_collector') return `3_${maxLevel}`
@@ -637,6 +647,7 @@ export default function AdminPage({ username, onLogout }) {
                   if (building.id === 'royal_champion') return '122'
                   if (building.id === 'minion_prince') return '208'
                   if (building.id === 'dragon_duke') return '260'
+                  if (building.id === 'lassi') return '129'
                   return '18_3'
                 }
 
@@ -676,17 +687,17 @@ export default function AdminPage({ username, onLogout }) {
                             </span>
                           </div>
                         )}
-                        {(activeTab === 'troops' || activeTab === 'dark_troops' || activeTab === 'sieges') && (
+                        {(activeTab === 'troops' || activeTab === 'dark_troops' || activeTab === 'sieges' || activeTab === 'pets') && (
                           <p className={styles.buildingItemCount}>
                             Level Count: {levelCountValue}
                           </p>
                         )}
-                        {buildingData?.buildings_unlocked != null && activeTab !== 'troops' && activeTab !== 'dark_troops' && activeTab !== 'sieges' && activeTab !== 'spells' && activeTab !== 'dark_spells' && activeTab !== 'heroes' && (
+                        {buildingData?.buildings_unlocked != null && activeTab !== 'troops' && activeTab !== 'dark_troops' && activeTab !== 'sieges' && activeTab !== 'pets' && activeTab !== 'spells' && activeTab !== 'dark_spells' && activeTab !== 'heroes' && (
                           <p className={styles.buildingItemCount}>
                             Count: {buildingData.buildings_unlocked}
                           </p>
                         )}
-                        {activeTab !== 'troops' && activeTab !== 'dark_troops' && activeTab !== 'sieges' && (
+                        {activeTab !== 'troops' && activeTab !== 'dark_troops' && activeTab !== 'sieges' && activeTab !== 'pets' && (
                           <p className={styles.buildingItemCount}>
                             Level Count: {levels.length}
                             {activeTab === 'equipment' && (
@@ -735,6 +746,13 @@ export default function AdminPage({ username, onLogout }) {
                           <>
                             <p className={styles.buildingItemCount}>
                               Hero Hall level needed: {heroHallLevelNeeded}
+                            </p>
+                          </>
+                        )}
+                        {activeTab === 'pets' && (
+                          <>
+                            <p className={styles.buildingItemCount}>
+                              Pet House level needed: {petHouseLevelNeeded}
                             </p>
                           </>
                         )}
@@ -831,6 +849,11 @@ export default function AdminPage({ username, onLogout }) {
                                 {activeTab === 'equipment' && (
                                   <span className={styles.levelNumber}>
                                     Blacksmith Lvl: {Number(level.blacksmith_level_unlocked ?? level.level ?? 0)}
+                                  </span>
+                                )}
+                                {activeTab === 'pets' && (
+                                  <span className={styles.levelNumber}>
+                                    Pet House Lvl: {Number(level.pet_house_level_unlocked ?? level.level ?? 0)}
                                   </span>
                                 )}
                               </div>

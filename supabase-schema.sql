@@ -26,6 +26,9 @@ alter table if exists public.townhall_buildings
   add column if not exists heroes jsonb default '{}'::jsonb;
 
 alter table if exists public.townhall_buildings
+  add column if not exists pets jsonb default '{}'::jsonb;
+
+alter table if exists public.townhall_buildings
   add column if not exists equipment jsonb default '{}'::jsonb;
 
 alter table if exists public.user_villages

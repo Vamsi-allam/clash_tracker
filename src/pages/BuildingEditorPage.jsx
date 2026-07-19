@@ -186,6 +186,7 @@ const createTroopLevelDraft = (levelNumber, sourceLevel = {}) => ({
   resource: sourceLevel.resource || 'gold',
   time: sourceLevel.time || '0sec',
   lab_level_unlocked: Number(sourceLevel.lab_level_unlocked ?? 0),
+  pet_house_level_unlocked: Number(sourceLevel.pet_house_level_unlocked ?? 0),
 })
 
 const normalizeTroopLevels = (count, sourceLevels = []) =>
@@ -379,13 +380,14 @@ export default function BuildingEditorPage({ username, onLogout }) {
   const isWallBuilding = buildingId === 'walls'
   const isDarkTroopBuilding = BUILDING_SECTIONS.dark_troops.some((building) => building.id === buildingId)
   const isSiegeBuilding = BUILDING_SECTIONS.sieges.some((building) => building.id === buildingId)
+  const isPetBuilding = BUILDING_SECTIONS.pets.some((building) => building.id === buildingId)
   const isDarkSpellBuilding = DARK_SPELL_BUILDING_IDS.has(buildingId)
-  const isTroopBuilding = BUILDING_SECTIONS.troops.some((building) => building.id === buildingId) || isDarkTroopBuilding || isSiegeBuilding
+  const isTroopBuilding = BUILDING_SECTIONS.troops.some((building) => building.id === buildingId) || isDarkTroopBuilding || isSiegeBuilding || isPetBuilding
   const isSpellBuilding = BUILDING_SECTIONS.spells.some((building) => building.id === buildingId) || isDarkSpellBuilding
   const spellFactoryUnlockKey = isDarkSpellBuilding ? 'dark_spell_factory_level_unlocked' : 'spell_factory_level_unlocked'
-  const troopUnlockKey = isSiegeBuilding ? 'workshop_level_unlocked' : isDarkTroopBuilding ? 'dark_barracks_level_unlocked' : 'barracks_level_unlocked'
-  const troopUnlockSourceLabel = isSiegeBuilding ? 'Workshop' : isDarkTroopBuilding ? 'Dark Barracks' : 'Barracks'
-  const troopUnlockMinTownhall = isSiegeBuilding ? 12 : isDarkTroopBuilding ? 7 : 3
+  const troopUnlockKey = isPetBuilding ? 'pet_house_level_unlocked' : isSiegeBuilding ? 'workshop_level_unlocked' : isDarkTroopBuilding ? 'dark_barracks_level_unlocked' : 'barracks_level_unlocked'
+  const troopUnlockSourceLabel = isPetBuilding ? 'Pet House' : isSiegeBuilding ? 'Workshop' : isDarkTroopBuilding ? 'Dark Barracks' : 'Barracks'
+  const troopUnlockMinTownhall = isPetBuilding ? 14 : isSiegeBuilding ? 12 : isDarkTroopBuilding ? 7 : 3
   const isTroopLikeBuilding = isTroopBuilding || isSpellBuilding
   const isHeroBuilding = BUILDING_SECTIONS.heroes.some((building) => building.id === buildingId)
   const equipmentMeta = EQUIPMENT_BUILDINGS[buildingId]
@@ -610,6 +612,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
       staticLevel.time === dynamicLevel.time &&
       staticLevel.resource === dynamicLevel.resource &&
       Number(staticLevel.lab_level_unlocked ?? 0) === Number(dynamicLevel.lab_level_unlocked ?? 0) &&
+      Number(staticLevel.pet_house_level_unlocked ?? 0) === Number(dynamicLevel.pet_house_level_unlocked ?? 0) &&
       Number(staticLevel.hero_hall_level_unlocked ?? 0) === Number(dynamicLevel.hero_hall_level_unlocked ?? 0) &&
       Number(staticLevel.blacksmith_level_unlocked ?? 0) === Number(dynamicLevel.blacksmith_level_unlocked ?? 0)
     )
@@ -871,6 +874,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
         dark_troops: inheritedTownhallData.dark_troops || [],
         sieges: inheritedTownhallData.sieges || [],
         heroes: inheritedTownhallData.heroes || [],
+        pets: inheritedTownhallData.pets || [],
         equipment: inheritedTownhallData.equipment || [],
         walls: inheritedTownhallData.walls || {},
         updated_at: new Date().toISOString(),
@@ -1034,6 +1038,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
         level.time !== original.time ||
         level.resource !== original.resource ||
         Number(level.lab_level_unlocked ?? 0) !== Number(original.lab_level_unlocked ?? 0) ||
+        Number(level.pet_house_level_unlocked ?? 0) !== Number(original.pet_house_level_unlocked ?? 0) ||
         Number(level.hero_hall_level_unlocked ?? 0) !== Number(original.hero_hall_level_unlocked ?? 0)
       )
     })
@@ -1085,6 +1090,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
                 if (defence.id === 'barracks') return `8_${maxLevel}`
                 if (defence.id === 'dark_barracks') return `9_${maxLevel}`
                 if (defence.id === 'clan_castle') return `19_${maxLevel}`
+                if (defence.id === 'pet_house') return `128_${maxLevel}`
                 if (defence.id === 'walls') return `60_${maxLevel}`
                 if (defence.id === 'gold_mine') return `2_${maxLevel}`
                 if (defence.id === 'elixir_collector') return `3_${maxLevel}`
@@ -1147,6 +1153,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
                 if (defence.id === 'royal_champion') return '122'
                 if (defence.id === 'minion_prince') return '208'
                 if (defence.id === 'dragon_duke') return '260'
+                if (defence.id === 'lassi') return '129'
                 return '18_3'
               }
               
@@ -1653,7 +1660,19 @@ export default function BuildingEditorPage({ username, onLogout }) {
                           {level.time}
                         </button>
                       )}
-                      {(isTroopBuilding || isSpellBuilding) && Number(townhallLevel) >= 3 && (
+                      {isTroopBuilding && isPetBuilding && Number(townhallLevel) >= 14 && (
+                        <div className={styles.troopLabGroup}>
+                          <span className={styles.troopLabLabel}>Pet House:</span>
+                          <input
+                            type="number"
+                            value={level.pet_house_level_unlocked ?? 0}
+                            onChange={(e) => handleEditLevel(idx, 'pet_house_level_unlocked', Math.max(0, parseInt(e.target.value) || 0))}
+                            min="0"
+                            className={`${styles.headingCountInput} ${styles.troopLabInput}`}
+                          />
+                        </div>
+                      )}
+                      {(isTroopBuilding || isSpellBuilding) && !isPetBuilding && Number(townhallLevel) >= 3 && (
                         <div className={styles.troopLabGroup}>
                           <span className={styles.troopLabLabel}>Lab:</span>
                           <input
