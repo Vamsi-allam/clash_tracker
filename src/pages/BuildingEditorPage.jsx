@@ -1160,6 +1160,9 @@ export default function BuildingEditorPage({ username, onLogout }) {
                 if (defence.id === 'minion_prince') return '208'
                 if (defence.id === 'dragon_duke') return '260'
                 if (defence.id === 'lassi') return '129'
+                if (defence.id === 'electro_owl') return '130'
+                if (defence.id === 'mighty_yak') return '131'
+                if (defence.id === 'unicorn') return '132'
                 return '18_3'
               }
               

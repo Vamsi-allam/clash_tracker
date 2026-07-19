@@ -120,6 +120,9 @@ export const BUILDING_SECTIONS = {
   ],
   pets: [
     { id: 'lassi', name: 'L.A.S.S.I', image: '/src/assets/pets/L.A.S.S.I' },
+    { id: 'electro_owl', name: 'Electro Owl', image: '/src/assets/pets/Electro_Owl' },
+    { id: 'mighty_yak', name: 'Mighty Yak', image: '/src/assets/pets/Might_Yak' },
+    { id: 'unicorn', name: 'Unicorn', image: '/src/assets/pets/Unicorn' },
   ],
   equipment: [
     { id: 'barbarian_puppet', name: 'Barbarian Puppet', hero: 'Barbarian King', image: '/src/assets/Equipment/Barbarian_King/Barbarian_puppet/157.png', levelCount: 4, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1, equipment_type: 'active', equipment_rarity: 'common' },
@@ -1524,6 +1527,33 @@ export const getDefaultBuildingData = (townhallLevel) => {
         pet_house_level_unlocked: 1,
         levels: [
           { level: 1, cost: 0, resource: 'dark_elixir', time: '0sec', pet_house_level_unlocked: 1 },
+        ],
+      },
+      electro_owl: {
+        id: 'electro_owl',
+        image_path: '/src/assets/pets/Electro_Owl/130',
+        copy_unlocks: [true],
+        pet_house_level_unlocked: 2,
+        levels: [
+          { level: 1, cost: 0, resource: 'dark_elixir', time: '0sec', pet_house_level_unlocked: 2 },
+        ],
+      },
+      mighty_yak: {
+        id: 'mighty_yak',
+        image_path: '/src/assets/pets/Might_Yak/131',
+        copy_unlocks: [true],
+        pet_house_level_unlocked: 3,
+        levels: [
+          { level: 1, cost: 0, resource: 'dark_elixir', time: '0sec', pet_house_level_unlocked: 3 },
+        ],
+      },
+      unicorn: {
+        id: 'unicorn',
+        image_path: '/src/assets/pets/Unicorn/132',
+        copy_unlocks: [true],
+        pet_house_level_unlocked: 4,
+        levels: [
+          { level: 1, cost: 0, resource: 'dark_elixir', time: '0sec', pet_house_level_unlocked: 4 },
         ],
       },
       electro_titan: {

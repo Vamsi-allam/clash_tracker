@@ -653,6 +653,9 @@ export default function AdminPage({ username, onLogout }) {
                   if (building.id === 'minion_prince') return '208'
                   if (building.id === 'dragon_duke') return '260'
                   if (building.id === 'lassi') return '129'
+                  if (building.id === 'electro_owl') return '130'
+                  if (building.id === 'mighty_yak') return '131'
+                  if (building.id === 'unicorn') return '132'
                   return '18_3'
                 }
 
