@@ -390,6 +390,7 @@ export default function AdminPage({ username, onLogout }) {
       seeking_shield: 1,
       royal_gem: 2,
       rocket_spear: 3,
+      hog_rider_puppet: 4,
       electro_boots: 4,
       frost_flake: 5,
     }
@@ -610,6 +611,7 @@ export default function AdminPage({ username, onLogout }) {
                   if (building.id === 'electro_dragon') return `103_${maxLevel}`
                   if (building.id === 'yeti') return `121_${maxLevel}`
                   if (building.id === 'dragon_rider') return `133_${maxLevel}`
+                  if (building.id === 'electro_titan') return `138_${maxLevel}`
                   if (building.id === 'minion') return `53_${maxLevel}`
                   if (building.id === 'hog_rider') return `54_${maxLevel}`
                   if (building.id === 'valkyrie') return `55_${maxLevel}`
@@ -620,6 +622,7 @@ export default function AdminPage({ username, onLogout }) {
                   if (building.id === 'ice_golem') return `111_${maxLevel}`
                   if (building.id === 'head_hunter') return `123_${maxLevel}`
                   if (building.id === 'apprentice_warden') return `151_${maxLevel}`
+                  if (building.id === 'druid') return `197_${maxLevel}`
                   if (building.id === 'wall_wrecker') return `105_${maxLevel}`
                   if (building.id === 'battle_blimp') return `106_${maxLevel}`
                   if (building.id === 'stone_slammer') return `109_${maxLevel}`
@@ -639,6 +642,7 @@ export default function AdminPage({ username, onLogout }) {
                   if (building.id === 'haste_spell') return '51'
                   if (building.id === 'skeleton_spell') return '52'
                   if (building.id === 'bat_spell') return '110'
+                  if (building.id === 'ice_block_spell') return '236'
                   if (building.id === 'overgrowth_spell') return '175'
                   if (building.id === 'invisibility_spell') return '124'
                   if (building.id === 'recall_spell') return '140'
