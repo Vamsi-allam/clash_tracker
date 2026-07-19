@@ -7,6 +7,7 @@ export const BUILDING_SECTIONS = {
   defences: [
     { id: 'canon', name: 'Canon', image: '/src/assets/Defences/canon' },
     { id: 'archer_tower', name: 'Archer Tower', image: '/src/assets/Defences/Archer_Tower' },
+    { id: 'builder_hut', name: 'Builder Hut', image: '/src/assets/Defences/Builder_hut' },
     { id: 'mortar', name: 'Mortar', image: '/src/assets/Defences/mortar' },
     { id: 'bomb_tower', name: 'Bomb Tower', image: '/src/assets/Defences/Bomb_tower' },
     { id: 'wizard_tower', name: 'Wizard Tower', image: '/src/assets/Defences/wizard_tower' },
@@ -1494,6 +1495,15 @@ export const getDefaultBuildingData = (townhallLevel) => {
 
   if (Number(townhallLevel) === 14) {
     return {
+      builder_hut: {
+        id: 'builder_hut',
+        image_path: '/src/assets/Defences/Builder_hut/127_',
+        buildings_unlocked: 1,
+        copy_unlocks: createCopyUnlocks(1, 1),
+        levels: [
+          { level: 1, cost: 0, resource: 'gold', time: '0sec' },
+        ],
+      },
       pet_house: {
         id: 'pet_house',
         image_path: '/src/assets/Army/Pet_House/128_',

@@ -378,6 +378,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
   const navigate = useNavigate()
   const isEditingRef = useRef(false)
   const isWallBuilding = buildingId === 'walls'
+  const isBuilderHutBuilding = buildingId === 'builder_hut'
   const isDarkTroopBuilding = BUILDING_SECTIONS.dark_troops.some((building) => building.id === buildingId)
   const isSiegeBuilding = BUILDING_SECTIONS.sieges.some((building) => building.id === buildingId)
   const isPetBuilding = BUILDING_SECTIONS.pets.some((building) => building.id === buildingId)
@@ -655,6 +656,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
   }
 
   const handleEditingBuildingCountChange = (value) => {
+    if (isBuilderHutBuilding) return
     const minimumCount = isSpellBuilding || (!isTroopLikeBuilding && !isWallBuilding && !isHeroBuilding && !isEquipmentBuilding) ? 1 : 0
     const nextCount = Math.max(minimumCount, parseInt(value) || 0)
     setEditingBuildingCount(nextCount)
@@ -980,7 +982,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
 
   // Detect if there are changes
   const hasChanges = () => {
-    if (editingBuildingCount !== (dynamicData.buildings_unlocked || 0)) {
+    if (!isBuilderHutBuilding && editingBuildingCount !== (dynamicData.buildings_unlocked || 0)) {
       return true
     }
     if (!isTroopLikeBuilding && editingLevelCount !== (dynamicData.levels || []).length) {
@@ -1063,6 +1065,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
               const getImagePath = () => {
                 if (isEquipmentBuilding) return ''
                 if (defence.id === 'archer_tower') return `16_${maxLevel}`
+                if (defence.id === 'builder_hut') return `127_${maxLevel}`
                 if (defence.id === 'canon') return `18_${maxLevel}`
                 if (defence.id === 'bomb') return `27_${maxLevel}`
                 if (defence.id === 'giant_bomb') return `28_${maxLevel}`
@@ -1371,7 +1374,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
                 )}
                 {isEditing && (
                   <>
-                    {!isHeroBuilding && !isEquipmentBuilding && (
+                    {!isHeroBuilding && !isEquipmentBuilding && !isBuilderHutBuilding && (
                       <>
                         <span style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>{troopCountLabel}:</span>
                         <input
@@ -1382,6 +1385,11 @@ export default function BuildingEditorPage({ username, onLogout }) {
                           className={styles.headingCountInput}
                         />
                       </>
+                    )}
+                    {isBuilderHutBuilding && (
+                      <span style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>
+                        Count is managed from user village builder count.
+                      </span>
                     )}
                     {!isTroopLikeBuilding && (
                       <>

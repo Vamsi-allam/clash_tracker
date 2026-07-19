@@ -160,10 +160,41 @@ const clampDurationPartsToMax = (parts, maxSeconds) => {
 const getStructureRowCount = (building, currentLevels = []) => {
   const buildingId = String(building?.id || '')
   if (TROOP_BUILDING_IDS.has(buildingId) || DARK_TROOP_BUILDING_IDS.has(buildingId) || SIEGE_BUILDING_IDS.has(buildingId) || PET_BUILDING_IDS.has(buildingId) || SPELL_BUILDING_IDS.has(buildingId) || EQUIPMENT_BUILDING_IDS.has(buildingId)) return 1
+  if (buildingId === 'builder_hut') {
+    return Math.max(1, Number(building?.buildings_unlocked) || 0)
+  }
 
   const unlockedCount = Number(building?.buildings_unlocked) || 0
   const savedCount = Array.isArray(currentLevels) ? currentLevels.length : 0
   return Math.max(1, unlockedCount, savedCount)
+}
+
+const normalizeBuilderHutCount = (value) => Math.max(0, Math.min(5, Number(value) || 0))
+
+const applyBuilderHutCountToSnapshot = (snapshot = {}, builderHutCount = 0) => {
+  const defences = Array.isArray(snapshot?.defences) ? snapshot.defences : []
+  if (defences.length === 0) return snapshot
+
+  const normalizedCount = normalizeBuilderHutCount(builderHutCount)
+  let hasBuilderHut = false
+
+  const nextDefences = defences.map((building) => {
+    if (String(building?.id || '') !== 'builder_hut') return building
+    hasBuilderHut = true
+
+    return {
+      ...building,
+      buildings_unlocked: normalizedCount,
+      copy_unlocks: Array.from({ length: normalizedCount }, () => true),
+    }
+  })
+
+  if (!hasBuilderHut) return snapshot
+
+  return {
+    ...snapshot,
+    defences: nextDefences,
+  }
 }
 
 const getTroopBarracksRequirement = (building) => {
@@ -253,11 +284,12 @@ const getCurrentPetHouseLevel = (structureLevels = {}) => {
   return petHouseLevels.reduce((highest, value) => Math.max(highest, Number(value) || 0), 0)
 }
 
-const getAllowedBuildingRowIdsForSnapshot = (snapshot = {}) => {
+const getAllowedBuildingRowIdsForSnapshot = (snapshot = {}, builderHutCount = 0) => {
+  const snapshotWithBuilderHutCount = applyBuilderHutCountToSnapshot(snapshot, builderHutCount)
   const rowIds = new Set()
 
   ;['defences', 'traps', 'army', 'resources', 'troops', 'spells', 'dark_troops', 'sieges', 'heroes', 'pets', 'equipment'].forEach((categoryKey) => {
-    const category = Array.isArray(snapshot?.[categoryKey]) ? snapshot[categoryKey] : []
+    const category = Array.isArray(snapshotWithBuilderHutCount?.[categoryKey]) ? snapshotWithBuilderHutCount[categoryKey] : []
 
     category.forEach((building) => {
       const buildingId = String(building?.id || '').trim()
@@ -275,8 +307,8 @@ const getAllowedBuildingRowIdsForSnapshot = (snapshot = {}) => {
     })
   })
 
-  if (snapshot?.walls && typeof snapshot.walls === 'object') {
-    const wallLevels = Array.isArray(snapshot.walls.levels) ? snapshot.walls.levels : []
+  if (snapshotWithBuilderHutCount?.walls && typeof snapshotWithBuilderHutCount.walls === 'object') {
+    const wallLevels = Array.isArray(snapshotWithBuilderHutCount.walls.levels) ? snapshotWithBuilderHutCount.walls.levels : []
     wallLevels.forEach((level) => {
       const levelNumber = Number(level?.level || 0)
       if (levelNumber > 0) {
@@ -288,7 +320,7 @@ const getAllowedBuildingRowIdsForSnapshot = (snapshot = {}) => {
   return rowIds
 }
 
-const syncVillageBuildingRowsToTownhall = async (villageId, townhallLevel) => {
+const syncVillageBuildingRowsToTownhall = async (villageId, townhallLevel, builderHutCount = 0) => {
   if (!villageId || !townhallLevel) return
 
   const { data: rows, error } = await supabase
@@ -300,7 +332,7 @@ const syncVillageBuildingRowsToTownhall = async (villageId, townhallLevel) => {
   if (error) throw error
 
   const snapshot = getTownhallSnapshotForLevel(rows || [], townhallLevel, getDefaultBuildingData(townhallLevel))
-  const allowedRowIds = getAllowedBuildingRowIdsForSnapshot(snapshot)
+  const allowedRowIds = getAllowedBuildingRowIdsForSnapshot(snapshot, builderHutCount)
 
   const { data: existingRows, error: loadError } = await supabase
     .from('user_village_buildings')
@@ -414,6 +446,7 @@ const seekingAirMineImages = import.meta.glob('../assets/Traps/Seeking_Air_Mine/
 const springTrapImages = import.meta.glob('../assets/Traps/Spring_Trap/*.png', { eager: true, import: 'default' })
 const tornadoTrapImages = import.meta.glob('../assets/Traps/Tornado_Trap/*.png', { eager: true, import: 'default' })
 const archerTowerImages = import.meta.glob('../assets/Defences/Archer_Tower/*.png', { eager: true, import: 'default' })
+const builderHutImages = import.meta.glob('../assets/Defences/Builder_hut/*.png', { eager: true, import: 'default' })
 const armyCampImages = import.meta.glob('../assets/Army/Army_Camp/*.png', { eager: true, import: 'default' })
 const barracksImages = import.meta.glob('../assets/Army/Barracks/*.png', { eager: true, import: 'default' })
 const darkBarracksImages = import.meta.glob('../assets/Army/Dark_Barracks/*.png', { eager: true, import: 'default' })
@@ -678,8 +711,8 @@ export default function UserPage({ username, onLogout, userId }) {
         builderCountRef.current = selectedBuilderCount
         setBuilderCount(selectedBuilderCount)
         setRemainingBetaBuilderCount(selectedBuilderCount)
-        await syncVillageBuildingRowsToTownhall(selectedVillage.id, selectedVillage.townhall_level)
-        await loadTownhallStructures(selectedVillage.townhall_level, selectedVillage.id)
+        await syncVillageBuildingRowsToTownhall(selectedVillage.id, selectedVillage.townhall_level, selectedBuilderCount)
+        await loadTownhallStructures(selectedVillage.townhall_level, selectedVillage.id, selectedBuilderCount)
       }
       setViewMode('loaded')
     } else {
@@ -759,8 +792,8 @@ export default function UserPage({ username, onLogout, userId }) {
       await setActiveVillagePersisted(data.id)
       await loadVillages()
       setActiveVillage(data)
-      await syncVillageBuildingRowsToTownhall(data.id, data.townhall_level)
-      await loadTownhallStructures(data.townhall_level, data.id)
+      await syncVillageBuildingRowsToTownhall(data.id, data.townhall_level, selectedBuilderCount)
+      await loadTownhallStructures(data.townhall_level, data.id, selectedBuilderCount)
       setViewMode('structures')
       setPlayerData(null)
       setTag('')
@@ -821,7 +854,7 @@ export default function UserPage({ username, onLogout, userId }) {
   const handleSelectVillage = (village) => {
     setActiveVillagePersisted(village.id).catch(() => {})
     setActiveVillage(village)
-    loadTownhallStructures(village.townhall_level, village.id)
+    loadTownhallStructures(village.townhall_level, village.id, Math.min(5, Math.max(2, Number(village?.builder_count) || 2)))
     setViewMode('loaded')
     setPlayerData(null)
     setTag('')
@@ -881,8 +914,9 @@ export default function UserPage({ username, onLogout, userId }) {
           if (updateError) throw updateError
 
           setActiveVillage(updatedVillage)
-          await syncVillageBuildingRowsToTownhall(updatedVillage.id, updatedVillage.townhall_level)
-          await loadTownhallStructures(updatedVillage.townhall_level, updatedVillage.id)
+          const refreshedBuilderCount = Math.min(5, Math.max(2, Number(updatedVillage?.builder_count) || 2))
+          await syncVillageBuildingRowsToTownhall(updatedVillage.id, updatedVillage.townhall_level, refreshedBuilderCount)
+          await loadTownhallStructures(updatedVillage.townhall_level, updatedVillage.id, refreshedBuilderCount)
         }
 
         // Update preview data so user can see the refreshed info
@@ -970,7 +1004,7 @@ export default function UserPage({ username, onLogout, userId }) {
 
   const townhallUpgradeTargetLevel = Number(activeTownhallUpgrade?.toLevel || nextTownHallLevel)
 
-  const normalizeTownhallBuildings = (data) => {
+  const normalizeTownhallBuildings = (data, builderHutCount = 0) => {
     const normalizeStructures = (structures) => {
       if (!structures) return []
       const normalizedList = Array.isArray(structures)
@@ -1012,7 +1046,16 @@ export default function UserPage({ username, onLogout, userId }) {
       })
     }
 
-    const normalizedDefences = sortDefences(normalizeStructures(data?.defences))
+    const normalizedDefences = sortDefences(normalizeStructures(data?.defences)).map((building) => {
+      if (String(building?.id || '') !== 'builder_hut') return building
+
+      const normalizedCount = normalizeBuilderHutCount(builderHutCount)
+      return {
+        ...building,
+        buildings_unlocked: normalizedCount,
+        copy_unlocks: Array.from({ length: normalizedCount }, () => true),
+      }
+    })
     const normalizedTraps = normalizeStructures(data?.traps)
     const normalizedArmy = normalizeStructures(data?.army)
     const normalizedResources = normalizeStructures(data?.resources)
@@ -1052,13 +1095,13 @@ export default function UserPage({ username, onLogout, userId }) {
   const loadTownhallSnapshot = async (townhallLevel, options = {}) => {
     if (!townhallLevel) return null
 
-    const { loadStructures = false, loadWalls = false, villageId = activeVillageRef.current?.id } = options
+    const { loadStructures = false, loadWalls = false, villageId = activeVillageRef.current?.id, builderHutCount = Math.min(5, Math.max(2, Number(activeVillageRef.current?.builder_count || builderCountRef.current || 2))) } = options
     const cachedSnapshot = readTownhallSnapshotCache(villageId, townhallLevel)
     const nextSnapshotCache = { ...(cachedSnapshot || {}) }
 
     if (cachedSnapshot) {
       if (loadStructures && cachedSnapshot.structureCatalog) {
-        setStructureCatalog(cachedSnapshot.structureCatalog)
+        setStructureCatalog(applyBuilderHutCountToSnapshot(cachedSnapshot.structureCatalog, builderHutCount))
         setStructureLevels(cachedSnapshot.structureLevels || {})
         setPendingUpgrades(cachedSnapshot.pendingUpgrades || [])
       }
@@ -1080,7 +1123,10 @@ export default function UserPage({ username, onLogout, userId }) {
       .order('townhall_level', { ascending: true })
 
     const selectedTownhallRow = (rows || []).find((row) => Number(row.townhall_level) === Number(townhallLevel)) || null
-    const normalizedData = normalizeTownhallBuildings(getTownhallSnapshotForLevel(rows || [], townhallLevel, getDefaultBuildingData(townhallLevel)))
+    const normalizedData = normalizeTownhallBuildings(
+      getTownhallSnapshotForLevel(rows || [], townhallLevel, getDefaultBuildingData(townhallLevel)),
+      builderHutCount,
+    )
     const hasSavedTraps = (rows || []).some((row) => {
       const traps = row?.traps
       if (Array.isArray(traps)) return traps.some((entry) => Boolean(entry))
@@ -1243,7 +1289,7 @@ export default function UserPage({ username, onLogout, userId }) {
     return selectedTownhallRow || rows?.[rows.length - 1] || null
   }
 
-  const loadTownhallStructures = async (townhallLevel, villageId = activeVillageRef.current?.id) => {
+  const loadTownhallStructures = async (townhallLevel, villageId = activeVillageRef.current?.id, builderHutCount = Math.min(5, Math.max(2, Number(activeVillageRef.current?.builder_count || builderCountRef.current || 2)))) => {
     if (!townhallLevel) return
 
     setStructuresLoading(true)
@@ -1253,6 +1299,7 @@ export default function UserPage({ username, onLogout, userId }) {
         loadStructures: true,
         loadWalls: true,
         villageId,
+        builderHutCount,
       })
       if (!data) {
         setStructureCatalog({ defences: [], traps: [], army: [], resources: [], troops: [], spells: [], dark_troops: [], sieges: [], heroes: [], pets: [], equipment: [] })
@@ -1286,7 +1333,11 @@ export default function UserPage({ username, onLogout, userId }) {
     }
 
     try {
-      const data = await loadTownhallSnapshot(activeVillage.townhall_level, { loadWalls: true, villageId: activeVillage.id })
+      const data = await loadTownhallSnapshot(activeVillage.townhall_level, {
+        loadWalls: true,
+        villageId: activeVillage.id,
+        builderHutCount: Math.min(5, Math.max(2, Number(activeVillage?.builder_count || 2))),
+      })
       if (!data) {
         setWallConfig(null)
         setWallCounts({})
@@ -2215,8 +2266,9 @@ export default function UserPage({ username, onLogout, userId }) {
     if (updatedVillage) {
       setActiveVillage(updatedVillage)
       setVillages((current) => current.map((village) => (village.id === updatedVillage.id ? updatedVillage : village)))
-      await syncVillageBuildingRowsToTownhall(updatedVillage.id, updatedVillage.townhall_level)
-      await loadTownhallStructures(updatedVillage.townhall_level, updatedVillage.id)
+      const upgradedBuilderCount = Math.min(5, Math.max(2, Number(updatedVillage?.builder_count) || 2))
+      await syncVillageBuildingRowsToTownhall(updatedVillage.id, updatedVillage.townhall_level, upgradedBuilderCount)
+      await loadTownhallStructures(updatedVillage.townhall_level, updatedVillage.id, upgradedBuilderCount)
     }
 
     return true
@@ -2513,8 +2565,9 @@ export default function UserPage({ username, onLogout, userId }) {
       if (updatedVillage) {
         setActiveVillage(updatedVillage)
         setVillages((current) => current.map((village) => (village.id === updatedVillage.id ? updatedVillage : village)))
-        await syncVillageBuildingRowsToTownhall(updatedVillage.id, updatedVillage.townhall_level)
-        await loadTownhallStructures(updatedVillage.townhall_level, updatedVillage.id)
+        const revertedBuilderCount = Math.min(5, Math.max(2, Number(updatedVillage?.builder_count) || 2))
+        await syncVillageBuildingRowsToTownhall(updatedVillage.id, updatedVillage.townhall_level, revertedBuilderCount)
+        await loadTownhallStructures(updatedVillage.townhall_level, updatedVillage.id, revertedBuilderCount)
       }
 
       closeTownhallUpgradePopup()
@@ -3218,6 +3271,7 @@ export default function UserPage({ username, onLogout, userId }) {
       spring_trap: (imageLevel) => springTrapImages[`../assets/Traps/Spring_Trap/30_${imageLevel}.png`] || '',
       tornado_trap: (imageLevel) => tornadoTrapImages[`../assets/Traps/Tornado_Trap/108_${imageLevel}.png`] || '',
       archer_tower: (imageLevel) => archerTowerImages[`../assets/Defences/Archer_Tower/16_${imageLevel}.png`] || '',
+      builder_hut: (imageLevel) => builderHutImages[`../assets/Defences/Builder_hut/127_${imageLevel}.png`] || '',
       wizard_tower: (imageLevel) => wizardTowerImages[`../assets/Defences/wizard_tower/24_${imageLevel}.png`] || '',
       army_camp: (imageLevel) => armyCampImages[`../assets/Army/Army_Camp/10_${imageLevel}.png`] || '',
       barracks: (imageLevel) => barracksImages[`../assets/Army/Barracks/8_${imageLevel}.png`] || '',

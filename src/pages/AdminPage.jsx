@@ -557,6 +557,7 @@ export default function AdminPage({ username, onLogout }) {
                 const getImagePath = () => {
                   if (activeTab === 'equipment') return ''
                   if (building.id === 'archer_tower') return `16_${maxLevel}`
+                  if (building.id === 'builder_hut') return `127_${maxLevel}`
                   if (building.id === 'canon') return `18_${maxLevel}`
                   if (building.id === 'bomb') return `27_${maxLevel}`
                   if (building.id === 'giant_bomb') return `28_${maxLevel}`
@@ -692,7 +693,11 @@ export default function AdminPage({ username, onLogout }) {
                             Level Count: {levelCountValue}
                           </p>
                         )}
-                        {buildingData?.buildings_unlocked != null && activeTab !== 'troops' && activeTab !== 'dark_troops' && activeTab !== 'sieges' && activeTab !== 'pets' && activeTab !== 'spells' && activeTab !== 'dark_spells' && activeTab !== 'heroes' && (
+                        {activeTab === 'defenses' && building.id === 'builder_hut' ? (
+                          <p className={styles.buildingItemCount}>
+                            Count: Managed by user village builder count
+                          </p>
+                        ) : buildingData?.buildings_unlocked != null && activeTab !== 'troops' && activeTab !== 'dark_troops' && activeTab !== 'sieges' && activeTab !== 'pets' && activeTab !== 'spells' && activeTab !== 'dark_spells' && activeTab !== 'heroes' && (
                           <p className={styles.buildingItemCount}>
                             Count: {buildingData.buildings_unlocked}
                           </p>
