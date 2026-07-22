@@ -59,7 +59,6 @@ const EQUIPMENT_BUILDINGS = {
   stick_horse: { id: 'stick_horse', name: 'Stick Horse', hero: 'Barbarian King', image: '/src/assets/Equipment/Barbarian_King/Stick_Horse/258.png', levelCount: 4, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1 },
   fire_heart: { id: 'fire_heart', name: 'Fire Heart', hero: 'Dragon Duke', image: '/src/assets/Equipment/Dragon_Duke/Fire_Heart/261.png', levelCount: 4, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1 },
   flame_blower: { id: 'flame_blower', name: 'Flame Blower', hero: 'Dragon Duke', image: '/src/assets/Equipment/Dragon_Duke/Flame_Blower/262.png', levelCount: 4, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1 },
-  stun_blaster: { id: 'stun_blaster', name: 'Stun Blaster', hero: 'Dragon Duke', image: '/src/assets/Equipment/Dragon_Duke/Stun_Blaster/263.png', levelCount: 4, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1 },
   rocket_backpack: { id: 'rocket_backpack', name: 'Rocket Backpack', hero: 'Dragon Duke', image: '/src/assets/Equipment/Dragon_Duke/Rocket_Backpack/276.png', levelCount: 4, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1 },
   monolith_arrow: { id: 'monolith_arrow', name: 'Monolith Arrow', hero: 'Archer Queen', image: '/src/assets/Equipment/Archer_Queen/Monolith_Arrow/280.png', levelCount: 4, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1 },
 }
@@ -1084,6 +1083,8 @@ export default function BuildingEditorPage({ username, onLogout }) {
                 if (defence.id === 'eagle_artillery') return `20_${maxLevel}`
                 if (defence.id === 'inferno_tower') return `22_${maxLevel}`
                 if (defence.id === 'scattershot') return `119_${maxLevel}`
+                if (defence.id === 'spell_tower') return `135_${maxLevel}`
+                if (defence.id === 'monolith') return `136_${maxLevel}`
                 if (defence.id === 'lab') return `13_${maxLevel}`
                 if (defence.id === 'hero_hall') return `202_${maxLevel}`
                 if (defence.id === 'army_camp') return `10_${maxLevel}`
@@ -1116,6 +1117,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
                 if (defence.id === 'miner') return `42_${maxLevel}`
                 if (defence.id === 'electro_dragon') return `103_${maxLevel}`
                 if (defence.id === 'electro_titan') return `138_${maxLevel}`
+                if (defence.id === 'root_rider') return `156_${maxLevel}`
                 if (defence.id === 'yeti') return `121_${maxLevel}`
                 if (defence.id === 'dragon_rider') return `133_${maxLevel}`
                 if (defence.id === 'minion') return `53_${maxLevel}`
@@ -1129,6 +1131,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
                 if (defence.id === 'head_hunter') return `123_${maxLevel}`
                 if (defence.id === 'apprentice_warden') return `151_${maxLevel}`
                 if (defence.id === 'druid') return `197_${maxLevel}`
+                if (defence.id === 'furnance') return `218_${maxLevel}`
                 if (defence.id === 'wall_wrecker') return `105_${maxLevel}`
                 if (defence.id === 'battle_blimp') return `106_${maxLevel}`
                 if (defence.id === 'stone_slammer') return `109_${maxLevel}`
@@ -1153,6 +1156,8 @@ export default function BuildingEditorPage({ username, onLogout }) {
                 if (defence.id === 'overgrowth_spell') return '175'
                 if (defence.id === 'invisibility_spell') return '124'
                 if (defence.id === 'recall_spell') return '140'
+                if (defence.id === 'revive_spell') return '205'
+                if (defence.id === 'angry_spell') return '281'
                 if (defence.id === 'barbarian_king') return '61'
                 if (defence.id === 'archer_queen') return '62'
                 if (defence.id === 'grand_warden') return '63'
@@ -1163,6 +1168,10 @@ export default function BuildingEditorPage({ username, onLogout }) {
                 if (defence.id === 'electro_owl') return '130'
                 if (defence.id === 'mighty_yak') return '131'
                 if (defence.id === 'unicorn') return '132'
+                if (defence.id === 'frosty') return '141'
+                if (defence.id === 'diggy') return '142'
+                if (defence.id === 'poison_lizard') return '143'
+                if (defence.id === 'phoenix') return '144'
                 return '18_3'
               }
               

@@ -18,6 +18,8 @@ export const BUILDING_SECTIONS = {
     { id: 'x_bow', name: 'X-Bow', image: '/src/assets/Defences/x-bow' },
     { id: 'eagle_artillery', name: 'Eagle Artillery', image: '/src/assets/Defences/Eagle_Artillery' },
     { id: 'scattershot', name: 'Scattershot', image: '/src/assets/Defences/scattershot' },
+    { id: 'spell_tower', name: 'Spell Tower', image: '/src/assets/Defences/spell_tower' },
+    { id: 'monolith', name: 'Monolith', image: '/src/assets/Defences/monolith' },
   ],
   traps: [
     { id: 'bomb', name: 'Bomb', image: '/src/assets/Traps/Bomb' },
@@ -67,6 +69,7 @@ export const BUILDING_SECTIONS = {
     { id: 'yeti', name: 'Yeti', image: '/src/assets/Troops/Yeti' },
     { id: 'dragon_rider', name: 'Dragon Rider', image: '/src/assets/Troops/DragonRider' },
     { id: 'electro_titan', name: 'Electro Titan', image: '/src/assets/Troops/Electro_Titan' },
+    { id: 'root_rider', name: 'Root Rider', image: '/src/assets/Troops/Root_Rider' },
   ],
   spells: [
     { id: 'lightning_spell', name: 'Lightning Spell', image: '/src/assets/spells/Lightning_Spell' },
@@ -77,6 +80,7 @@ export const BUILDING_SECTIONS = {
     { id: 'clone_spell', name: 'Clone Spell', image: '/src/assets/spells/Clone_Spell' },
     { id: 'invisibility_spell', name: 'Invisibility Spell', image: '/src/assets/spells/Invisibility_Spell' },
     { id: 'recall_spell', name: 'Recall Spell', image: '/src/assets/spells/Recall_Spell' },
+    { id: 'revive_spell', name: 'Revive Spell', image: '/src/assets/spells/Revivie_Spell' },
   ],
   dark_spells: [
     { id: 'poison_spell', name: 'Poison Spell', image: '/src/assets/spells/Poison_Spell' },
@@ -86,6 +90,7 @@ export const BUILDING_SECTIONS = {
     { id: 'bat_spell', name: 'Bat Spell', image: '/src/assets/spells/Bat_spell' },
     { id: 'overgrowth_spell', name: 'Overgrowth Spell', image: '/src/assets/spells/Overgrowth_Spell' },
     { id: 'ice_block_spell', name: 'Ice Block Spell', image: '/src/assets/spells/Ice_Block_spell' },
+    { id: 'angry_spell', name: 'Angry Spell', image: '/src/assets/spells/Angry_Spell' },
   ],
   dark_troops: [
     { id: 'minion', name: 'Minion', image: '/src/assets/Dark_Troops/Minion' },
@@ -99,6 +104,7 @@ export const BUILDING_SECTIONS = {
     { id: 'head_hunter', name: 'Head Hunter', image: '/src/assets/Dark_Troops/HeadHunter' },
     { id: 'apprentice_warden', name: 'Apprentice Warden', image: '/src/assets/Dark_Troops/Apprentice_Warden' },
     { id: 'druid', name: 'Druid', image: '/src/assets/Dark_Troops/Druid' },
+    { id: 'furnance', name: 'Furnace', image: '/src/assets/Dark_Troops/Furnance' },
   ],
   sieges: [
     { id: 'wall_wrecker', name: 'Wall Wrecker', image: '/src/assets/Seige_machines/Wall_Wrecker' },
@@ -123,6 +129,10 @@ export const BUILDING_SECTIONS = {
     { id: 'electro_owl', name: 'Electro Owl', image: '/src/assets/pets/Electro_Owl' },
     { id: 'mighty_yak', name: 'Mighty Yak', image: '/src/assets/pets/Might_Yak' },
     { id: 'unicorn', name: 'Unicorn', image: '/src/assets/pets/Unicorn' },
+    { id: 'frosty', name: 'Frosty', image: '/src/assets/pets/Frosty' },
+    { id: 'diggy', name: 'Diggy', image: '/src/assets/pets/Diggy' },
+    { id: 'poison_lizard', name: 'Poison Lizard', image: '/src/assets/pets/Poison_Lizard' },
+    { id: 'phoenix', name: 'Phoenix', image: '/src/assets/pets/Phoenix' },
   ],
   equipment: [
     { id: 'barbarian_puppet', name: 'Barbarian Puppet', hero: 'Barbarian King', image: '/src/assets/Equipment/Barbarian_King/Barbarian_puppet/157.png', levelCount: 4, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1, equipment_type: 'active', equipment_rarity: 'common' },
@@ -158,8 +168,12 @@ export const BUILDING_SECTIONS = {
     { id: 'seeking_shield', name: 'Seeking Shield', hero: 'Royal Champion', image: '/src/assets/Equipment/Royal_Champion/Seeking_Shield/170.png', levelCount: 1, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1, equipment_type: 'active', equipment_rarity: 'common' },
     { id: 'hog_rider_puppet', name: 'Hog Rider Puppet', hero: 'Royal Champion', image: '/src/assets/Equipment/Royal_Champion/Hog_Rider_Puppet/173.png', levelCount: 1, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1, equipment_type: 'active', equipment_rarity: 'common' },
     { id: 'rocket_spear', name: 'Rocket Spear', hero: 'Royal Champion', image: '/src/assets/Equipment/Royal_Champion/Rocket_Spear/195.png', levelCount: 1, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1, equipment_type: 'active', equipment_rarity: 'epic' },
+    { id: 'haste_vial', name: 'Haste Vial', hero: 'Royal Champion', image: '/src/assets/Equipment/Royal_Champion/Haste_Vial/174.png', levelCount: 1, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1, equipment_type: 'active', equipment_rarity: 'epic' },
     { id: 'electro_boots', name: 'Electro Boots', hero: 'Royal Champion', image: '/src/assets/Equipment/Royal_Champion/Electro_Boots/211.png', levelCount: 1, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1, equipment_type: 'passive', equipment_rarity: 'common' },
     { id: 'frost_flake', name: 'Frost Flake', hero: 'Royal Champion', image: '/src/assets/Equipment/Royal_Champion/Frost_Flake/257.png', levelCount: 1, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1, equipment_type: 'passive', equipment_rarity: 'common' },
+    { id: 'fire_heart', name: 'Fire Heart', hero: 'Dragon Duke', image: '/src/assets/Equipment/Dragon_Duke/Fire_Heart/261.png', levelCount: 1, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1, equipment_type: 'passive', equipment_rarity: 'epic' },
+    { id: 'flame_blower', name: 'Flame Blower', hero: 'Dragon Duke', image: '/src/assets/Equipment/Dragon_Duke/Flame_Blower/262.png', levelCount: 1, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1, equipment_type: 'active', equipment_rarity: 'epic' },
+    { id: 'rocket_backpack', name: 'Rocket Backpack', hero: 'Dragon Duke', image: '/src/assets/Equipment/Dragon_Duke/Rocket_Backpack/276.png', levelCount: 1, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1, equipment_type: 'active', equipment_rarity: 'epic' },
   ],
   walls: [
     { id: 'walls', name: 'Walls', image: '/src/assets/Walls' },
@@ -1602,6 +1616,179 @@ export const getDefaultBuildingData = (townhallLevel) => {
         blacksmith_level_unlocked: 1,
         equipment_type: 'active',
         equipment_rarity: 'common',
+        levels: [
+          { level: 1, cost: 0, resource: 'glowy_ore', resource_options: ['glowy_ore'], resource_costs: createEquipmentResourceCosts(['glowy_ore', 0]), time: '0sec', blacksmith_level_unlocked: 1 },
+        ],
+      },
+    }
+  }
+
+  if (Number(townhallLevel) === 15) {
+    return {
+      spell_tower: {
+        id: 'spell_tower',
+        image_path: '/src/assets/Defences/spell_tower/135_',
+        buildings_unlocked: 1,
+        copy_unlocks: createCopyUnlocks(1, 1),
+        levels: [
+          { level: 1, cost: 0, resource: 'gold', time: '0sec' },
+        ],
+      },
+      monolith: {
+        id: 'monolith',
+        image_path: '/src/assets/Defences/monolith/136_',
+        buildings_unlocked: 1,
+        copy_unlocks: createCopyUnlocks(1, 1),
+        levels: [
+          { level: 1, cost: 0, resource: 'gold', time: '0sec' },
+        ],
+      },
+      root_rider: {
+        id: 'root_rider',
+        image_path: '/src/assets/Troops/Root_Rider/156_',
+        copy_unlocks: [true],
+        barracks_level_unlocked: 16,
+        levels: [
+          { level: 1, cost: 0, resource: 'elixir', time: '0sec', lab_level_unlocked: 1 },
+        ],
+      },
+      furnance: {
+        id: 'furnance',
+        image_path: '/src/assets/Dark_Troops/Furnance/218_',
+        copy_unlocks: [true],
+        dark_barracks_level_unlocked: 11,
+        levels: [
+          { level: 1, cost: 0, resource: 'dark_elixir', time: '0sec', lab_level_unlocked: 1 },
+        ],
+      },
+      revive_spell: {
+        id: 'revive_spell',
+        image_path: '/src/assets/spells/Revivie_Spell/205',
+        copy_unlocks: [true],
+        spell_factory_level_unlocked: 9,
+        levels: [
+          { level: 1, cost: 0, resource: 'elixir', time: '0sec', lab_level_unlocked: 1 },
+        ],
+      },
+      angry_spell: {
+        id: 'angry_spell',
+        image_path: '/src/assets/spells/Angry_Spell/281',
+        copy_unlocks: [true],
+        dark_spell_factory_level_unlocked: 8,
+        levels: [
+          { level: 1, cost: 0, resource: 'dark_elixir', time: '0sec', lab_level_unlocked: 1 },
+        ],
+      },
+      dragon_duke: {
+        id: 'dragon_duke',
+        image_path: '/src/assets/Heros/Dragon_Duke/260_',
+        copy_unlocks: [true],
+        hero_hall_level_unlocked: 4,
+        levels: [
+          { level: 1, cost: 0, resource: 'dark_elixir', time: '0sec', hero_hall_level_unlocked: 4 },
+        ],
+      },
+      battle_drill: {
+        id: 'battle_drill',
+        image_path: '/src/assets/Seige_machines/Battle_Drill/139_',
+        copy_unlocks: [true],
+        workshop_level_unlocked: 7,
+        levels: [
+          { level: 1, cost: 0, resource: 'elixir', time: '0sec', lab_level_unlocked: 1 },
+        ],
+      },
+      frosty: {
+        id: 'frosty',
+        image_path: '/src/assets/pets/Frosty/141',
+        copy_unlocks: [true],
+        pet_house_level_unlocked: 5,
+        levels: [
+          { level: 1, cost: 0, resource: 'dark_elixir', time: '0sec', pet_house_level_unlocked: 5 },
+        ],
+      },
+      diggy: {
+        id: 'diggy',
+        image_path: '/src/assets/pets/Diggy/142',
+        copy_unlocks: [true],
+        pet_house_level_unlocked: 6,
+        levels: [
+          { level: 1, cost: 0, resource: 'dark_elixir', time: '0sec', pet_house_level_unlocked: 6 },
+        ],
+      },
+      poison_lizard: {
+        id: 'poison_lizard',
+        image_path: '/src/assets/pets/Poison_Lizard/143',
+        copy_unlocks: [true],
+        pet_house_level_unlocked: 7,
+        levels: [
+          { level: 1, cost: 0, resource: 'dark_elixir', time: '0sec', pet_house_level_unlocked: 7 },
+        ],
+      },
+      phoenix: {
+        id: 'phoenix',
+        image_path: '/src/assets/pets/Phoenix/144',
+        copy_unlocks: [true],
+        pet_house_level_unlocked: 8,
+        levels: [
+          { level: 1, cost: 0, resource: 'dark_elixir', time: '0sec', pet_house_level_unlocked: 8 },
+        ],
+      },
+      haste_vial: {
+        id: 'haste_vial',
+        image_path: '/src/assets/Equipment/Royal_Champion/Haste_Vial/174.png',
+        hero: 'Royal Champion',
+        priority: 6,
+        buildings_unlocked: 1,
+        copy_unlocks: [true],
+        unlock_source: 'blacksmith',
+        blacksmith_level_unlocked: 1,
+        equipment_type: 'active',
+        equipment_rarity: 'epic',
+        levels: [
+          { level: 1, cost: 0, resource: 'glowy_ore', resource_options: ['glowy_ore'], resource_costs: createEquipmentResourceCosts(['glowy_ore', 0]), time: '0sec', blacksmith_level_unlocked: 1 },
+        ],
+      },
+      fire_heart: {
+        id: 'fire_heart',
+        image_path: '/src/assets/Equipment/Dragon_Duke/Fire_Heart/261.png',
+        hero: 'Dragon Duke',
+        priority: 1,
+        buildings_unlocked: 1,
+        copy_unlocks: [true],
+        unlock_source: 'blacksmith',
+        blacksmith_level_unlocked: 1,
+        equipment_type: 'passive',
+        equipment_rarity: 'epic',
+        levels: [
+          { level: 1, cost: 0, resource: 'glowy_ore', resource_options: ['glowy_ore'], resource_costs: createEquipmentResourceCosts(['glowy_ore', 0]), time: '0sec', blacksmith_level_unlocked: 1 },
+        ],
+      },
+      flame_blower: {
+        id: 'flame_blower',
+        image_path: '/src/assets/Equipment/Dragon_Duke/Flame_Blower/262.png',
+        hero: 'Dragon Duke',
+        priority: 2,
+        buildings_unlocked: 1,
+        copy_unlocks: [true],
+        unlock_source: 'blacksmith',
+        blacksmith_level_unlocked: 1,
+        equipment_type: 'active',
+        equipment_rarity: 'epic',
+        levels: [
+          { level: 1, cost: 0, resource: 'glowy_ore', resource_options: ['glowy_ore'], resource_costs: createEquipmentResourceCosts(['glowy_ore', 0]), time: '0sec', blacksmith_level_unlocked: 1 },
+        ],
+      },
+      rocket_backpack: {
+        id: 'rocket_backpack',
+        image_path: '/src/assets/Equipment/Dragon_Duke/Rocket_Backpack/276.png',
+        hero: 'Dragon Duke',
+        priority: 3,
+        buildings_unlocked: 1,
+        copy_unlocks: [true],
+        unlock_source: 'blacksmith',
+        blacksmith_level_unlocked: 1,
+        equipment_type: 'active',
+        equipment_rarity: 'epic',
         levels: [
           { level: 1, cost: 0, resource: 'glowy_ore', resource_options: ['glowy_ore'], resource_costs: createEquipmentResourceCosts(['glowy_ore', 0]), time: '0sec', blacksmith_level_unlocked: 1 },
         ],
