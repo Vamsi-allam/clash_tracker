@@ -59,6 +59,7 @@ const EQUIPMENT_BUILDINGS = {
   stick_horse: { id: 'stick_horse', name: 'Stick Horse', hero: 'Barbarian King', image: '/src/assets/Equipment/Barbarian_King/Stick_Horse/258.png', levelCount: 4, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1 },
   fire_heart: { id: 'fire_heart', name: 'Fire Heart', hero: 'Dragon Duke', image: '/src/assets/Equipment/Dragon_Duke/Fire_Heart/261.png', levelCount: 4, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1 },
   flame_blower: { id: 'flame_blower', name: 'Flame Blower', hero: 'Dragon Duke', image: '/src/assets/Equipment/Dragon_Duke/Flame_Blower/262.png', levelCount: 4, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1 },
+  stun_blaster: { id: 'stun_blaster', name: 'Stun Blaster', hero: 'Dragon Duke', image: '/src/assets/Equipment/Dragon_Duke/Stun_Blaster/263.png', levelCount: 4, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1 },
   rocket_backpack: { id: 'rocket_backpack', name: 'Rocket Backpack', hero: 'Dragon Duke', image: '/src/assets/Equipment/Dragon_Duke/Rocket_Backpack/276.png', levelCount: 4, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1 },
   monolith_arrow: { id: 'monolith_arrow', name: 'Monolith Arrow', hero: 'Archer Queen', image: '/src/assets/Equipment/Archer_Queen/Monolith_Arrow/280.png', levelCount: 4, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1 },
 }
