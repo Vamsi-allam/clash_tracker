@@ -397,6 +397,7 @@ export default function AdminPage({ username, onLogout }) {
       fire_heart: 1,
       flame_blower: 2,
       rocket_backpack: 3,
+      stun_blaster: 4,
     }
     const getEquipmentPriority = (building) => {
       const buildingId = building?.id
@@ -562,8 +563,10 @@ export default function AdminPage({ username, onLogout }) {
                 const getImagePath = () => {
                   if (activeTab === 'equipment') return ''
                   if (building.id === 'archer_tower') return `16_${maxLevel}`
+                  if (building.id === 'multi_archer_tower') return `154_${maxLevel}`
                   if (building.id === 'builder_hut') return `127_${maxLevel}`
                   if (building.id === 'canon') return `18_${maxLevel}`
+                  if (building.id === 'ricochet_cannon') return `153_${maxLevel}`
                   if (building.id === 'bomb') return `27_${maxLevel}`
                   if (building.id === 'giant_bomb') return `28_${maxLevel}`
                   if (building.id === 'skeleton_trap') return `64_${maxLevel}`
@@ -619,6 +622,7 @@ export default function AdminPage({ username, onLogout }) {
                   if (building.id === 'dragon_rider') return `133_${maxLevel}`
                   if (building.id === 'electro_titan') return `138_${maxLevel}`
                   if (building.id === 'root_rider') return `156_${maxLevel}`
+                  if (building.id === 'thrower') return `204_${maxLevel}`
                   if (building.id === 'minion') return `53_${maxLevel}`
                   if (building.id === 'hog_rider') return `54_${maxLevel}`
                   if (building.id === 'valkyrie') return `55_${maxLevel}`
@@ -631,6 +635,7 @@ export default function AdminPage({ username, onLogout }) {
                   if (building.id === 'apprentice_warden') return `151_${maxLevel}`
                   if (building.id === 'druid') return `197_${maxLevel}`
                   if (building.id === 'furnance') return `218_${maxLevel}`
+                  if (building.id === 'ruin_witch') return `282_${maxLevel}`
                   if (building.id === 'wall_wrecker') return `105_${maxLevel}`
                   if (building.id === 'battle_blimp') return `106_${maxLevel}`
                   if (building.id === 'stone_slammer') return `109_${maxLevel}`
@@ -656,6 +661,7 @@ export default function AdminPage({ username, onLogout }) {
                   if (building.id === 'recall_spell') return '140'
                   if (building.id === 'revive_spell') return '205'
                   if (building.id === 'angry_spell') return '281'
+                  if (building.id === 'totem_spell') return '244'
                   if (building.id === 'barbarian_king') return '61'
                   if (building.id === 'archer_queen') return '62'
                   if (building.id === 'grand_warden') return '63'
@@ -670,6 +676,8 @@ export default function AdminPage({ username, onLogout }) {
                   if (building.id === 'diggy') return '142'
                   if (building.id === 'poison_lizard') return '143'
                   if (building.id === 'phoenix') return '144'
+                  if (building.id === 'spirit_fox') return '155'
+                  if (building.id === 'angry_jelly') return '193'
                   return '18_3'
                 }
 

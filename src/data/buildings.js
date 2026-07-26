@@ -6,7 +6,9 @@ const createEquipmentResourceCosts = (...entries) => entries.map(([resource, cos
 export const BUILDING_SECTIONS = {
   defences: [
     { id: 'canon', name: 'Canon', image: '/src/assets/Defences/canon' },
+    { id: 'ricochet_cannon', name: 'Ricochet Cannon', image: '/src/assets/Defences/Ricochet_Cannon' },
     { id: 'archer_tower', name: 'Archer Tower', image: '/src/assets/Defences/Archer_Tower' },
+    { id: 'multi_archer_tower', name: 'Multi Archer Tower', image: '/src/assets/Defences/Multi_Archer_Tower' },
     { id: 'builder_hut', name: 'Builder Hut', image: '/src/assets/Defences/Builder_hut' },
     { id: 'mortar', name: 'Mortar', image: '/src/assets/Defences/mortar' },
     { id: 'bomb_tower', name: 'Bomb Tower', image: '/src/assets/Defences/Bomb_tower' },
@@ -70,6 +72,7 @@ export const BUILDING_SECTIONS = {
     { id: 'dragon_rider', name: 'Dragon Rider', image: '/src/assets/Troops/DragonRider' },
     { id: 'electro_titan', name: 'Electro Titan', image: '/src/assets/Troops/Electro_Titan' },
     { id: 'root_rider', name: 'Root Rider', image: '/src/assets/Troops/Root_Rider' },
+    { id: 'thrower', name: 'Thrower', image: '/src/assets/Troops/Thrower' },
   ],
   spells: [
     { id: 'lightning_spell', name: 'Lightning Spell', image: '/src/assets/spells/Lightning_Spell' },
@@ -81,6 +84,7 @@ export const BUILDING_SECTIONS = {
     { id: 'invisibility_spell', name: 'Invisibility Spell', image: '/src/assets/spells/Invisibility_Spell' },
     { id: 'recall_spell', name: 'Recall Spell', image: '/src/assets/spells/Recall_Spell' },
     { id: 'revive_spell', name: 'Revive Spell', image: '/src/assets/spells/Revivie_Spell' },
+    { id: 'totem_spell', name: 'Totem Spell', image: '/src/assets/spells/Totem_Spell' },
   ],
   dark_spells: [
     { id: 'poison_spell', name: 'Poison Spell', image: '/src/assets/spells/Poison_Spell' },
@@ -105,6 +109,7 @@ export const BUILDING_SECTIONS = {
     { id: 'apprentice_warden', name: 'Apprentice Warden', image: '/src/assets/Dark_Troops/Apprentice_Warden' },
     { id: 'druid', name: 'Druid', image: '/src/assets/Dark_Troops/Druid' },
     { id: 'furnance', name: 'Furnace', image: '/src/assets/Dark_Troops/Furnance' },
+    { id: 'ruin_witch', name: 'Ruin Witch', image: '/src/assets/Dark_Troops/Ruin_Witch' },
   ],
   sieges: [
     { id: 'wall_wrecker', name: 'Wall Wrecker', image: '/src/assets/Seige_machines/Wall_Wrecker' },
@@ -133,6 +138,8 @@ export const BUILDING_SECTIONS = {
     { id: 'diggy', name: 'Diggy', image: '/src/assets/pets/Diggy' },
     { id: 'poison_lizard', name: 'Poison Lizard', image: '/src/assets/pets/Poison_Lizard' },
     { id: 'phoenix', name: 'Phoenix', image: '/src/assets/pets/Phoenix' },
+    { id: 'spirit_fox', name: 'Spirit Fox', image: '/src/assets/pets/Spirit_Fox' },
+    { id: 'angry_jelly', name: 'Angry Jelly', image: '/src/assets/pets/Angry_jelly' },
   ],
   equipment: [
     { id: 'barbarian_puppet', name: 'Barbarian Puppet', hero: 'Barbarian King', image: '/src/assets/Equipment/Barbarian_King/Barbarian_puppet/157.png', levelCount: 4, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1, equipment_type: 'active', equipment_rarity: 'common' },
@@ -174,6 +181,7 @@ export const BUILDING_SECTIONS = {
     { id: 'fire_heart', name: 'Fire Heart', hero: 'Dragon Duke', image: '/src/assets/Equipment/Dragon_Duke/Fire_Heart/261.png', levelCount: 1, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1, equipment_type: 'passive', equipment_rarity: 'epic' },
     { id: 'flame_blower', name: 'Flame Blower', hero: 'Dragon Duke', image: '/src/assets/Equipment/Dragon_Duke/Flame_Blower/262.png', levelCount: 1, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1, equipment_type: 'active', equipment_rarity: 'epic' },
     { id: 'rocket_backpack', name: 'Rocket Backpack', hero: 'Dragon Duke', image: '/src/assets/Equipment/Dragon_Duke/Rocket_Backpack/276.png', levelCount: 1, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1, equipment_type: 'active', equipment_rarity: 'epic' },
+    { id: 'stun_blaster', name: 'Stun Blaster', hero: 'Dragon Duke', image: '/src/assets/Equipment/Dragon_Duke/Stun_Blaster/263.png', levelCount: 1, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1, equipment_type: 'active', equipment_rarity: 'epic' },
   ],
   walls: [
     { id: 'walls', name: 'Walls', image: '/src/assets/Walls' },
@@ -1783,6 +1791,99 @@ export const getDefaultBuildingData = (townhallLevel) => {
         image_path: '/src/assets/Equipment/Dragon_Duke/Rocket_Backpack/276.png',
         hero: 'Dragon Duke',
         priority: 3,
+        buildings_unlocked: 1,
+        copy_unlocks: [true],
+        unlock_source: 'blacksmith',
+        blacksmith_level_unlocked: 1,
+        equipment_type: 'active',
+        equipment_rarity: 'epic',
+        levels: [
+          { level: 1, cost: 0, resource: 'glowy_ore', resource_options: ['glowy_ore'], resource_costs: createEquipmentResourceCosts(['glowy_ore', 0]), time: '0sec', blacksmith_level_unlocked: 1 },
+        ],
+      },
+    }
+  }
+
+  if (Number(townhallLevel) === 16) {
+    return {
+      ricochet_cannon: {
+        id: 'ricochet_cannon',
+        image_path: '/src/assets/Defences/Ricochet_Cannon/153_',
+        buildings_unlocked: 1,
+        copy_unlocks: createCopyUnlocks(1, 1),
+        levels: [
+          { level: 1, cost: 0, resource: 'gold', time: '0sec' },
+        ],
+      },
+      multi_archer_tower: {
+        id: 'multi_archer_tower',
+        image_path: '/src/assets/Defences/Multi_Archer_Tower/154_',
+        buildings_unlocked: 1,
+        copy_unlocks: createCopyUnlocks(1, 1),
+        levels: [
+          { level: 1, cost: 0, resource: 'gold', time: '0sec' },
+        ],
+      },
+      thrower: {
+        id: 'thrower',
+        image_path: '/src/assets/Troops/Thrower/204_',
+        copy_unlocks: [true],
+        barracks_level_unlocked: 17,
+        levels: [
+          { level: 1, cost: 0, resource: 'elixir', time: '0sec', lab_level_unlocked: 1 },
+        ],
+      },
+      ruin_witch: {
+        id: 'ruin_witch',
+        image_path: '/src/assets/Dark_Troops/Ruin_Witch/282_',
+        copy_unlocks: [true],
+        dark_barracks_level_unlocked: 12,
+        levels: [
+          { level: 1, cost: 0, resource: 'dark_elixir', time: '0sec', lab_level_unlocked: 1 },
+        ],
+      },
+      totem_spell: {
+        id: 'totem_spell',
+        image_path: '/src/assets/spells/Totem_Spell/244',
+        buildings_unlocked: 1,
+        copy_unlocks: createCopyUnlocks(1, 1),
+        spell_factory_level_unlocked: 10,
+        levels: [
+          { level: 1, cost: 0, resource: 'elixir', time: '0sec', lab_level_unlocked: 1 },
+        ],
+      },
+      troop_launcher: {
+        id: 'troop_launcher',
+        image_path: '/src/assets/Seige_machines/Troop_Launcher/215_',
+        copy_unlocks: [true],
+        workshop_level_unlocked: 8,
+        levels: [
+          { level: 1, cost: 0, resource: 'elixir', time: '0sec', lab_level_unlocked: 1 },
+        ],
+      },
+      spirit_fox: {
+        id: 'spirit_fox',
+        image_path: '/src/assets/pets/Spirit_Fox/155',
+        copy_unlocks: [true],
+        pet_house_level_unlocked: 9,
+        levels: [
+          { level: 1, cost: 0, resource: 'dark_elixir', time: '0sec', pet_house_level_unlocked: 9 },
+        ],
+      },
+      angry_jelly: {
+        id: 'angry_jelly',
+        image_path: '/src/assets/pets/Angry_jelly/193',
+        copy_unlocks: [true],
+        pet_house_level_unlocked: 10,
+        levels: [
+          { level: 1, cost: 0, resource: 'dark_elixir', time: '0sec', pet_house_level_unlocked: 10 },
+        ],
+      },
+      stun_blaster: {
+        id: 'stun_blaster',
+        image_path: '/src/assets/Equipment/Dragon_Duke/Stun_Blaster/263.png',
+        hero: 'Dragon Duke',
+        priority: 4,
         buildings_unlocked: 1,
         copy_unlocks: [true],
         unlock_source: 'blacksmith',
