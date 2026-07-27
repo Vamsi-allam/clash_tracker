@@ -1086,6 +1086,8 @@ export default function BuildingEditorPage({ username, onLogout }) {
                 if (defence.id === 'scattershot') return `119_${maxLevel}`
                 if (defence.id === 'spell_tower') return `135_${maxLevel}`
                 if (defence.id === 'monolith') return `136_${maxLevel}`
+                if (defence.id === 'ricochet_cannon') return `153_${maxLevel}`
+                if (defence.id === 'multi_archer_tower') return `154_${maxLevel}`
                 if (defence.id === 'lab') return `13_${maxLevel}`
                 if (defence.id === 'hero_hall') return `202_${maxLevel}`
                 if (defence.id === 'army_camp') return `10_${maxLevel}`
@@ -1119,6 +1121,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
                 if (defence.id === 'electro_dragon') return `103_${maxLevel}`
                 if (defence.id === 'electro_titan') return `138_${maxLevel}`
                 if (defence.id === 'root_rider') return `156_${maxLevel}`
+                if (defence.id === 'thrower') return `204_${maxLevel}`
                 if (defence.id === 'yeti') return `121_${maxLevel}`
                 if (defence.id === 'dragon_rider') return `133_${maxLevel}`
                 if (defence.id === 'minion') return `53_${maxLevel}`
@@ -1133,6 +1136,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
                 if (defence.id === 'apprentice_warden') return `151_${maxLevel}`
                 if (defence.id === 'druid') return `197_${maxLevel}`
                 if (defence.id === 'furnance') return `218_${maxLevel}`
+                if (defence.id === 'ruin_witch') return `282_${maxLevel}`
                 if (defence.id === 'wall_wrecker') return `105_${maxLevel}`
                 if (defence.id === 'battle_blimp') return `106_${maxLevel}`
                 if (defence.id === 'stone_slammer') return `109_${maxLevel}`
@@ -1159,6 +1163,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
                 if (defence.id === 'recall_spell') return '140'
                 if (defence.id === 'revive_spell') return '205'
                 if (defence.id === 'angry_spell') return '281'
+                if (defence.id === 'totem_spell') return '244'
                 if (defence.id === 'barbarian_king') return '61'
                 if (defence.id === 'archer_queen') return '62'
                 if (defence.id === 'grand_warden') return '63'
@@ -1173,6 +1178,8 @@ export default function BuildingEditorPage({ username, onLogout }) {
                 if (defence.id === 'diggy') return '142'
                 if (defence.id === 'poison_lizard') return '143'
                 if (defence.id === 'phoenix') return '144'
+                if (defence.id === 'spirit_fox') return '155'
+                if (defence.id === 'angry_jelly') return '193'
                 return '18_3'
               }
               

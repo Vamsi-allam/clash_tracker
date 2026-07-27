@@ -548,6 +548,27 @@ const upgradeResourceIcons = {
   dark_elixir: '/src/assets/magic-items/de.png',
 }
 
+const MERGED_DEFENCE_RULES = {
+  ricochet_cannon: {
+    mergedBuildingId: 'ricochet_cannon',
+    mergedBuildingLabel: 'Ricochet Cannon',
+    baseBuildingId: 'canon',
+    baseBuildingLabel: 'Cannon',
+    requiredBaseLevel: 21,
+    requiredBaseCount: 2,
+  },
+  multi_archer_tower: {
+    mergedBuildingId: 'multi_archer_tower',
+    mergedBuildingLabel: 'Multi Archer Tower',
+    baseBuildingId: 'archer_tower',
+    baseBuildingLabel: 'Archer Tower',
+    requiredBaseLevel: 21,
+    requiredBaseCount: 2,
+  },
+}
+
+const MERGED_DEFENCE_IDS = new Set(Object.keys(MERGED_DEFENCE_RULES))
+
 export default function UserPage({ username, onLogout, userId }) {
   const [tag, setTag] = useState('')
   const [playerData, setPlayerData] = useState(null)
@@ -1791,6 +1812,113 @@ export default function UserPage({ username, onLogout, userId }) {
     pet_house: 9,
   }
 
+  const getBuildingRowLevelsWithDefaults = (building, rowCount) => {
+    const levels = structureLevels[building.id]
+    if (Array.isArray(levels) && levels.length > 0) {
+      return levels
+    }
+
+    return Array.from(
+      { length: rowCount },
+      (_, index) => {
+        const explicitUnlock = Array.isArray(building?.copy_unlocks) && building.copy_unlocks[index] != null
+          ? Boolean(building.copy_unlocks[index])
+          : (index === 0 ? building?.starts_unlocked !== false : false)
+
+        if (!explicitUnlock) return 0
+        if (MERGED_DEFENCE_IDS.has(String(building?.id || ''))) return 0
+        const isGemUnlock = String(building?.unlock_source || '').toLowerCase().includes('gem')
+        if (isGemUnlock) return 0
+        return 1
+      },
+    )
+  }
+
+  const getPendingUpgradeForBuildingRow = (buildingId, rowIndex) => {
+    const rowBuildingId = `${buildingId}-${rowIndex + 1}`
+    return pendingUpgrades.find((upgrade) => (
+      upgrade?.villageId === activeVillage?.id
+      && upgrade?.buildingId === rowBuildingId
+      && Number(upgrade?.rowIndex) === Number(rowIndex)
+    )) || null
+  }
+
+  const getMergedDefenceUnlockState = (mergedBuildingId) => {
+    const rule = MERGED_DEFENCE_RULES[String(mergedBuildingId || '')]
+    if (!rule) return null
+
+    const mergedBuilding = (structureCatalog.defences || []).find((building) => String(building?.id || '') === rule.mergedBuildingId)
+    const baseBuilding = (structureCatalog.defences || []).find((building) => String(building?.id || '') === rule.baseBuildingId)
+    if (!mergedBuilding || !baseBuilding) {
+      return {
+        ...rule,
+        ready: false,
+        missingCount: rule.requiredBaseCount,
+        eligibleRowIndexes: [],
+        consumedRowIndexes: [],
+        requirementText: `Requires ${rule.requiredBaseCount} ${rule.baseBuildingLabel} at level ${rule.requiredBaseLevel} to merge.`,
+      }
+    }
+
+    const mergedRowCount = getStructureRowCount(mergedBuilding, structureLevels[rule.mergedBuildingId] || [])
+    const mergedLevels = getBuildingRowLevelsWithDefaults(mergedBuilding, mergedRowCount)
+    const constructedMergedRows = Array.from({ length: mergedRowCount }, (_, rowIndex) => {
+      const pendingUpgrade = getPendingUpgradeForBuildingRow(rule.mergedBuildingId, rowIndex)
+      const rowLevel = pendingUpgrade
+        ? Number(pendingUpgrade.toLevel ?? mergedLevels[rowIndex] ?? 0)
+        : Number(mergedLevels[rowIndex] ?? 0)
+      return rowLevel > 0
+    }).filter(Boolean).length
+
+    const baseRowCount = getStructureRowCount(baseBuilding, structureLevels[rule.baseBuildingId] || [])
+    const baseLevels = getBuildingRowLevelsWithDefaults(baseBuilding, baseRowCount)
+    const eligibleRowIndexes = []
+
+    for (let rowIndex = 0; rowIndex < baseRowCount; rowIndex += 1) {
+      if (Number(baseLevels[rowIndex] || 0) >= Number(rule.requiredBaseLevel)) {
+        eligibleRowIndexes.push(rowIndex)
+      }
+    }
+
+    const ready = eligibleRowIndexes.length >= Number(rule.requiredBaseCount)
+    const missingCount = Math.max(0, Number(rule.requiredBaseCount) - eligibleRowIndexes.length)
+    const consumedBaseCount = Number(rule.requiredBaseCount) * constructedMergedRows
+    const consumedRowIndexes = consumedBaseCount > 0 && eligibleRowIndexes.length > 0
+      ? eligibleRowIndexes.slice(-consumedBaseCount)
+      : []
+
+    return {
+      ...rule,
+      ready,
+      missingCount,
+      eligibleRowIndexes,
+      consumedRowIndexes,
+      constructedMergedRows,
+      requirementText: ready
+        ? `${rule.mergedBuildingLabel} is ready to construct.`
+        : `Requires ${rule.requiredBaseCount} ${rule.baseBuildingLabel} at level ${rule.requiredBaseLevel} to merge.`,
+    }
+  }
+
+  const hiddenDefenceRowIndexesByBuildingId = Object.values(MERGED_DEFENCE_RULES).reduce((accumulator, rule) => {
+    const mergeState = getMergedDefenceUnlockState(rule.mergedBuildingId)
+    if (!mergeState || !Array.isArray(mergeState.consumedRowIndexes) || mergeState.consumedRowIndexes.length === 0) {
+      return accumulator
+    }
+
+    accumulator[rule.baseBuildingId] = new Set(mergeState.consumedRowIndexes)
+    return accumulator
+  }, {})
+
+  const getVisibleRowIndexesForBuilding = (building, rowCount = null) => {
+    const resolvedCount = Math.max(0, rowCount == null ? getStructureRowCount(building, structureLevels[building.id] || []) : Number(rowCount))
+    const hiddenIndexes = hiddenDefenceRowIndexesByBuildingId[String(building?.id || '')]
+
+    return Array.from({ length: resolvedCount }, (_, index) => index).filter((index) => {
+      return !(hiddenIndexes instanceof Set && hiddenIndexes.has(index))
+    })
+  }
+
   const visibleDefenseBuildings = [...(structureCatalog.defences || [])]
     .filter((building) => building?.id)
     .sort((left, right) => {
@@ -2616,6 +2744,11 @@ export default function UserPage({ username, onLogout, userId }) {
     // If the building is unlocked via gems, allow unlocking/upgrading regardless of blacksmith/lab/barracks/hero requirements
     const isGemUnlock = String(building?.unlock_source || '').toLowerCase().includes('gem')
     if (!isGemUnlock) {
+      if (rowState.mergeLocked) {
+        showToast(rowState.mergeLockedMessage || 'Merge requirement not met.', 'error')
+        return
+      }
+
       if (rowState.labRequirementLabel === 'Blacksmith' && rowState.labRequirementLevel != null && rowState.visibleNextLevels.length === 0) {
         showToast(`Blacksmith level ${rowState.labRequirementLevel} is required to upgrade this equipment.`, 'error')
         return
@@ -2809,8 +2942,10 @@ export default function UserPage({ username, onLogout, userId }) {
         return
       }
 
-      for (let i = 0; i < rows; i++) {
-        const currentLevel = Number(levelsArray[i] || 0)
+      const visibleRowIndexes = getVisibleRowIndexesForBuilding(building, rows)
+
+      for (const rowIndex of visibleRowIndexes) {
+        const currentLevel = Number(levelsArray[rowIndex] || 0)
         totalCurrentLevels += Math.min(Math.max(currentLevel, 0), maxLevel)
         totalMaxLevels += maxLevel
       }
@@ -3092,6 +3227,7 @@ export default function UserPage({ username, onLogout, userId }) {
 
   const getDefaultRowLevel = (building, rowIndex, unlocked = true) => {
     if (!unlocked) return 0
+    if (MERGED_DEFENCE_IDS.has(String(building?.id || ''))) return 0
     // For equipment unlocked via gems, default to locked (0) so the user can unlock via gems
     const isGemUnlock = String(building?.unlock_source || '').toLowerCase().includes('gem')
     if (isGemUnlock) return 0
@@ -3139,7 +3275,9 @@ export default function UserPage({ username, onLogout, userId }) {
           ? currentLevels
           : Array.from({ length: rowCount }, (_, index) => getDefaultRowLevel(building, index, isCopyUnlocked(building, index)))
 
-        for (let rowIndex = 0; rowIndex < rowCount; rowIndex += 1) {
+        const visibleRowIndexes = getVisibleRowIndexesForBuilding(building, rowCount)
+
+        for (const rowIndex of visibleRowIndexes) {
           if (HERO_BUILDING_IDS.has(String(building?.id || '')) && Number(currentHeroHallLevel || 0) < getHeroHallUnlockRequirement(building)) {
             continue
           }
@@ -3459,6 +3597,7 @@ export default function UserPage({ username, onLogout, userId }) {
     const isEquipmentCard = activeLoadedTab === 'equipment' && EQUIPMENT_BUILDING_IDS.has(String(building?.id || ''))
     const currentLevels = structureLevels[building.id] || []
     const rowCount = getStructureRowCount(building, currentLevels)
+    const visibleRowIndexes = getVisibleRowIndexesForBuilding(building, rowCount)
     const maxLevel = Math.max(...(building.levels || []).map((level) => level.level), 0)
     const troopBarracksRequirement = getTroopBarracksRequirement(building)
     const siegeWorkshopRequirement = getSiegeWorkshopRequirement(building)
@@ -3532,6 +3671,18 @@ export default function UserPage({ username, onLogout, userId }) {
       const labLockedTotalSeconds = labLockedNextLevels.reduce((total, level) => total + getTimeSeconds(level.time), 0)
       const summaryResource = allRemainingNextLevels[0]?.resource || visibleNextLevels[0]?.resource || upgradeSummary.totalResource || ''
       const actionRowKey = `${building.id}-${rowIndex + 1}`
+      const mergeUnlockState = getMergedDefenceUnlockState(building.id)
+      const requiredBaseCountForRow = mergeUnlockState
+        ? Number(mergeUnlockState.requiredBaseCount) * (rowIndex + 1)
+        : 0
+      const mergeRowReady = mergeUnlockState
+        ? mergeUnlockState.eligibleRowIndexes.length >= requiredBaseCountForRow
+        : true
+      const mergeMissingCountForRow = Math.max(0, requiredBaseCountForRow - Number(mergeUnlockState?.eligibleRowIndexes?.length || 0))
+      const mergeLocked = Boolean(mergeUnlockState && Number(rowLevel || 0) <= 0 && !mergeRowReady)
+      const mergeLockedMessage = mergeLocked
+        ? `Requires ${mergeUnlockState.requiredBaseCount} ${mergeUnlockState.baseBuildingLabel} at level ${mergeUnlockState.requiredBaseLevel} to merge.`
+        : ''
 
       return {
         rowIndex,
@@ -3555,6 +3706,8 @@ export default function UserPage({ username, onLogout, userId }) {
         labLockedTotalCost,
         labLockedTotalSeconds,
         summaryResource,
+        mergeLocked,
+        mergeLockedMessage,
         statusIcon: rowLevel <= 0 ? (
           <HandymanOutlinedIcon className={styles.readOnlyActionIcon} />
         ) : (
@@ -3562,6 +3715,9 @@ export default function UserPage({ username, onLogout, userId }) {
         ),
       }
     })
+
+    const visibleRowStates = rowStates.filter((rowState) => visibleRowIndexes.includes(Number(rowState.rowIndex)))
+    const displayRowCount = Math.max(1, visibleRowStates.length)
 
     const isUpgradeLevelLocked = (rowState, levelInfo) => {
       if (rowState?.labRequirementLabel === 'Lab') {
@@ -3585,10 +3741,10 @@ export default function UserPage({ username, onLogout, userId }) {
     }
 
     const tableRowStyle = {
-      gridTemplateRows: `repeat(${rowCount}, minmax(0, auto))`,
+      gridTemplateRows: `repeat(${displayRowCount}, minmax(0, auto))`,
     }
     const rowsColumnStyle = {
-      gridRow: `1 / span ${rowCount}`,
+      gridRow: `1 / span ${displayRowCount}`,
     }
     const upgradeListClassName = activeLoadedTab === 'equipment'
       ? `${styles.readOnlyUpgradeList} ${styles.readOnlyUpgradeListEquipment}`
@@ -3608,7 +3764,7 @@ export default function UserPage({ username, onLogout, userId }) {
             const isSpellTabCard = (activeLoadedTab === 'spells' || activeLoadedTab === 'dark_spells') && SPELL_BUILDING_IDS.has(String(building?.id || ''))
 
             if (isTroopTabCard || isDarkTroopTabCard || isSiegeTabCard || isPetTabCard || isSpellTabCard) {
-              const troopRowState = rowStates[0] || null
+              const troopRowState = visibleRowStates[0] || rowStates[0] || null
               const isDarkSpellBuilding = SPELL_BUILDING_IDS.has(String(building?.id || '')) && DARK_SPELL_BUILDING_IDS.has(String(building?.id || ''))
               const troopUnlocked = isTroopTabCard
                 ? currentBarracksLevel >= troopBarracksRequirement
@@ -3645,7 +3801,7 @@ export default function UserPage({ username, onLogout, userId }) {
                 return (
                   <section key={cardKey} className={`${styles.defenceCard} ${styles.readOnlyBuildingBlock}`}>
                     <div className={styles.readOnlyCardGrid} style={tableRowStyle}>
-                      <div className={styles.readOnlySummaryPanel} style={{ gridRow: `1 / span ${rowCount}` }}>
+                      <div className={styles.readOnlySummaryPanel} style={{ gridRow: `1 / span ${displayRowCount}` }}>
                         {getBuildingImagePath(building, troopRowImageLevel) ? (
                           <img
                             src={getBuildingImagePath(building, troopRowImageLevel)}
@@ -3733,7 +3889,7 @@ export default function UserPage({ username, onLogout, userId }) {
 
             }
             if (activeLoadedTab === 'heroes' && HERO_BUILDING_IDS.has(String(building?.id || ''))) {
-              const heroRowState = rowStates[0] || null
+              const heroRowState = visibleRowStates[0] || rowStates[0] || null
               const heroUnlocked = currentHeroHallLevel >= heroHallRequirement
               const heroRowLevel = heroUnlocked ? Number(heroRowState?.rowLevel || 0) : 0
               const heroRowImageLevel = heroRowLevel
@@ -3747,7 +3903,7 @@ export default function UserPage({ username, onLogout, userId }) {
                 return (
                   <section key={cardKey} className={`${styles.defenceCard} ${styles.readOnlyBuildingBlock}`}>
                     <div className={styles.readOnlyCardGrid} style={tableRowStyle}>
-                      <div className={styles.readOnlySummaryPanel} style={{ gridRow: `1 / span ${rowCount}` }}>
+                      <div className={styles.readOnlySummaryPanel} style={{ gridRow: `1 / span ${displayRowCount}` }}>
                         {getBuildingImagePath(building, heroRowImageLevel) ? (
                           <img
                             src={getBuildingImagePath(building, heroRowImageLevel)}
@@ -3832,7 +3988,7 @@ export default function UserPage({ username, onLogout, userId }) {
               }
             }
             if (activeLoadedTab === 'equipment' && EQUIPMENT_BUILDING_IDS.has(String(building?.id || ''))) {
-              const equipmentRowState = rowStates[0] || null
+              const equipmentRowState = visibleRowStates[0] || rowStates[0] || null
               const equipmentBlacksmithRequired = Number(building?.blacksmith_level_unlocked ?? 0)
               const isGemUnlock = String(building?.unlock_source || '').toLowerCase().includes('gem')
               const equipmentUnlocked = equipmentBlacksmithRequired === 0 || currentBlacksmithLevel >= equipmentBlacksmithRequired
@@ -3866,7 +4022,7 @@ export default function UserPage({ username, onLogout, userId }) {
                 return (
                   <section key={cardKey} className={`${styles.defenceCard} ${styles.readOnlyBuildingBlock}`}>
                     <div className={styles.readOnlyCardGrid} style={tableRowStyle}>
-                      <div className={styles.readOnlySummaryPanel} style={{ gridRow: `1 / span ${rowCount}` }}>
+                      <div className={styles.readOnlySummaryPanel} style={{ gridRow: `1 / span ${displayRowCount}` }}>
                         {getBuildingImagePath(building, equipmentRowLevel) ? (
                           <img
                             src={getBuildingImagePath(building, equipmentRowLevel)}
@@ -3985,21 +4141,21 @@ export default function UserPage({ username, onLogout, userId }) {
               }
             }
 
-      const totalRemainingUpgrades = rowStates.reduce((total, rowState) => total + rowState.allRemainingNextLevels.length, 0)
-      const totalCost = rowStates.reduce((total, rowState) => {
+      const totalRemainingUpgrades = visibleRowStates.reduce((total, rowState) => total + rowState.allRemainingNextLevels.length, 0)
+      const totalCost = visibleRowStates.reduce((total, rowState) => {
         const nextLevels = rowState.allRemainingNextLevels
         return total + nextLevels.reduce((rowTotal, levelInfo) => rowTotal + Number(levelInfo.cost || 0), 0)
       }, 0)
-      const totalSeconds = rowStates.reduce((total, rowState) => {
+      const totalSeconds = visibleRowStates.reduce((total, rowState) => {
         const nextLevels = rowState.allRemainingNextLevels
         return total + nextLevels.reduce((rowTotal, levelInfo) => rowTotal + getTimeSeconds(levelInfo.time), 0)
       }, 0)
-      const summaryImageLevel = rowStates[0]?.rowLevel ?? 0
+      const summaryImageLevel = visibleRowStates[0]?.rowLevel ?? rowStates[0]?.rowLevel ?? 0
 
       return (
         <section key={cardKey} className={`${styles.defenceCard} ${styles.readOnlyBuildingBlock}`}>
           <div className={styles.readOnlyCardGrid} style={tableRowStyle}>
-            <div className={styles.readOnlySummaryPanel} style={{ gridRow: `1 / span ${rowCount}` }}>
+            <div className={styles.readOnlySummaryPanel} style={{ gridRow: `1 / span ${displayRowCount}` }}>
               {getBuildingImagePath(building, summaryImageLevel) ? (
                 <img
                   src={getBuildingImagePath(building, summaryImageLevel)}
@@ -4024,11 +4180,11 @@ export default function UserPage({ username, onLogout, userId }) {
               {totalRemainingUpgrades > 0 && activeLoadedTab !== 'equipment' && (
                 <div className={styles.readOnlySummaryBox}>
                   <div className={styles.readOnlySummaryCount}>{totalRemainingUpgrades} Upgrades</div>
-                  <div className={`${styles.readOnlySummaryCost} ${getUpgradeResourceClass(rowStates[0]?.upgradeSummary?.totalResource)}`}>
-                    {upgradeResourceIcons[String(rowStates[0]?.upgradeSummary?.totalResource || '').trim().toLowerCase()] ? (
+                  <div className={`${styles.readOnlySummaryCost} ${getUpgradeResourceClass((visibleRowStates[0] || rowStates[0])?.upgradeSummary?.totalResource)}`}>
+                    {upgradeResourceIcons[String((visibleRowStates[0] || rowStates[0])?.upgradeSummary?.totalResource || '').trim().toLowerCase()] ? (
                       <img
-                        src={upgradeResourceIcons[String(rowStates[0]?.upgradeSummary?.totalResource || '').trim().toLowerCase()]}
-                        alt={getUpgradeResourceLabel(rowStates[0]?.upgradeSummary?.totalResource)}
+                        src={upgradeResourceIcons[String((visibleRowStates[0] || rowStates[0])?.upgradeSummary?.totalResource || '').trim().toLowerCase()]}
+                        alt={getUpgradeResourceLabel((visibleRowStates[0] || rowStates[0])?.upgradeSummary?.totalResource)}
                         className={styles.readOnlySummaryResourceIcon}
                       />
                     ) : null}
@@ -4040,7 +4196,7 @@ export default function UserPage({ username, onLogout, userId }) {
             </div>
 
             <div className={styles.readOnlyRowsColumn} style={rowsColumnStyle}>
-              {rowStates.map((rowState) => (
+              {visibleRowStates.map((rowState) => (
                 <div key={`${building.id}-${rowState.rowIndex}`} className={styles.readOnlyRow}>
                   <div className={styles.readOnlyLevelCell}>
                     {getBuildingImagePath(building, rowState.rowLevel) ? (
@@ -4085,9 +4241,9 @@ export default function UserPage({ username, onLogout, userId }) {
                         <button
                           type="button"
                           className={`${styles.readOnlyActionBtn} ${rowState.rowLevel <= 0 ? styles.readOnlyActionBtnConstruct : styles.readOnlyActionBtnUpgrade} ${rowState.pendingUpgrade ? styles.readOnlyActionBtnPending : ''}`}
-                            disabled={Boolean(rowState.pendingUpgrade)}
+                          disabled={Boolean(rowState.pendingUpgrade)}
                           aria-label={rowState.rowLevel <= 0 ? 'Complete Construction' : 'Complete Construction'}
-                          title={rowState.rowLevel <= 0 ? 'Construct' : 'Upgrade'}
+                          title={rowState.mergeLocked ? rowState.mergeLockedMessage : (rowState.rowLevel <= 0 ? 'Construct' : 'Upgrade')}
                           onClick={() => {
                             setOpenActionRowKey(rowState.actionRowKey)
                             closeComingSoonPopup()
@@ -4526,6 +4682,11 @@ export default function UserPage({ username, onLogout, userId }) {
                             </span>
                           </div>
                         )}
+                        {rowState.mergeLockedMessage && (
+                          <div className={`${styles.readOnlyUpgradeSummary} ${styles.readOnlyTroopLockedSummary}`}>
+                            <span>{rowState.mergeLockedMessage}</span>
+                          </div>
+                        )}
                       </>
                     ) : rowState.labRequirementLevel != null ? (
                       <>
@@ -4608,7 +4769,7 @@ export default function UserPage({ username, onLogout, userId }) {
         </div>
 
         <div className={styles.defenceRows}>
-          {rowStates.map((rowState) => (
+          {visibleRowStates.map((rowState) => (
             <div key={`${building.id}-${rowState.rowIndex}`} className={styles.defenceRow}>
               {getBuildingImagePath(building, rowState.rowLevel) ? (
                 <img
@@ -4748,7 +4909,8 @@ export default function UserPage({ username, onLogout, userId }) {
       const rowCount = getStructureRowCount(building, structureLevels[building.id] || [])
       const rowLevels = structureLevels[building.id] || Array.from({ length: rowCount }, (_, index) => getDefaultRowLevel(building, index, isCopyUnlocked(building, index)))
 
-      return Array.from({ length: rowCount }, (_, index) => Number(rowLevels[index] || 0) >= maxLevel).every(Boolean)
+      return getVisibleRowIndexesForBuilding(building, rowCount)
+        .every((index) => Number(rowLevels[index] || 0) >= maxLevel)
     })
   }
 
@@ -4765,7 +4927,8 @@ export default function UserPage({ username, onLogout, userId }) {
       const rowLevels = structureLevels[building.id] || []
       const rowCount = getStructureRowCount(building, rowLevels)
 
-      return Array.from({ length: rowCount }, (_, index) => Number(rowLevels[index] || 0) >= maxLevel).every(Boolean)
+      return getVisibleRowIndexesForBuilding(building, rowCount)
+        .every((index) => Number(rowLevels[index] || 0) >= maxLevel)
     })
   }
 
@@ -4782,7 +4945,8 @@ export default function UserPage({ username, onLogout, userId }) {
       const rowLevels = structureLevels[building.id] || []
       const rowCount = getStructureRowCount(building, rowLevels)
 
-      return Array.from({ length: rowCount }, (_, index) => Number(rowLevels[index] || 0) >= maxLevel).every(Boolean)
+      return getVisibleRowIndexesForBuilding(building, rowCount)
+        .every((index) => Number(rowLevels[index] || 0) >= maxLevel)
     })
   }
 
@@ -4799,7 +4963,8 @@ export default function UserPage({ username, onLogout, userId }) {
       const rowLevels = structureLevels[building.id] || []
       const rowCount = getStructureRowCount(building, rowLevels)
 
-      return Array.from({ length: rowCount }, (_, index) => Number(rowLevels[index] || 0) >= maxLevel).every(Boolean)
+      return getVisibleRowIndexesForBuilding(building, rowCount)
+        .every((index) => Number(rowLevels[index] || 0) >= maxLevel)
     })
   }
 
@@ -4818,7 +4983,8 @@ export default function UserPage({ username, onLogout, userId }) {
       const rowLevels = structureLevels[building.id] || []
       const rowCount = getStructureRowCount(building, rowLevels)
 
-      return Array.from({ length: rowCount }, (_, index) => Number(rowLevels[index] || 0) >= maxLevel).every(Boolean)
+      return getVisibleRowIndexesForBuilding(building, rowCount)
+        .every((index) => Number(rowLevels[index] || 0) >= maxLevel)
     })
   }
 
@@ -4835,7 +5001,8 @@ export default function UserPage({ username, onLogout, userId }) {
       const rowLevels = structureLevels[building.id] || []
       const rowCount = getStructureRowCount(building, rowLevels)
 
-      return Array.from({ length: rowCount }, (_, index) => Number(rowLevels[index] || 0) >= maxLevel).every(Boolean)
+      return getVisibleRowIndexesForBuilding(building, rowCount)
+        .every((index) => Number(rowLevels[index] || 0) >= maxLevel)
     })
   }
 
@@ -4852,7 +5019,8 @@ export default function UserPage({ username, onLogout, userId }) {
       const rowLevels = structureLevels[building.id] || []
       const rowCount = getStructureRowCount(building, rowLevels)
 
-      return Array.from({ length: rowCount }, (_, index) => Number(rowLevels[index] || 0) >= maxLevel).every(Boolean)
+      return getVisibleRowIndexesForBuilding(building, rowCount)
+        .every((index) => Number(rowLevels[index] || 0) >= maxLevel)
     })
   }
 
@@ -4896,7 +5064,8 @@ export default function UserPage({ username, onLogout, userId }) {
 
       const rowLevels = structureLevels[building.id] || Array.from({ length: rowCount }, (_, index) => getDefaultRowLevel(building, index, isCopyUnlocked(building, index)))
 
-      return Array.from({ length: rowCount }, (_, index) => Number(rowLevels[index] || 0) > 0).every(Boolean)
+      return getVisibleRowIndexesForBuilding(building, rowCount)
+        .every((index) => Number(rowLevels[index] || 0) > 0)
     })
   })()
   const activeRemainingBetaComplete = isWallsTabActive ? isWallMaxComplete : Boolean(loadedTabCompletion[activeLoadedTab])
