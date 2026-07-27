@@ -1919,8 +1919,16 @@ export default function UserPage({ username, onLogout, userId }) {
     })
   }
 
+  const isTownhall17MergeInProgress = Boolean(
+    activeTownhallUpgrade
+    && Number(activeTownhallUpgrade.fromLevel || 0) === 16
+    && Number(activeTownhallUpgrade.toLevel || 0) === 17,
+  )
+  const shouldHideEagleArtillery = Number(currentTownHallLevel || 0) >= 17 || isTownhall17MergeInProgress
+
   const visibleDefenseBuildings = [...(structureCatalog.defences || [])]
     .filter((building) => building?.id)
+    .filter((building) => !(shouldHideEagleArtillery && String(building.id || '') === 'eagle_artillery'))
     .sort((left, right) => {
       return (left.name || formatStructureName(left.id)).localeCompare(right.name || formatStructureName(right.id))
     })
@@ -1947,6 +1955,7 @@ export default function UserPage({ username, onLogout, userId }) {
 
   const editDefenseBuildings = [...(structureCatalog.defences || [])]
     .filter((building) => building?.id)
+    .filter((building) => !(shouldHideEagleArtillery && String(building.id || '') === 'eagle_artillery'))
     .sort((left, right) => {
       return (left.name || formatStructureName(left.id)).localeCompare(right.name || formatStructureName(right.id))
     })
@@ -2546,6 +2555,16 @@ export default function UserPage({ username, onLogout, userId }) {
     if (!isWallBuildComplete) {
       showToast('Build all the walls before upgrading to the next Town Hall.', 'warning')
       return
+    }
+
+    if (Number(nextTownHallLevel || 0) === 17) {
+      const eagleLevels = Array.isArray(structureLevels?.eagle_artillery) ? structureLevels.eagle_artillery : []
+      const currentEagleLevel = eagleLevels.reduce((highest, value) => Math.max(highest, Number(value) || 0), 0)
+
+      if (currentEagleLevel < 7) {
+        showToast('Eagle Artillery level 7 is required before upgrading to Town Hall 17.', 'warning')
+        return
+      }
     }
 
     const durationSeconds = Math.max(0, Math.floor(Number(townhallUpgradeInfo?.timeSeconds) || 0))
