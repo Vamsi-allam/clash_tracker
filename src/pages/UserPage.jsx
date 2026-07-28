@@ -2102,6 +2102,10 @@ export default function UserPage({ username, onLogout, userId }) {
   const visibleDefenseBuildings = [...(structureCatalog.defences || [])]
     .filter((building) => building?.id)
     .filter((building) => !(shouldHideEagleArtillery && String(building.id || '') === 'eagle_artillery'))
+    .filter((building) => {
+      const rowCount = getStructureRowCount(building, structureLevels[building.id] || [])
+      return getVisibleRowIndexesForBuilding(building, rowCount).length > 0
+    })
     .sort((left, right) => {
       return (left.name || formatStructureName(left.id)).localeCompare(right.name || formatStructureName(right.id))
     })
