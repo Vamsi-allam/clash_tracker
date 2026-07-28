@@ -1069,6 +1069,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
                 if (defence.id === 'canon') return `18_${maxLevel}`
                 if (defence.id === 'bomb') return `27_${maxLevel}`
                 if (defence.id === 'giant_bomb') return `28_${maxLevel}`
+                if (defence.id === 'giga_bomb') return `201_${maxLevel}`
                 if (defence.id === 'skeleton_trap') return `64_${maxLevel}`
                 if (defence.id === 'air_bomb') return `26_${maxLevel}`
                 if (defence.id === 'seeking_air_mine') return `29_${maxLevel}`
@@ -1088,6 +1089,8 @@ export default function BuildingEditorPage({ username, onLogout }) {
                 if (defence.id === 'monolith') return `136_${maxLevel}`
                 if (defence.id === 'ricochet_cannon') return `153_${maxLevel}`
                 if (defence.id === 'multi_archer_tower') return `154_${maxLevel}`
+                if (defence.id === 'multi_gear_tower') return `214_${maxLevel}`
+                if (defence.id === 'firespitter') return `203_${maxLevel}`
                 if (defence.id === 'lab') return `13_${maxLevel}`
                 if (defence.id === 'hero_hall') return `202_${maxLevel}`
                 if (defence.id === 'army_camp') return `10_${maxLevel}`
@@ -1122,6 +1125,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
                 if (defence.id === 'electro_titan') return `138_${maxLevel}`
                 if (defence.id === 'root_rider') return `156_${maxLevel}`
                 if (defence.id === 'thrower') return `204_${maxLevel}`
+                if (defence.id === 'meteor_golem') return `241_${maxLevel}`
                 if (defence.id === 'yeti') return `121_${maxLevel}`
                 if (defence.id === 'dragon_rider') return `133_${maxLevel}`
                 if (defence.id === 'minion') return `53_${maxLevel}`
@@ -1145,6 +1149,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
                 if (defence.id === 'flame_flinger') return `134_${maxLevel}`
                 if (defence.id === 'battle_drill') return `139_${maxLevel}`
                 if (defence.id === 'troop_launcher') return `215_${maxLevel}`
+                if (defence.id === 'sky_wagon') return `278_${maxLevel}`
                 if (defence.id === 'blacksmith') return `152_${maxLevel}`
                 if (defence.id === 'lightning_spell') return '43'
                 if (defence.id === 'healing_spell') return '44'
@@ -1180,6 +1185,7 @@ export default function BuildingEditorPage({ username, onLogout }) {
                 if (defence.id === 'phoenix') return '144'
                 if (defence.id === 'spirit_fox') return '155'
                 if (defence.id === 'angry_jelly') return '193'
+                if (defence.id === 'sneezy') return '217'
                 return '18_3'
               }
               

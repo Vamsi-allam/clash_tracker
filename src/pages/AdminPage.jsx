@@ -564,11 +564,14 @@ export default function AdminPage({ username, onLogout }) {
                   if (activeTab === 'equipment') return ''
                   if (building.id === 'archer_tower') return `16_${maxLevel}`
                   if (building.id === 'multi_archer_tower') return `154_${maxLevel}`
+                  if (building.id === 'multi_gear_tower') return `214_${maxLevel}`
                   if (building.id === 'builder_hut') return `127_${maxLevel}`
                   if (building.id === 'canon') return `18_${maxLevel}`
                   if (building.id === 'ricochet_cannon') return `153_${maxLevel}`
+                  if (building.id === 'firespitter') return `203_${maxLevel}`
                   if (building.id === 'bomb') return `27_${maxLevel}`
                   if (building.id === 'giant_bomb') return `28_${maxLevel}`
+                  if (building.id === 'giga_bomb') return `201_${maxLevel}`
                   if (building.id === 'skeleton_trap') return `64_${maxLevel}`
                   if (building.id === 'air_bomb') return `26_${maxLevel}`
                   if (building.id === 'seeking_air_mine') return `29_${maxLevel}`
@@ -623,6 +626,7 @@ export default function AdminPage({ username, onLogout }) {
                   if (building.id === 'electro_titan') return `138_${maxLevel}`
                   if (building.id === 'root_rider') return `156_${maxLevel}`
                   if (building.id === 'thrower') return `204_${maxLevel}`
+                  if (building.id === 'meteor_golem') return `241_${maxLevel}`
                   if (building.id === 'minion') return `53_${maxLevel}`
                   if (building.id === 'hog_rider') return `54_${maxLevel}`
                   if (building.id === 'valkyrie') return `55_${maxLevel}`
@@ -644,6 +648,7 @@ export default function AdminPage({ username, onLogout }) {
                   if (building.id === 'flame_flinger') return `134_${maxLevel}`
                   if (building.id === 'battle_drill') return `139_${maxLevel}`
                   if (building.id === 'troop_launcher') return `215_${maxLevel}`
+                  if (building.id === 'sky_wagon') return `278_${maxLevel}`
                   if (building.id === 'lightning_spell') return '43'
                   if (building.id === 'healing_spell') return '44'
                   if (building.id === 'rage_spell') return '45'
@@ -678,6 +683,7 @@ export default function AdminPage({ username, onLogout }) {
                   if (building.id === 'phoenix') return '144'
                   if (building.id === 'spirit_fox') return '155'
                   if (building.id === 'angry_jelly') return '193'
+                  if (building.id === 'sneezy') return '217'
                   return '18_3'
                 }
 

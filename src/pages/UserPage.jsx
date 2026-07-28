@@ -441,6 +441,8 @@ const spellTowerImages = import.meta.glob('../assets/Defences/spell_tower/*.png'
 const monolithImages = import.meta.glob('../assets/Defences/monolith/*.png', { eager: true, import: 'default' })
 const ricochetCannonImages = import.meta.glob('../assets/Defences/Ricochet_Cannon/*.png', { eager: true, import: 'default' })
 const multiArcherTowerImages = import.meta.glob('../assets/Defences/Multi_Archer_Tower/*.png', { eager: true, import: 'default' })
+const multiGearTowerImages = import.meta.glob('../assets/Defences/Multi_Gear_Tower/*.png', { eager: true, import: 'default' })
+const firespitterImages = import.meta.glob('../assets/Defences/firespitter/*.png', { eager: true, import: 'default' })
 const wizardTowerImages = import.meta.glob('../assets/Defences/wizard_tower/*.png', { eager: true, import: 'default' })
 const bombImages = import.meta.glob('../assets/Traps/Bomb/*.png', { eager: true, import: 'default' })
 const giantBombImages = import.meta.glob('../assets/Traps/Gaint_Bomb/*.png', { eager: true, import: 'default' })
@@ -449,6 +451,7 @@ const airBombImages = import.meta.glob('../assets/Traps/Air_Bomb/*.png', { eager
 const seekingAirMineImages = import.meta.glob('../assets/Traps/Seeking_Air_Mine/*.png', { eager: true, import: 'default' })
 const springTrapImages = import.meta.glob('../assets/Traps/Spring_Trap/*.png', { eager: true, import: 'default' })
 const tornadoTrapImages = import.meta.glob('../assets/Traps/Tornado_Trap/*.png', { eager: true, import: 'default' })
+const gigaBombImages = import.meta.glob('../assets/Traps/Giga_Bomb/*.png', { eager: true, import: 'default' })
 const archerTowerImages = import.meta.glob('../assets/Defences/Archer_Tower/*.png', { eager: true, import: 'default' })
 const builderHutImages = import.meta.glob('../assets/Defences/Builder_hut/*.png', { eager: true, import: 'default' })
 const armyCampImages = import.meta.glob('../assets/Army/Army_Camp/*.png', { eager: true, import: 'default' })
@@ -485,6 +488,7 @@ const electroDragonTroopImages = import.meta.glob('../assets/Troops/Electro_Drag
 const electroTitanTroopImages = import.meta.glob('../assets/Troops/Electro_Titan/*.png', { eager: true, import: 'default' })
 const rootRiderTroopImages = import.meta.glob('../assets/Troops/Root_Rider/*.png', { eager: true, import: 'default' })
 const throwerTroopImages = import.meta.glob('../assets/Troops/Thrower/*.png', { eager: true, import: 'default' })
+const meteorGolemTroopImages = import.meta.glob('../assets/Troops/Meteor_Golem/*.png', { eager: true, import: 'default' })
 const yetiTroopImages = import.meta.glob('../assets/Troops/Yeti/*.png', { eager: true, import: 'default' })
 const dragonRiderTroopImages = import.meta.glob('../assets/Troops/DragonRider/*.png', { eager: true, import: 'default' })
 const minionDarkTroopImages = import.meta.glob('../assets/Dark_Troops/Minion/*.png', { eager: true, import: 'default' })
@@ -510,6 +514,7 @@ const poisonLizardPetImages = import.meta.glob('../assets/pets/Poison_Lizard/*.p
 const phoenixPetImages = import.meta.glob('../assets/pets/Phoenix/*.png', { eager: true, import: 'default' })
 const spiritFoxPetImages = import.meta.glob('../assets/pets/Spirit_Fox/*.png', { eager: true, import: 'default' })
 const angryJellyPetImages = import.meta.glob('../assets/pets/Angry_jelly/*.png', { eager: true, import: 'default' })
+const sneezyPetImages = import.meta.glob('../assets/pets/Sneezy/*.png', { eager: true, import: 'default' })
 const wallWreckerSiegeImages = import.meta.glob('../assets/Seige_machines/Wall_Wrecker/*.png', { eager: true, import: 'default' })
 const battleBlimpSiegeImages = import.meta.glob('../assets/Seige_machines/Battle_Blimp/*.png', { eager: true, import: 'default' })
 const stoneSlammerSiegeImages = import.meta.glob('../assets/Seige_machines/Stone_Slammer/*.png', { eager: true, import: 'default' })
@@ -518,6 +523,7 @@ const logLauncherSiegeImages = import.meta.glob('../assets/Seige_machines/Log_La
 const flameFlingerSiegeImages = import.meta.glob('../assets/Seige_machines/Flame_Flinger/*.png', { eager: true, import: 'default' })
 const battleDrillSiegeImages = import.meta.glob('../assets/Seige_machines/Battle_Drill/*.png', { eager: true, import: 'default' })
 const troopLauncherSiegeImages = import.meta.glob('../assets/Seige_machines/Troop_Launcher/*.png', { eager: true, import: 'default' })
+const skyWagonSiegeImages = import.meta.glob('../assets/Seige_machines/Sky_Wagon/*.png', { eager: true, import: 'default' })
 const lightningSpellImages = import.meta.glob('../assets/spells/Lightning_Spell/*.png', { eager: true, import: 'default' })
 const healingSpellImages = import.meta.glob('../assets/spells/Healing_Spell/*.png', { eager: true, import: 'default' })
 const rageSpellImages = import.meta.glob('../assets/spells/Rage_Spell/*.png', { eager: true, import: 'default' })
@@ -565,9 +571,77 @@ const MERGED_DEFENCE_RULES = {
     requiredBaseLevel: 21,
     requiredBaseCount: 2,
   },
+  multi_gear_tower: {
+    mergedBuildingId: 'multi_gear_tower',
+    mergedBuildingLabel: 'Multi Gear Tower',
+    baseRequirements: [
+      {
+        baseBuildingId: 'canon',
+        baseBuildingLabel: 'Cannon',
+        requiredBaseLevel: 21,
+        requiredBaseCount: 1,
+      },
+      {
+        baseBuildingId: 'archer_tower',
+        baseBuildingLabel: 'Archer Tower',
+        requiredBaseLevel: 21,
+        requiredBaseCount: 1,
+      },
+    ],
+  },
 }
 
 const MERGED_DEFENCE_IDS = new Set(Object.keys(MERGED_DEFENCE_RULES))
+
+const getMergeRequirements = (rule = {}) => {
+  if (Array.isArray(rule.baseRequirements) && rule.baseRequirements.length > 0) {
+    return rule.baseRequirements
+      .map((requirement) => ({
+        baseBuildingId: String(requirement?.baseBuildingId || ''),
+        baseBuildingLabel: String(requirement?.baseBuildingLabel || ''),
+        requiredBaseLevel: Number(requirement?.requiredBaseLevel || 0),
+        requiredBaseCount: Number(requirement?.requiredBaseCount || 0),
+      }))
+      .filter((requirement) => requirement.baseBuildingId && requirement.requiredBaseCount > 0)
+  }
+
+  if (!rule.baseBuildingId || !rule.requiredBaseCount) return []
+
+  return [
+    {
+      baseBuildingId: String(rule.baseBuildingId),
+      baseBuildingLabel: String(rule.baseBuildingLabel || formatStructureName(rule.baseBuildingId)),
+      requiredBaseLevel: Number(rule.requiredBaseLevel || 0),
+      requiredBaseCount: Number(rule.requiredBaseCount || 0),
+    },
+  ]
+}
+
+const getMergeRequirementText = (requirements = []) => {
+  if (!Array.isArray(requirements) || requirements.length === 0) {
+    return 'Merge requirement not configured.'
+  }
+
+  if (
+    requirements.length === 2
+    && requirements.every((requirement) => Number(requirement.requiredBaseCount || 0) === 1)
+    && Number(requirements[0]?.requiredBaseLevel || 0) === Number(requirements[1]?.requiredBaseLevel || 0)
+  ) {
+    const firstLabel = requirements[0].baseBuildingLabel || formatStructureName(requirements[0].baseBuildingId)
+    const secondLabel = requirements[1].baseBuildingLabel || formatStructureName(requirements[1].baseBuildingId)
+    const sharedLevel = Number(requirements[0].requiredBaseLevel || 0)
+    return `Requires both ${firstLabel} and ${secondLabel} at level ${sharedLevel} to merge.`
+  }
+
+  const parts = requirements.map((requirement) => {
+    const count = Number(requirement.requiredBaseCount || 0)
+    const label = requirement.baseBuildingLabel || formatStructureName(requirement.baseBuildingId)
+    const level = Number(requirement.requiredBaseLevel || 0)
+    return `${count} ${label}${count > 1 ? 's' : ''} at level ${level}`
+  })
+
+  return `Requires ${parts.join(' + ')} to merge.`
+}
 
 export default function UserPage({ username, onLogout, userId }) {
   const [tag, setTag] = useState('')
@@ -1847,16 +1921,36 @@ export default function UserPage({ username, onLogout, userId }) {
     const rule = MERGED_DEFENCE_RULES[String(mergedBuildingId || '')]
     if (!rule) return null
 
-    const mergedBuilding = (structureCatalog.defences || []).find((building) => String(building?.id || '') === rule.mergedBuildingId)
-    const baseBuilding = (structureCatalog.defences || []).find((building) => String(building?.id || '') === rule.baseBuildingId)
-    if (!mergedBuilding || !baseBuilding) {
+    const requirements = getMergeRequirements(rule)
+    const requirementText = getMergeRequirementText(requirements)
+
+    if (requirements.length === 0) {
       return {
         ...rule,
         ready: false,
-        missingCount: rule.requiredBaseCount,
+        missingCount: 0,
         eligibleRowIndexes: [],
         consumedRowIndexes: [],
-        requirementText: `Requires ${rule.requiredBaseCount} ${rule.baseBuildingLabel} at level ${rule.requiredBaseLevel} to merge.`,
+        requirements: [],
+        requirementText,
+      }
+    }
+
+    const mergedBuilding = (structureCatalog.defences || []).find((building) => String(building?.id || '') === rule.mergedBuildingId)
+    const missingRequirementBuildings = requirements.some((requirement) => {
+      return !(structureCatalog.defences || []).some((building) => String(building?.id || '') === requirement.baseBuildingId)
+    })
+
+    if (!mergedBuilding || missingRequirementBuildings) {
+      return {
+        ...rule,
+        ready: false,
+        missingCount: requirements.reduce((total, requirement) => total + Number(requirement.requiredBaseCount || 0), 0),
+        eligibleRowIndexes: [],
+        consumedRowIndexes: [],
+        requirements: requirements.map((requirement) => ({ ...requirement, eligibleRowIndexes: [], consumedRowIndexes: [] })),
+        consumedRowIndexesByBaseBuildingId: {},
+        requirementText,
       }
     }
 
@@ -1870,45 +1964,124 @@ export default function UserPage({ username, onLogout, userId }) {
       return rowLevel > 0
     }).filter(Boolean).length
 
-    const baseRowCount = getStructureRowCount(baseBuilding, structureLevels[rule.baseBuildingId] || [])
-    const baseLevels = getBuildingRowLevelsWithDefaults(baseBuilding, baseRowCount)
-    const eligibleRowIndexes = []
+    const requirementStates = requirements.map((requirement) => {
+      const baseBuilding = (structureCatalog.defences || []).find((building) => String(building?.id || '') === requirement.baseBuildingId)
+      const baseRowCount = getStructureRowCount(baseBuilding, structureLevels[requirement.baseBuildingId] || [])
+      const baseLevels = getBuildingRowLevelsWithDefaults(baseBuilding, baseRowCount)
+      const eligibleRowIndexes = []
 
-    for (let rowIndex = 0; rowIndex < baseRowCount; rowIndex += 1) {
-      if (Number(baseLevels[rowIndex] || 0) >= Number(rule.requiredBaseLevel)) {
-        eligibleRowIndexes.push(rowIndex)
+      for (let rowIndex = 0; rowIndex < baseRowCount; rowIndex += 1) {
+        if (Number(baseLevels[rowIndex] || 0) >= Number(requirement.requiredBaseLevel)) {
+          eligibleRowIndexes.push(rowIndex)
+        }
       }
-    }
 
-    const ready = eligibleRowIndexes.length >= Number(rule.requiredBaseCount)
-    const missingCount = Math.max(0, Number(rule.requiredBaseCount) - eligibleRowIndexes.length)
-    const consumedBaseCount = Number(rule.requiredBaseCount) * constructedMergedRows
-    const consumedRowIndexes = consumedBaseCount > 0 && eligibleRowIndexes.length > 0
-      ? eligibleRowIndexes.slice(-consumedBaseCount)
-      : []
+      const consumedBaseCount = Number(requirement.requiredBaseCount) * constructedMergedRows
+      const consumedRowIndexes = consumedBaseCount > 0 && eligibleRowIndexes.length > 0
+        ? eligibleRowIndexes.slice(-consumedBaseCount)
+        : []
+
+      return {
+        ...requirement,
+        eligibleRowIndexes,
+        consumedRowIndexes,
+      }
+    })
+
+    const ready = requirementStates.every((requirement) => {
+      return requirement.eligibleRowIndexes.length >= Number(requirement.requiredBaseCount)
+    })
+
+    const missingCount = requirementStates.reduce((total, requirement) => {
+      const requirementMissingCount = Math.max(0, Number(requirement.requiredBaseCount) - requirement.eligibleRowIndexes.length)
+      return total + requirementMissingCount
+    }, 0)
+
+    const consumedRowIndexesByBaseBuildingId = requirementStates.reduce((accumulator, requirement) => {
+      accumulator[requirement.baseBuildingId] = requirement.consumedRowIndexes
+      return accumulator
+    }, {})
 
     return {
       ...rule,
       ready,
       missingCount,
-      eligibleRowIndexes,
-      consumedRowIndexes,
+      requirements: requirementStates,
+      consumedRowIndexesByBaseBuildingId,
+      eligibleRowIndexes: requirementStates[0]?.eligibleRowIndexes || [],
+      consumedRowIndexes: requirementStates[0]?.consumedRowIndexes || [],
+      requiredBaseCount: requirementStates[0]?.requiredBaseCount || 0,
+      requiredBaseLevel: requirementStates[0]?.requiredBaseLevel || 0,
+      baseBuildingLabel: requirementStates[0]?.baseBuildingLabel || '',
       constructedMergedRows,
-      requirementText: ready
-        ? `${rule.mergedBuildingLabel} is ready to construct.`
-        : `Requires ${rule.requiredBaseCount} ${rule.baseBuildingLabel} at level ${rule.requiredBaseLevel} to merge.`,
+      requirementText,
     }
   }
 
-  const hiddenDefenceRowIndexesByBuildingId = Object.values(MERGED_DEFENCE_RULES).reduce((accumulator, rule) => {
-    const mergeState = getMergedDefenceUnlockState(rule.mergedBuildingId)
-    if (!mergeState || !Array.isArray(mergeState.consumedRowIndexes) || mergeState.consumedRowIndexes.length === 0) {
-      return accumulator
-    }
+  const hiddenDefenceRowIndexesByBuildingId = (() => {
+    const totalConsumedByBaseBuildingId = {}
+    const eligibleIndexesByBaseBuildingId = {}
 
-    accumulator[rule.baseBuildingId] = new Set(mergeState.consumedRowIndexes)
-    return accumulator
-  }, {})
+    Object.values(MERGED_DEFENCE_RULES).forEach((rule) => {
+      const mergeState = getMergedDefenceUnlockState(rule.mergedBuildingId)
+      if (!mergeState) return
+
+      const constructedMergedRows = Number(mergeState.constructedMergedRows || 0)
+      ;(mergeState.requirements || []).forEach((requirement) => {
+        const baseBuildingId = String(requirement?.baseBuildingId || '')
+        if (!baseBuildingId) return
+
+        const requiredPerMergedRow = Number(requirement.requiredBaseCount || 0)
+        totalConsumedByBaseBuildingId[baseBuildingId] = Number(totalConsumedByBaseBuildingId[baseBuildingId] || 0)
+          + (requiredPerMergedRow * constructedMergedRows)
+
+        const eligibleRowIndexes = Array.isArray(requirement.eligibleRowIndexes) ? requirement.eligibleRowIndexes : []
+        if (!eligibleIndexesByBaseBuildingId[baseBuildingId] || eligibleIndexesByBaseBuildingId[baseBuildingId].length < eligibleRowIndexes.length) {
+          eligibleIndexesByBaseBuildingId[baseBuildingId] = [...eligibleRowIndexes]
+        }
+      })
+    })
+
+    return Object.entries(totalConsumedByBaseBuildingId).reduce((accumulator, [baseBuildingId, consumedCount]) => {
+      const eligibleRowIndexes = eligibleIndexesByBaseBuildingId[baseBuildingId] || []
+      const consumedRowIndexes = Number(consumedCount) > 0
+        ? eligibleRowIndexes.slice(-Number(consumedCount))
+        : []
+
+      accumulator[baseBuildingId] = new Set(consumedRowIndexes)
+      return accumulator
+    }, {})
+  })()
+
+  const mergedBaseDemandByRuleAndBuildingId = (() => {
+    const demandByRuleId = {}
+    const totalDemandByBaseBuildingId = {}
+
+    Object.values(MERGED_DEFENCE_RULES).forEach((rule) => {
+      const mergeState = getMergedDefenceUnlockState(rule.mergedBuildingId)
+      if (!mergeState) return
+
+      const mergedBuildingId = String(rule.mergedBuildingId || '')
+      const constructedMergedRows = Number(mergeState.constructedMergedRows || 0)
+      const requirementDemandByBaseBuildingId = {}
+
+      ;(mergeState.requirements || []).forEach((requirement) => {
+        const baseBuildingId = String(requirement?.baseBuildingId || '')
+        if (!baseBuildingId) return
+
+        const demandForRule = Number(requirement.requiredBaseCount || 0) * constructedMergedRows
+        requirementDemandByBaseBuildingId[baseBuildingId] = demandForRule
+        totalDemandByBaseBuildingId[baseBuildingId] = Number(totalDemandByBaseBuildingId[baseBuildingId] || 0) + demandForRule
+      })
+
+      demandByRuleId[mergedBuildingId] = requirementDemandByBaseBuildingId
+    })
+
+    return {
+      demandByRuleId,
+      totalDemandByBaseBuildingId,
+    }
+  })()
 
   const getVisibleRowIndexesForBuilding = (building, rowCount = null) => {
     const resolvedCount = Math.max(0, rowCount == null ? getStructureRowCount(building, structureLevels[building.id] || []) : Number(rowCount))
@@ -3453,8 +3626,19 @@ export default function UserPage({ username, onLogout, userId }) {
       monolith: (imageLevel) => monolithImages[`../assets/Defences/monolith/136_${imageLevel}.png`] || '',
       ricochet_cannon: (imageLevel) => ricochetCannonImages[`../assets/Defences/Ricochet_Cannon/153_${imageLevel}.png`] || '',
       multi_archer_tower: (imageLevel) => multiArcherTowerImages[`../assets/Defences/Multi_Archer_Tower/154_${imageLevel}.png`] || '',
+      multi_gear_tower: (imageLevel) => multiGearTowerImages[`../assets/Defences/Multi_Gear_Tower/214_${imageLevel}.png`]
+        || multiGearTowerImages['../assets/Defences/Multi_Gear_Tower/214_3.png']
+        || multiGearTowerImages['../assets/Defences/Multi_Gear_Tower/214_2.png']
+        || multiGearTowerImages['../assets/Defences/Multi_Gear_Tower/214_1.png']
+        || '',
+      firespitter: (imageLevel) => firespitterImages[`../assets/Defences/firespitter/203_${imageLevel}.png`]
+        || firespitterImages['../assets/Defences/firespitter/203_3.png']
+        || firespitterImages['../assets/Defences/firespitter/203_2.png']
+        || firespitterImages['../assets/Defences/firespitter/203_1.png']
+        || '',
       bomb: (imageLevel) => bombImages[`../assets/Traps/Bomb/27_${imageLevel}.png`] || '',
       giant_bomb: (imageLevel) => giantBombImages[`../assets/Traps/Gaint_Bomb/28_${imageLevel}.png`] || '',
+      giga_bomb: (imageLevel) => gigaBombImages[`../assets/Traps/Giga_Bomb/201_${imageLevel}.png`] || '',
       skeleton_trap: (imageLevel) => skeletonTrapImages[`../assets/Traps/Skeleton_Trap/64_${imageLevel}.png`] || '',
       air_bomb: (imageLevel) => airBombImages[`../assets/Traps/Air_Bomb/26_${imageLevel}.png`] || '',
       seeking_air_mine: (imageLevel) => seekingAirMineImages[`../assets/Traps/Seeking_Air_Mine/29_${imageLevel}.png`] || '',
@@ -3505,6 +3689,7 @@ export default function UserPage({ username, onLogout, userId }) {
       electro_titan: (imageLevel) => electroTitanTroopImages[`../assets/Troops/Electro_Titan/138_${imageLevel}.png`] || '',
       root_rider: (imageLevel) => rootRiderTroopImages[`../assets/Troops/Root_Rider/156_${imageLevel}.png`] || '',
       thrower: (imageLevel) => throwerTroopImages[`../assets/Troops/Thrower/204_${imageLevel}.png`] || '',
+      meteor_golem: (imageLevel) => meteorGolemTroopImages[`../assets/Troops/Meteor_Golem/241_${imageLevel}.png`] || '',
       yeti: (imageLevel) => yetiTroopImages[`../assets/Troops/Yeti/121_${imageLevel}.png`] || '',
       dragon_rider: (imageLevel) => dragonRiderTroopImages[`../assets/Troops/DragonRider/133_${imageLevel}.png`] || '',
       minion: (imageLevel) => minionDarkTroopImages[`../assets/Dark_Troops/Minion/53_${imageLevel}.png`] || '',
@@ -3528,6 +3713,7 @@ export default function UserPage({ username, onLogout, userId }) {
       flame_flinger: (imageLevel) => flameFlingerSiegeImages[`../assets/Seige_machines/Flame_Flinger/134_${imageLevel}.png`] || '',
       battle_drill: (imageLevel) => battleDrillSiegeImages[`../assets/Seige_machines/Battle_Drill/139_${imageLevel}.png`] || '',
       troop_launcher: (imageLevel) => troopLauncherSiegeImages[`../assets/Seige_machines/Troop_Launcher/215_${imageLevel}.png`] || '',
+      sky_wagon: (imageLevel) => skyWagonSiegeImages[`../assets/Seige_machines/Sky_Wagon/278_${imageLevel}.png`] || '',
       lightning_spell: (imageLevel) => imageLevel === 0 ? (lightningSpellImages['../assets/spells/Lightning_Spell/43_0.png'] || '') : (lightningSpellImages['../assets/spells/Lightning_Spell/43.png'] || ''),
       healing_spell: (imageLevel) => imageLevel === 0 ? (healingSpellImages['../assets/spells/Healing_Spell/44_0.png'] || '') : (healingSpellImages['../assets/spells/Healing_Spell/44.png'] || ''),
       rage_spell: (imageLevel) => imageLevel === 0 ? (rageSpellImages['../assets/spells/Rage_Spell/45_0.png'] || '') : (rageSpellImages['../assets/spells/Rage_Spell/45.png'] || ''),
@@ -3564,6 +3750,7 @@ export default function UserPage({ username, onLogout, userId }) {
         : (totemSpellImages['../assets/spells/Totem_Spell/244.png'] || ''),
       spirit_fox: () => spiritFoxPetImages['../assets/pets/Spirit_Fox/155.png'] || spiritFoxPetImages['../assets/pets/Spirit_Fox/155_0.png'] || '',
       angry_jelly: () => angryJellyPetImages['../assets/pets/Angry_jelly/193.png'] || angryJellyPetImages['../assets/pets/Angry_jelly/193_0.png'] || '',
+      sneezy: () => sneezyPetImages['../assets/pets/Sneezy/217.png'] || sneezyPetImages['../assets/pets/Sneezy/217_0.png'] || '',
       barbarian_king: (imageLevel) => imageLevel === 0 ? (barbarianKingImages['../assets/Heros/Barbarian_King/61_0.png'] || '') : (barbarianKingImages['../assets/Heros/Barbarian_King/61.png'] || ''),
       archer_queen: (imageLevel) => imageLevel === 0 ? (archerQueenImages['../assets/Heros/Archer_Queen/62_0.png'] || '') : (archerQueenImages['../assets/Heros/Archer_Queen/62.png'] || ''),
       grand_warden: (imageLevel) => imageLevel === 0 ? (grandWardenImages['../assets/Heros/Grand_Warden/63_0.png'] || '') : (grandWardenImages['../assets/Heros/Grand_Warden/63.png'] || ''),
@@ -3691,16 +3878,21 @@ export default function UserPage({ username, onLogout, userId }) {
       const summaryResource = allRemainingNextLevels[0]?.resource || visibleNextLevels[0]?.resource || upgradeSummary.totalResource || ''
       const actionRowKey = `${building.id}-${rowIndex + 1}`
       const mergeUnlockState = getMergedDefenceUnlockState(building.id)
-      const requiredBaseCountForRow = mergeUnlockState
-        ? Number(mergeUnlockState.requiredBaseCount) * (rowIndex + 1)
-        : 0
       const mergeRowReady = mergeUnlockState
-        ? mergeUnlockState.eligibleRowIndexes.length >= requiredBaseCountForRow
+        ? (mergeUnlockState.requirements || []).every((requirement) => {
+          const baseBuildingId = String(requirement?.baseBuildingId || '')
+          const requiredCountForRow = Number(requirement.requiredBaseCount || 0) * (rowIndex + 1)
+          const totalDemandForBase = Number(mergedBaseDemandByRuleAndBuildingId.totalDemandByBaseBuildingId?.[baseBuildingId] || 0)
+          const alreadyConsumedByCurrentRule = Number(mergedBaseDemandByRuleAndBuildingId.demandByRuleId?.[String(building.id || '')]?.[baseBuildingId] || 0)
+          const demandFromOtherMergedBuildings = Math.max(0, totalDemandForBase - alreadyConsumedByCurrentRule)
+          const requiredAvailableCount = demandFromOtherMergedBuildings + requiredCountForRow
+
+          return Number(requirement?.eligibleRowIndexes?.length || 0) >= requiredAvailableCount
+        })
         : true
-      const mergeMissingCountForRow = Math.max(0, requiredBaseCountForRow - Number(mergeUnlockState?.eligibleRowIndexes?.length || 0))
       const mergeLocked = Boolean(mergeUnlockState && Number(rowLevel || 0) <= 0 && !mergeRowReady)
       const mergeLockedMessage = mergeLocked
-        ? `Requires ${mergeUnlockState.requiredBaseCount} ${mergeUnlockState.baseBuildingLabel} at level ${mergeUnlockState.requiredBaseLevel} to merge.`
+        ? String(mergeUnlockState.requirementText || 'Merge requirement not met.')
         : ''
 
       return {

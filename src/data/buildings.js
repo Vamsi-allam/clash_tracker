@@ -22,6 +22,8 @@ export const BUILDING_SECTIONS = {
     { id: 'scattershot', name: 'Scattershot', image: '/src/assets/Defences/scattershot' },
     { id: 'spell_tower', name: 'Spell Tower', image: '/src/assets/Defences/spell_tower' },
     { id: 'monolith', name: 'Monolith', image: '/src/assets/Defences/monolith' },
+    { id: 'multi_gear_tower', name: 'Multi Gear Tower', image: '/src/assets/Defences/Multi_Gear_Tower' },
+    { id: 'firespitter', name: 'Firespitter', image: '/src/assets/Defences/firespitter' },
   ],
   traps: [
     { id: 'bomb', name: 'Bomb', image: '/src/assets/Traps/Bomb' },
@@ -31,6 +33,7 @@ export const BUILDING_SECTIONS = {
     { id: 'seeking_air_mine', name: 'Seeking Air Mine', image: '/src/assets/Traps/Seeking_Air_Mine' },
     { id: 'spring_trap', name: 'Spring Trap', image: '/src/assets/Traps/Spring_Trap' },
     { id: 'tornado_trap', name: 'Tornado Trap', image: '/src/assets/Traps/Tornado_Trap' },
+    { id: 'giga_bomb', name: 'Giga Bomb', image: '/src/assets/Traps/Giga_Bomb' },
   ],
   army: [
     { id: 'army_camp', name: 'Army Camp', image: '/src/assets/Army/Army_Camp' },
@@ -73,6 +76,7 @@ export const BUILDING_SECTIONS = {
     { id: 'electro_titan', name: 'Electro Titan', image: '/src/assets/Troops/Electro_Titan' },
     { id: 'root_rider', name: 'Root Rider', image: '/src/assets/Troops/Root_Rider' },
     { id: 'thrower', name: 'Thrower', image: '/src/assets/Troops/Thrower' },
+    { id: 'meteor_golem', name: 'Meteor Golem', image: '/src/assets/Troops/Meteor_Golem' },
   ],
   spells: [
     { id: 'lightning_spell', name: 'Lightning Spell', image: '/src/assets/spells/Lightning_Spell' },
@@ -120,6 +124,7 @@ export const BUILDING_SECTIONS = {
     { id: 'flame_flinger', name: 'Flame Flinger', image: '/src/assets/Seige_machines/Flame_Flinger' },
     { id: 'battle_drill', name: 'Battle Drill', image: '/src/assets/Seige_machines/Battle_Drill' },
     { id: 'troop_launcher', name: 'Troop Launcher', image: '/src/assets/Seige_machines/Troop_Launcher' },
+    { id: 'sky_wagon', name: 'Sky Wagon', image: '/src/assets/Seige_machines/Sky_Wagon' },
   ],
   heroes: [
     { id: 'barbarian_king', name: 'Barbarian King', image: '/src/assets/Heros/Barbarian_King' },
@@ -140,6 +145,7 @@ export const BUILDING_SECTIONS = {
     { id: 'phoenix', name: 'Phoenix', image: '/src/assets/pets/Phoenix' },
     { id: 'spirit_fox', name: 'Spirit Fox', image: '/src/assets/pets/Spirit_Fox' },
     { id: 'angry_jelly', name: 'Angry Jelly', image: '/src/assets/pets/Angry_jelly' },
+    { id: 'sneezy', name: 'Sneezy', image: '/src/assets/pets/Sneezy' },
   ],
   equipment: [
     { id: 'barbarian_puppet', name: 'Barbarian Puppet', hero: 'Barbarian King', image: '/src/assets/Equipment/Barbarian_King/Barbarian_puppet/157.png', levelCount: 4, unlock_source: 'blacksmith', blacksmith_level_unlocked: 1, equipment_type: 'active', equipment_rarity: 'common' },
@@ -1892,6 +1898,65 @@ export const getDefaultBuildingData = (townhallLevel) => {
         equipment_rarity: 'epic',
         levels: [
           { level: 1, cost: 0, resource: 'glowy_ore', resource_options: ['glowy_ore'], resource_costs: createEquipmentResourceCosts(['glowy_ore', 0]), time: '0sec', blacksmith_level_unlocked: 1 },
+        ],
+      },
+    }
+  }
+
+  if (Number(townhallLevel) === 17) {
+    return {
+      multi_gear_tower: {
+        id: 'multi_gear_tower',
+        image_path: '/src/assets/Defences/Multi_Gear_Tower/214_',
+        buildings_unlocked: 1,
+        copy_unlocks: createCopyUnlocks(1, 1),
+        levels: [
+          { level: 1, cost: 0, resource: 'gold', time: '0sec' },
+        ],
+      },
+      firespitter: {
+        id: 'firespitter',
+        image_path: '/src/assets/Defences/firespitter/203_',
+        buildings_unlocked: 1,
+        copy_unlocks: createCopyUnlocks(1, 1),
+        levels: [
+          { level: 1, cost: 0, resource: 'gold', time: '0sec' },
+        ],
+      },
+      giga_bomb: {
+        id: 'giga_bomb',
+        image_path: '/src/assets/Traps/Giga_Bomb/201_',
+        buildings_unlocked: 1,
+        copy_unlocks: createCopyUnlocks(1, 1),
+        levels: [
+          { level: 1, cost: 0, resource: 'gold', time: '0sec' },
+        ],
+      },
+      meteor_golem: {
+        id: 'meteor_golem',
+        image_path: '/src/assets/Troops/Meteor_Golem/241_',
+        copy_unlocks: [true],
+        barracks_level_unlocked: 19,
+        levels: [
+          { level: 1, cost: 0, resource: 'elixir', time: '0sec', lab_level_unlocked: 1 },
+        ],
+      },
+      sky_wagon: {
+        id: 'sky_wagon',
+        image_path: '/src/assets/Seige_machines/Sky_Wagon/278_',
+        copy_unlocks: [true],
+        workshop_level_unlocked: 9,
+        levels: [
+          { level: 1, cost: 0, resource: 'elixir', time: '0sec', lab_level_unlocked: 1 },
+        ],
+      },
+      sneezy: {
+        id: 'sneezy',
+        image_path: '/src/assets/pets/Sneezy/217',
+        copy_unlocks: [true],
+        pet_house_level_unlocked: 11,
+        levels: [
+          { level: 1, cost: 0, resource: 'dark_elixir', time: '0sec', pet_house_level_unlocked: 11 },
         ],
       },
     }
